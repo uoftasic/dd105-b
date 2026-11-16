@@ -1,0 +1,28 @@
+     -.--ns INFO     gpi                                ..mbed/gpi_embed.cpp:93   in _embed_init_python              Using Python 3.12.4 interpreter at .venv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:79   in gpi_print_registered_impl       VPI registered
+     0.00ns INFO     cocotb                             Running on Verilator version 5.050 2026-07-01
+     0.00ns INFO     cocotb                             Seeding Python random module with supplied seed 1
+     0.00ns INFO     cocotb                             Initialized cocotb v2.0.1 from /usr/local/lib/python3.12/dist-packages/cocotb
+     0.00ns INFO     cocotb                             Running tests
+     0.00ns INFO     cocotb.regression                  running test_st.StPlainTest (1/1)
+                                                            Derives from uvm_test, not BaseTest. Its scoreboard logs MISMATCH on B01
+DD105-BUG: B01 enabled
+   185.00ns ERROR    ../selftest/alu/tb/test_st.py(111) [uvm_test_top.env.sb]: MISMATCH SUB 23 23: r=00 c=1, expected r=00 c=0
+   385.00ns ERROR    ../selftest/alu/tb/test_st.py(111) [uvm_test_top.env.sb]: MISMATCH SUB 4c 4c: r=00 c=1, expected r=00 c=0
+  2505.00ns ERROR    ../selftest/alu/tb/test_st.py(111) [uvm_test_top.env.sb]: MISMATCH SUB 7c 7c: r=00 c=1, expected r=00 c=0
+  2645.00ns ERROR    ../selftest/alu/tb/test_st.py(111) [uvm_test_top.env.sb]: MISMATCH SUB 53 53: r=00 c=1, expected r=00 c=0
+  2745.00ns ERROR    ../selftest/alu/tb/test_st.py(111) [uvm_test_top.env.sb]: MISMATCH SUB ce ce: r=00 c=1, expected r=00 c=0
+  3805.00ns ERROR    ../selftest/alu/tb/test_st.py(111) [uvm_test_top.env.sb]: MISMATCH SUB e6 e6: r=00 c=1, expected r=00 c=0
+  4645.00ns ERROR    ../selftest/alu/tb/test_st.py(111) [uvm_test_top.env.sb]: MISMATCH SUB d0 d0: r=00 c=1, expected r=00 c=0
+  5325.00ns ERROR    ../selftest/alu/tb/test_st.py(111) [uvm_test_top.env.sb]: MISMATCH SUB 9f 9f: r=00 c=1, expected r=00 c=0
+  5585.00ns ERROR    ../selftest/alu/tb/test_st.py(111) [uvm_test_top.env.sb]: MISMATCH SUB 37 37: r=00 c=1, expected r=00 c=0
+  5765.00ns ERROR    ../selftest/alu/tb/test_st.py(111) [uvm_test_top.env.sb]: MISMATCH SUB 54 54: r=00 c=1, expected r=00 c=0
+  6060.00ns INFO     cocotb.regression                  test_st.StPlainTest passed
+  6060.00ns INFO     cocotb.regression                  **************************************************************************************
+                                                        ** TEST                          STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        **************************************************************************************
+                                                        ** test_st.StPlainTest            PASS        6060.00           0.04     145374.01  **
+                                                        **************************************************************************************
+                                                        ** TESTS=1 PASS=1 FAIL=0 SKIP=0               6060.00           0.09      66833.76  **
+                                                        **************************************************************************************
+- :0: Verilog $finish

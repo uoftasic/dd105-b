@@ -1,0 +1,33 @@
+     -.--ns INFO     gpi                                ..mbed/gpi_embed.cpp:93   in _embed_init_python              Using Python 3.12.4 interpreter at .venv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:79   in gpi_print_registered_impl       VPI registered
+     0.00ns INFO     cocotb                             Running on Verilator version 5.050 2026-07-01
+     0.00ns INFO     cocotb                             Seeding Python random module with supplied seed 1
+     0.00ns INFO     cocotb                             Initialized cocotb v2.0.1 from /usr/local/lib/python3.12/dist-packages/cocotb
+     0.00ns INFO     cocotb                             Running tests
+     0.00ns INFO     cocotb.regression                  running test_st.StAssertTest (1/1)
+                                                            Checks with a plain `assert` in the scoreboard, which raises inside the
+DD105-BUG: B01 enabled
+   625.00ns WARNING  cocotb.Task 7.StMonitor.run_phase  MISMATCH SUB 4b 4b: r=00 c=1
+                                                        assert (0, 1) == (0, 0)
+                                                        Traceback (most recent call last):
+                                                          File "labs/common/selftest/alu/tb/test_st.py", line 100, in run_phase
+                                                            self.ap.write((pending.pop(0), int(d.result.value), int(d.carry.value)))
+                                                          File "/usr/local/lib/python3.12/dist-packages/pyuvm/s12_uvm_tlm_interfaces.py", line 477, in write
+                                                            export.write(datum)
+                                                          File "/usr/local/lib/python3.12/dist-packages/pyuvm/s13_predefined_component_classes.py", line 201, in write
+                                                            self.write_fn(tt)
+                                                          File "labs/common/selftest/alu/tb/test_st.py", line 119, in write
+                                                            self.mismatch(it, r, c, want)
+                                                          File "labs/common/selftest/alu/tb/test_st.py", line 226, in mismatch
+                                                            assert (r, c) == want, f"MISMATCH {it}: r={r:02x} c={c}"
+                                                        AssertionError: MISMATCH SUB 4b 4b: r=00 c=1
+                                                        assert (0, 1) == (0, 0)
+   625.00ns WARNING  cocotb.regression                  test_st.StAssertTest failed
+   625.00ns INFO     cocotb.regression                  **************************************************************************************
+                                                        ** TEST                          STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        **************************************************************************************
+                                                        ** test_st.StAssertTest           FAIL         625.00           0.01     100774.23  **
+                                                        **************************************************************************************
+                                                        ** TESTS=1 PASS=0 FAIL=1 SKIP=0                625.00           0.06      10463.16  **
+                                                        **************************************************************************************
+- :0: Verilog $finish

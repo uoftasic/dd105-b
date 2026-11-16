@@ -1,0 +1,41 @@
+     -.--ns INFO     gpi                                ..mbed/gpi_embed.cpp:93   in _embed_init_python              Using Python 3.12.4 interpreter at .venv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:79   in gpi_print_registered_impl       VPI registered
+     0.00ns INFO     cocotb                             Running on Verilator version 5.050 2026-07-01
+     0.00ns INFO     cocotb                             Seeding Python random module with supplied seed 1
+     0.00ns INFO     cocotb                             Initialized cocotb v2.0.1 from /usr/local/lib/python3.12/dist-packages/cocotb
+     0.00ns INFO     cocotb                             Running tests
+     0.00ns INFO     cocotb.regression                  running test_st.StGoodTest (1/1)
+                                                            The reference: ok on golden, B01 caught (a logged MISMATCH), B02 caught
+DD105-BUG: B01 enabled
+  1125.00ns ERROR    ../selftest/alu/tb/test_st.py(111) [uvm_test_top.env.sb]: MISMATCH SUB df df: r=00 c=1, expected r=00 c=0
+  2405.00ns ERROR    ../selftest/alu/tb/test_st.py(111) [uvm_test_top.env.sb]: MISMATCH SUB 3a 3a: r=00 c=1, expected r=00 c=0
+  2825.00ns ERROR    ../selftest/alu/tb/test_st.py(111) [uvm_test_top.env.sb]: MISMATCH SUB 5f 5f: r=00 c=1, expected r=00 c=0
+  3985.00ns ERROR    ../selftest/alu/tb/test_st.py(111) [uvm_test_top.env.sb]: MISMATCH SUB a0 a0: r=00 c=1, expected r=00 c=0
+  4025.00ns ERROR    ../selftest/alu/tb/test_st.py(111) [uvm_test_top.env.sb]: MISMATCH SUB 06 06: r=00 c=1, expected r=00 c=0
+  5025.00ns ERROR    ../selftest/alu/tb/test_st.py(111) [uvm_test_top.env.sb]: MISMATCH SUB 8b 8b: r=00 c=1, expected r=00 c=0
+DD105-B BaseTest: 6 errors logged, 0 assertion failures (u_sva.n_fail)
+  6060.00ns WARNING  cocotb.Test StGoodTest.StGoodTest  6 errors logged, the first: MISMATCH SUB df df: r=00 c=1, expected r=00 c=0
+                                                        assert not ['6 errors logged, the first: MISMATCH SUB df df: r=00 c=1, expected r=00 c=0']
+                                                        Traceback (most recent call last):
+                                                          File "/usr/local/lib/python3.12/dist-packages/pyuvm/extension_classes.py", line 42, in test_obj
+                                                            await uvm_root().run_test(
+                                                          File "/usr/local/lib/python3.12/dist-packages/pyuvm/s13_uvm_component.py", line 480, in run_test
+                                                            self.running_phase.traverse(self.uvm_test_top)
+                                                          File "/usr/local/lib/python3.12/dist-packages/pyuvm/s09_phasing.py", line 63, in traverse
+                                                            cls.execute(comp)  # first we execute this node then its children
+                                                            ^^^^^^^^^^^^^^^^^
+                                                          File "/usr/local/lib/python3.12/dist-packages/pyuvm/s09_phasing.py", line 44, in execute
+                                                            method()
+                                                          File "labs/common/py/dd105b_base.py", line 138, in final_phase
+                                                            assert not msgs, "; ".join(msgs)
+                                                        AssertionError: 6 errors logged, the first: MISMATCH SUB df df: r=00 c=1, expected r=00 c=0
+                                                        assert not ['6 errors logged, the first: MISMATCH SUB df df: r=00 c=1, expected r=00 c=0']
+  6060.00ns WARNING  cocotb.regression                  test_st.StGoodTest failed
+  6060.00ns INFO     cocotb.regression                  **************************************************************************************
+                                                        ** TEST                          STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        **************************************************************************************
+                                                        ** test_st.StGoodTest             FAIL        6060.00           0.05     128978.23  **
+                                                        **************************************************************************************
+                                                        ** TESTS=1 PASS=0 FAIL=1 SKIP=0               6060.00           0.10      58218.46  **
+                                                        **************************************************************************************
+- :0: Verilog $finish

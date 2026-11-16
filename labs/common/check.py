@@ -70,7 +70,7 @@ READS_BUG = re.compile(
     r"""plusargs\s*(?:\.get\s*\(\s*|\[\s*)["']\+?BUG["']"""
     r"""|["']\+?BUG["']\s+(?:not\s+)?in\s+(?:cocotb\.)?plusargs"""
     r"""|\$(?:test|value)\$plusargs\s*\(\s*"\+?BUG"""
-    r"""|\b\w+_bug_pkg\b|\bbug_id\b""")
+    r"""|\b\w+_bug_pkg\b""")
 TB_SUFFIXES = (".py", ".sv", ".svh", ".v")
 
 

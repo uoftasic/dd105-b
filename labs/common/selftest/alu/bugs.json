@@ -1,0 +1,11 @@
+{
+  "B01": {"name": "B01_sub_borrow_on_equal", "tier": 1,
+          "hides_behind": "operands that are never equal",
+          "teaches": "bias the stimulus toward corners such as a == b"},
+  "B02": {"name": "B02_zero_low_nibble", "tier": 1,
+          "hides_behind": "a scoreboard that never looks at the flags",
+          "teaches": "an assertion bound to the design is a check too"},
+  "B03": {"name": "B03_add_magic_pair", "tier": 2,
+          "hides_behind": "one operand pair in 65,536",
+          "teaches": "random stimulus does not reach a single point; a directed test does"}
+}

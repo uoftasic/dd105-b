@@ -1,0 +1,83 @@
+     -.--ns INFO     gpi                                ..mbed/gpi_embed.cpp:93   in _embed_init_python              Using Python 3.12.4 interpreter at .venv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:79   in gpi_print_registered_impl       VPI registered
+     0.00ns INFO     cocotb                             Running on Verilator version 5.050 2026-07-01
+     0.00ns INFO     cocotb                             Seeding Python random module with supplied seed 1
+     0.00ns INFO     cocotb                             Initialized cocotb v2.0.1 from /usr/local/lib/python3.12/dist-packages/cocotb
+     0.00ns INFO     cocotb                             Running tests
+     0.00ns INFO     cocotb.regression                  running test_st.StGoodTest (1/1)
+                                                            The reference: ok on golden, B01 caught (a logged MISMATCH), B02 caught
+DD105-BUG: B02 enabled
+[150000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 80
+-Info: labs/common/selftest/alu/tb/st_sva.sv:13: Verilog $stop, ignored due to +verilator+error+limit
+[190000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 50
+[670000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result f0
+[870000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 80
+[910000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result e0
+[1010000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result e0
+[1150000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 50
+[1310000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result c0
+[1590000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 40
+[1790000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 80
+[1910000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result e0
+[1950000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result e0
+[2030000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result b0
+[2170000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 40
+[2250000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 80
+[2390000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 80
+[2530000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 80
+[2730000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result f0
+[2910000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result b0
+[3090000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 40
+[3370000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 10
+[3390000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 10
+[3610000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 40
+[3670000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 50
+[4070000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 80
+[4130000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 10
+[4150000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result e0
+[4210000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 30
+[4230000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 40
+[4370000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result c0
+[4430000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result f0
+[4470000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 80
+[4490000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 80
+[4850000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 90
+[4870000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result f0
+[5150000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result f0
+[5170000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result b0
+[5190000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 40
+[5310000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 50
+[5330000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 80
+[5430000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 90
+[5470000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result b0
+[5630000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 80
+[5690000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 80
+[5810000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result e0
+[5870000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 20
+[5990000] %Error: st_sva.sv:13: Assertion failed in st_alu.u_sva.a_zero_flag: zero flag is 1 for result 40
+DD105-B BaseTest: 0 errors logged, 47 assertion failures (u_sva.n_fail)
+  6060.00ns WARNING  cocotb.Test StGoodTest.StGoodTest  47 assertion failures (u_sva.n_fail)
+                                                        assert not ['47 assertion failures (u_sva.n_fail)']
+                                                        Traceback (most recent call last):
+                                                          File "/usr/local/lib/python3.12/dist-packages/pyuvm/extension_classes.py", line 42, in test_obj
+                                                            await uvm_root().run_test(
+                                                          File "/usr/local/lib/python3.12/dist-packages/pyuvm/s13_uvm_component.py", line 480, in run_test
+                                                            self.running_phase.traverse(self.uvm_test_top)
+                                                          File "/usr/local/lib/python3.12/dist-packages/pyuvm/s09_phasing.py", line 63, in traverse
+                                                            cls.execute(comp)  # first we execute this node then its children
+                                                            ^^^^^^^^^^^^^^^^^
+                                                          File "/usr/local/lib/python3.12/dist-packages/pyuvm/s09_phasing.py", line 44, in execute
+                                                            method()
+                                                          File "labs/common/py/dd105b_base.py", line 138, in final_phase
+                                                            assert not msgs, "; ".join(msgs)
+                                                        AssertionError: 47 assertion failures (u_sva.n_fail)
+                                                        assert not ['47 assertion failures (u_sva.n_fail)']
+  6060.00ns WARNING  cocotb.regression                  test_st.StGoodTest failed
+  6060.00ns INFO     cocotb.regression                  **************************************************************************************
+                                                        ** TEST                          STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        **************************************************************************************
+                                                        ** test_st.StGoodTest             FAIL        6060.00           0.05     127356.77  **
+                                                        **************************************************************************************
+                                                        ** TESTS=1 PASS=0 FAIL=1 SKIP=0               6060.00           0.10      58970.13  **
+                                                        **************************************************************************************
+- :0: Verilog $finish

@@ -19,7 +19,7 @@ DD105-B carries its own copy of everything it shares with DD105-A. There is no m
 between the two courses, so a change to one course's copy doesn't reach the other. Every file
 below was copied from [uoftasic/dd105-a](https://github.com/uoftasic/dd105-a) at commit
 `da489f273945e44c49069adee8dc45ac346bd42a` (Nov 16, 2026). The commit that copied them,
-"Copy the shared files from DD105-A da489f2", has them byte for byte; the commits after it hold
+"Copy the shared files from DD105-A da489f2" and the one after it, have them byte for byte; the commits after it hold
 every change DD105-B made.
 
 | Here | From DD105-A | What it is |
@@ -27,6 +27,7 @@ every change DD105-B made.
 | `labs/common/rtl/` | `labs/common/rtl/` | the router's RTL, the golden design |
 | `labs/common/bugs.py`, `labs/common/inject.py` | the same paths | the bug catalogue (B01 to B15) and the script that builds the faulty router with the `+BUG` switch |
 | `labs/common/smoke/` | `labs/common/smoke/` (all but `build/`) | the router's shipped test, `tb_smoke.sv`, and `tb_examples.sv`, which prints the specification's timing examples |
+| `labs/common/solutions/` | `labs/common/solutions/` | the router's directed reference test, `tb_directed.sv`, which the catalogue's `caught_by` lists name, and `run_catalogue.py`, which checks the catalogue end to end |
 | `docs/reference/router-spec.md`, `docs/reference/the-router-in-one-page.md` | the same paths | the router's specification and its one-page summary |
 | `docs/assets/img/router-block.svg`, `scripts/figures/router_block.py`, `scripts/figures/circuit_style.py`, `scripts/figures/requirements.txt` | the same paths | the router's block diagram and the script that draws it |
 | `labs/lab-05-protocol-rules-and-backpressure/tb/router_sva.sv`, `tb/router_sva_bind.sv`, `solutions/router_sva.sv` | the same paths | Lab 05's assertions (the starter with its TODOs, and the solution) and the `bind` that puts them into the router |

@@ -1,0 +1,13 @@
+`verilator_config
+// DD105-B: what the waves leave out. pyuvm.mk passes this file to every build
+// with TRACE=1 (the default). DD105-A's dd105_trace.vlt, without its UVM
+// library line.
+//
+// The waves would otherwise include the package variable that says which
+// planted bug is on (router_bug_pkg.bug_id, measured on the selftest's
+// st_bug_pkg.bug_id), which gives a mystery bug away. So no package is
+// traced; the design and the bound assertions are.
+tracing_off -scope "*_pkg*"
+// The router's faulty build reads +BUG in an initial block named bug_switch,
+// whose local "id" holds the bug's number.
+tracing_off -scope "*bug_switch*"

@@ -131,8 +131,10 @@ space    := $(subst ,, )
 # (every signal reachable from Python, the bound u_sva included) and
 # --timescale 1ns/1ps. Assertions are on by default in Verilator 5.050.
 VL_FILES := $(call abs,$(DUT_SRCS) $(SVA_SRCS))
-VL_ARGS  := $(addprefix -F ,$(call abs,$(DUT_F))) $(VFLAGS) $(if $(filter 1,$(TRACE)),--trace) \
-            -Wno-fatal
+# TRACE=1 also passes dd105b_trace.vlt, which leaves packages (and with them
+# the variable that says which bug is on) out of the waves.
+VL_ARGS  := $(addprefix -F ,$(call abs,$(DUT_F))) $(VFLAGS) \
+            $(if $(filter 1,$(TRACE)),--trace $(COMMON)/dd105b_trace.vlt) -Wno-fatal
 # These are passed to cocotb's own Verilator makefile, which does the build.
 COCOTB_BUILD = $(MAKE) --no-print-directory -f $(COCOTB_MAKEFILES)/Makefile.sim \
                SIM=verilator TOPLEVEL_LANG=verilog COCOTB_TOPLEVEL=$(TOPLEVEL) \
@@ -141,7 +143,8 @@ COCOTB_BUILD = $(MAKE) --no-print-directory -f $(COCOTB_MAKEFILES)/Makefile.sim 
                $(SIM)
 
 SRC_DIRS := $(sort $(dir $(call abs,$(DUT_F) $(DUT_SRCS) $(SVA_SRCS))))
-SRC_DEPS := $(sort $(VL_FILES) $(wildcard $(foreach d,$(SRC_DIRS),$(d)*.sv $(d)*.svh $(d)*.v $(d)*.vh $(d)*.f)))
+SRC_DEPS := $(sort $(VL_FILES) $(COMMON)/dd105b_trace.vlt \
+              $(wildcard $(foreach d,$(SRC_DIRS),$(d)*.sv $(d)*.svh $(d)*.v $(d)*.vh $(d)*.f)))
 
 # ── how a test is run ────────────────────────────────────────────────────────
 # cocotb picks tests with COCOTB_TEST_FILTER, a regular expression searched

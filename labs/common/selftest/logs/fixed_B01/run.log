@@ -1,0 +1,19 @@
+     -.--ns INFO     gpi                                ..mbed/gpi_embed.cpp:93   in _embed_init_python              Using Python 3.12.4 interpreter at .venv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:79   in gpi_print_registered_impl       VPI registered
+     0.00ns INFO     cocotb                             Running on Verilator version 5.050 2026-07-01
+     0.00ns INFO     cocotb                             Seeding Python random module with supplied seed 1
+     0.00ns INFO     cocotb                             Initialized cocotb v2.0.1 from /usr/local/lib/python3.12/dist-packages/cocotb
+     0.00ns INFO     cocotb                             Running tests
+     0.00ns INFO     cocotb.regression                  running test_st.StFixedTest (1/1)
+                                                            Sends ADD 01 02 three hundred times: ok on golden, MISSED on B01.
+DD105-BUG: B01 enabled
+DD105-B BaseTest: 0 errors logged, 0 assertion failures (u_sva.n_fail)
+  6060.00ns INFO     cocotb.regression                  test_st.StFixedTest passed
+  6060.00ns INFO     cocotb.regression                  **************************************************************************************
+                                                        ** TEST                          STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        **************************************************************************************
+                                                        ** test_st.StFixedTest            PASS        6060.00           0.04     149016.71  **
+                                                        **************************************************************************************
+                                                        ** TESTS=1 PASS=1 FAIL=0 SKIP=0               6060.00           0.09      68221.48  **
+                                                        **************************************************************************************
+- :0: Verilog $finish

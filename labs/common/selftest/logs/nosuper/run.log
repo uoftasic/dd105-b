@@ -1,0 +1,32 @@
+     -.--ns INFO     gpi                                ..mbed/gpi_embed.cpp:93   in _embed_init_python              Using Python 3.12.4 interpreter at .venv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:79   in gpi_print_registered_impl       VPI registered
+     0.00ns INFO     cocotb                             Running on Verilator version 5.050 2026-07-01
+     0.00ns INFO     cocotb                             Seeding Python random module with supplied seed 1
+     0.00ns INFO     cocotb                             Initialized cocotb v2.0.1 from /usr/local/lib/python3.12/dist-packages/cocotb
+     0.00ns INFO     cocotb                             Running tests
+     0.00ns INFO     cocotb.regression                  running test_st.StNoSuperTest (1/1)
+                                                            Overrides both phases that install BaseTest's error counter without
+DD105-B BaseTest: 0 errors logged, 0 assertion failures (u_sva.n_fail)
+  6060.00ns WARNING  ..Test StNoSuperTest.StNoSuperTest errors from uvm_test_top, uvm_test_top.env, uvm_test_top.env.sb were not counted: a component was made after end_of_elaboration_phase, or a test overrides it without calling super()
+                                                        Traceback (most recent call last):
+                                                          File "/usr/local/lib/python3.12/dist-packages/pyuvm/extension_classes.py", line 42, in test_obj
+                                                            await uvm_root().run_test(
+                                                          File "/usr/local/lib/python3.12/dist-packages/pyuvm/s13_uvm_component.py", line 480, in run_test
+                                                            self.running_phase.traverse(self.uvm_test_top)
+                                                          File "/usr/local/lib/python3.12/dist-packages/pyuvm/s09_phasing.py", line 63, in traverse
+                                                            cls.execute(comp)  # first we execute this node then its children
+                                                            ^^^^^^^^^^^^^^^^^
+                                                          File "/usr/local/lib/python3.12/dist-packages/pyuvm/s09_phasing.py", line 44, in execute
+                                                            method()
+                                                          File "labs/common/py/dd105b_base.py", line 129, in final_phase
+                                                            raise BaseTestNotSetUp(
+                                                        dd105b_base.BaseTestNotSetUp: errors from uvm_test_top, uvm_test_top.env, uvm_test_top.env.sb were not counted: a component was made after end_of_elaboration_phase, or a test overrides it without calling super()
+  6060.00ns WARNING  cocotb.regression                  test_st.StNoSuperTest failed
+  6060.00ns INFO     cocotb.regression                  **************************************************************************************
+                                                        ** TEST                          STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        **************************************************************************************
+                                                        ** test_st.StNoSuperTest          FAIL        6060.00           0.04     148265.68  **
+                                                        **************************************************************************************
+                                                        ** TESTS=1 PASS=0 FAIL=1 SKIP=0               6060.00           0.10      63570.09  **
+                                                        **************************************************************************************
+- :0: Verilog $finish

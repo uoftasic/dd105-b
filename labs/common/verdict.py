@@ -243,6 +243,9 @@ class Run:
             return "did not run"
         if self.problems:
             key, _ = self.problems[0]
+            if key == "errored":
+                types = [o.error_type for o in self.outcomes if o.kind == "errored"]
+                return (types[0] if types and types[0] else "test did not start")[:28]
             words = {"timeout": "timed out", "signal": "crashed", "noresults": "no results.xml",
                      "notests": "no tests", "skipped": "every test skipped",
                      "no-base-test": "no BaseTest line", "regmodel": "register model broken"}

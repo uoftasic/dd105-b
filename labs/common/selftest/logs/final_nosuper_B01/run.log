@@ -1,0 +1,25 @@
+     -.--ns INFO     gpi                                ..mbed/gpi_embed.cpp:93   in _embed_init_python              Using Python 3.12.4 interpreter at .venv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:79   in gpi_print_registered_impl       VPI registered
+     0.00ns INFO     cocotb                             Running on Verilator version 5.050 2026-07-01
+     0.00ns INFO     cocotb                             Seeding Python random module with supplied seed 1
+     0.00ns INFO     cocotb                             Initialized cocotb v2.0.1 from /usr/local/lib/python3.12/dist-packages/cocotb
+     0.00ns INFO     cocotb                             Running tests
+     0.00ns INFO     cocotb.regression                  running test_st.StFinalNoSuperTest (1/1)
+                                                            Overrides final_phase without calling super(), so logged errors fail
+DD105-BUG: B01 enabled
+   725.00ns ERROR    ../selftest/alu/tb/test_st.py(111) [uvm_test_top.env.sb]: MISMATCH SUB 5d 5d: r=00 c=1, expected r=00 c=0
+   885.00ns ERROR    ../selftest/alu/tb/test_st.py(111) [uvm_test_top.env.sb]: MISMATCH SUB a8 a8: r=00 c=1, expected r=00 c=0
+  2105.00ns ERROR    ../selftest/alu/tb/test_st.py(111) [uvm_test_top.env.sb]: MISMATCH SUB 2f 2f: r=00 c=1, expected r=00 c=0
+  2285.00ns ERROR    ../selftest/alu/tb/test_st.py(111) [uvm_test_top.env.sb]: MISMATCH SUB 24 24: r=00 c=1, expected r=00 c=0
+  3285.00ns ERROR    ../selftest/alu/tb/test_st.py(111) [uvm_test_top.env.sb]: MISMATCH SUB 50 50: r=00 c=1, expected r=00 c=0
+  3885.00ns ERROR    ../selftest/alu/tb/test_st.py(111) [uvm_test_top.env.sb]: MISMATCH SUB b0 b0: r=00 c=1, expected r=00 c=0
+  5885.00ns ERROR    ../selftest/alu/tb/test_st.py(111) [uvm_test_top.env.sb]: MISMATCH SUB 08 08: r=00 c=1, expected r=00 c=0
+  6060.00ns INFO     cocotb.regression                  test_st.StFinalNoSuperTest passed
+  6060.00ns INFO     cocotb.regression                  **************************************************************************************
+                                                        ** TEST                          STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        **************************************************************************************
+                                                        ** test_st.StFinalNoSuperTest     PASS        6060.00           0.04     141466.80  **
+                                                        **************************************************************************************
+                                                        ** TESTS=1 PASS=1 FAIL=0 SKIP=0               6060.00           0.10      63668.18  **
+                                                        **************************************************************************************
+- :0: Verilog $finish

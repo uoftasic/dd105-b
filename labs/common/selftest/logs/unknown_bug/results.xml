@@ -1,0 +1,44 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1" />
+    <testcase name="StGoodTest" classname="test_st" file="/usr/local/lib/python3.12/dist-packages/pyuvm/extension_classes.py" lineno="171" time="0.0013823509216308594" sim_time_ns="0.0" ratio_time="0.0">
+      <failure error_type="SimFailure" error_msg="Simulator shut down prematurely" />
+    </testcase>
+    <testcase name="StEmptyTest" classname="test_st" file="/usr/local/lib/python3.12/dist-packages/pyuvm/extension_classes.py" lineno="197" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="StFixedTest" classname="test_st" file="/usr/local/lib/python3.12/dist-packages/pyuvm/extension_classes.py" lineno="210" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="StPlainTest" classname="test_st" file="/usr/local/lib/python3.12/dist-packages/pyuvm/extension_classes.py" lineno="218" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="StAssertTest" classname="test_st" file="/usr/local/lib/python3.12/dist-packages/pyuvm/extension_classes.py" lineno="229" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="StCrashTest" classname="test_st" file="/usr/local/lib/python3.12/dist-packages/pyuvm/extension_classes.py" lineno="244" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="StFatalCheckTest" classname="test_st" file="/usr/local/lib/python3.12/dist-packages/pyuvm/extension_classes.py" lineno="258" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="StConfigTest" classname="test_st" file="/usr/local/lib/python3.12/dist-packages/pyuvm/extension_classes.py" lineno="267" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="StHangTest" classname="test_st" file="/usr/local/lib/python3.12/dist-packages/pyuvm/extension_classes.py" lineno="276" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="StWatchdogTest" classname="test_st" file="/usr/local/lib/python3.12/dist-packages/pyuvm/extension_classes.py" lineno="285" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="StNoSuperTest" classname="test_st" file="/usr/local/lib/python3.12/dist-packages/pyuvm/extension_classes.py" lineno="295" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="StFinalNoSuperTest" classname="test_st" file="/usr/local/lib/python3.12/dist-packages/pyuvm/extension_classes.py" lineno="307" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="StRegModelTest" classname="test_st" file="/usr/local/lib/python3.12/dist-packages/pyuvm/extension_classes.py" lineno="316" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+  </testsuite>
+</testsuites>

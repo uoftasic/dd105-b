@@ -1,0 +1,20 @@
+     -.--ns INFO     gpi                                ..mbed/gpi_embed.cpp:93   in _embed_init_python              Using Python 3.12.4 interpreter at .venv/bin/python
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:79   in gpi_print_registered_impl       VPI registered
+     0.00ns INFO     cocotb                             Running on Verilator version 5.050 2026-07-01
+     0.00ns INFO     cocotb                             Seeding Python random module with supplied seed 1
+     0.00ns INFO     cocotb                             Initialized cocotb v2.0.1 from /usr/local/lib/python3.12/dist-packages/cocotb
+     0.00ns INFO     cocotb                             Running tests
+     0.00ns INFO     cocotb.regression                  running test_st.StGoodTest (1/1)
+                                                            The reference: ok on golden, B01 caught (a logged MISMATCH), B02 caught
+[0] %Fatal: st_alu.sv:39: Assertion failed in st_alu.unnamedblk1: DD105-BUG: unknown bug id 'B99'
+%Error: labs/common/selftest/alu/rtl/st_alu.sv:39: Verilog $stop
+Aborting...
+     0.00ns WARNING  cocotb.regression                  test_st.StGoodTest failed
+     0.00ns INFO     cocotb.regression                  **************************************************************************************
+                                                        ** TEST                          STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                        **************************************************************************************
+                                                        ** test_st.StGoodTest             FAIL           0.00           0.00          0.00  **
+                                                        **************************************************************************************
+                                                        ** TESTS=1 PASS=0 FAIL=1 SKIP=0                  0.00           0.06          0.00  **
+                                                        **************************************************************************************
+- :0: Verilog $finish

@@ -25,3 +25,12 @@ venv/
 # Build artifacts (if any local tools)
 site/
 _book/
+
+# DD105-B lab builds (labs/common/pyuvm.mk): simulators, runs, waves, coverage,
+# the course venv when it lives in the clone (`make venv`), and the hunt's seal
+build/
+.ccache/
+.venv/
+.hunt
+*.vcd
+*.fst

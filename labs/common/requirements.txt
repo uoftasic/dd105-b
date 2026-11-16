@@ -1,0 +1,5 @@
+# DD105-B: what `make venv` installs into the course venv, pinned. The venv is
+# made with --system-site-packages, so cocotb 2.0.1 and pyuvm 4.0.1 come from
+# the course image and aren't listed here.
+pyvsc==1.1.0
+cocotb-coverage==2.0

@@ -1,6 +1,7 @@
 """
-DD105-B: a regression. Every test in TESTS on every seed in SEEDS, from one
-build, then the coverage of all of them together (cocotb-coverage's merge).
+DD105-B: a regression. DD105-A's regress.py, run on cocotb + pyuvm. Every
+test in TESTS on every seed in SEEDS, from one build, then the coverage of
+all of them together (cocotb-coverage's merge).
 
     make regress                       TESTS x SEEDS (NSEEDS=10: seeds 1 to 10)
     make seeds TEST=x NSEEDS=50

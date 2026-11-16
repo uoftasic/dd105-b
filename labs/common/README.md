@@ -100,11 +100,11 @@ its design prints one, `BUG_CONFIRM`. Paths are relative to the lab folder.
 
 `pyuvm.mk` builds with cocotb's own Verilator makefile, which adds `--vpi --public-flat-rw` (every
 signal, the bound `u_sva` included, is reachable from Python) and `--timescale 1ns/1ps`. Verilator
-5.050 checks assertions without being asked. Then, for each run, it starts the simulator directly in
+5.050 checks assertions by default (`--no-assert` would turn them off). Then, for each run, it starts the simulator directly in
 the run's own folder, with the environment cocotb's makefiles would give it: `COCOTB_TOPLEVEL`,
 `COCOTB_TEST_MODULES`, `COCOTB_TEST_FILTER`, `COCOTB_RANDOM_SEED`, `COCOTB_RESULTS_FILE`,
-`PYGPI_PYTHON_BIN`, `LIBPYTHON_LOC` and `COCOTB_TRUST_INERTIAL_WRITES=1`. That skips the 1.5 to 2 s
-that cocotb's makefiles spend before the simulator starts.
+`PYGPI_PYTHON_BIN`, `LIBPYTHON_LOC` and `COCOTB_TRUST_INERTIAL_WRITES=1`. That skips cocotb's
+makefiles, which the course research measured at 1.5 to 2 s a run before the simulator starts.
 
 Every run also gets `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`. cocotb 2.0.1 sets up pytest's assertion
 rewriting before it imports the tests, and pytest then loads every installed pytest plugin; one of
@@ -115,7 +115,7 @@ time, twice, after a first run of 1.11 s.
 
 `COCOTB_TEST_FILTER` is set to `(^|\.)<TEST>$`, so `TEST=RouterRandTest` runs that test and not
 `RouterRandTestLong`. cocotb's own makefile pastes the filter into a shell line without quotes, so a
-filter with `|` in it fails there; started directly, it doesn't.
+filter with `|` in it fails there; `pyuvm.mk` quotes it.
 
 ## Where things go
 

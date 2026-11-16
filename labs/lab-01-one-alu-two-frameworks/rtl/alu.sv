@@ -1,5 +1,5 @@
-// DD105-A Lab 01: SimProc's ALU, with DD104's three ALU bugs behind a
-// run-time switch.
+// DD105-B Lab 01: SimProc's ALU, with DD104's three ALU bugs behind a
+// run-time switch. DD105-A's Lab 01 file; only the comments differ.
 //
 // The module is `ALU` from DD104's labs/common/rtl/simproc_system.sv, lines
 // 790 to 823, which is the SimProc RTL at github.com/uoftasic/simproc commit
@@ -30,8 +30,9 @@
 
 package alu_bug_pkg;
   int unsigned bug_id = 0;
-  // Icarus 14 can't assign alu_bug_pkg::bug_id from inside a module, so the
-  // switch sets it through this function instead.
+  // DD105-A's Lab 01 also runs this file on Icarus 14, which can't assign
+  // alu_bug_pkg::bug_id from inside a module, so the switch sets it through
+  // this function. DD105-B runs only Verilator, where either way works.
   function automatic void select(int unsigned id);
     bug_id = id;
   endfunction
@@ -71,7 +72,7 @@ module ALU (
     assign N = ALUout[7];
     assign Z = (alu_bug_pkg::bug_id == 3) ? ~(|ALUout[3:0]) : ~(|ALUout);         // bug A03
 
-    // ---- The bug switch (DD105-A; not part of SimProc) ---------------------
+    // ---- The bug switch (DD105-A and B; not part of SimProc) ---------------
     // Reads +BUG once, at time 0. It prints nothing unless +BUG_ECHO is given
     // too, so a run's log doesn't say which bug it ran.
     initial begin : bug_switch

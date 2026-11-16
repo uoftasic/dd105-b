@@ -25,7 +25,7 @@ dashed outline round the buffers and goes down to the registers, with a branch b
 ingress."}
 
 The RTL is 730 lines in five files in
-[`labs/common/rtl/`](https://github.com/uoftasic/dd105-a/tree/main/labs/common/rtl): a package of
+[`labs/common/rtl/`](https://github.com/uoftasic/dd105-b/tree/main/labs/common/rtl): a package of
 sizes and register offsets, one file for each of the three kinds of block (the two buffers are two
 instances of `router_fifo`), and the top module, `router`, which connects them. You don't need to read them, and in the later labs you'll be testing builds
 whose RTL you can't trust anyway, but this is how they divide the work:

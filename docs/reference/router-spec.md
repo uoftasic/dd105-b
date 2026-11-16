@@ -11,7 +11,7 @@ using a routing table that software writes through an APB register port. Each ou
 buffer and its own `ready` signal, so one output can stall without stopping the other. A packet that
 can't be delivered (its route is disabled, or its output is too full) is dropped whole, and counted.
 
-The RTL is in [`labs/common/rtl/`](https://github.com/uoftasic/dd105-a/tree/main/labs/common/rtl).
+The RTL is in [`labs/common/rtl/`](https://github.com/uoftasic/dd105-b/tree/main/labs/common/rtl).
 The top module is `router`.
 
 ## Sizes

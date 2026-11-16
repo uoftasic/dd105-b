@@ -403,7 +403,7 @@ def part2(full):
     print(" PART 2   the graders, end to end, on alu/")
     print(RULE)
     if not full:
-        print(" Skipped. This part builds alu/ and runs the graders: about two minutes.")
+        print(" Skipped. This part builds alu/ and runs the graders: about 30 s.")
         print("     make FULL=1")
         print(RULE)
         return True

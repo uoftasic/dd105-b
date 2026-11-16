@@ -1,0 +1,148 @@
+# The reference solutions, checked in the course image.
+#
+# labs/common's selftest must pass with every grader run end to end, and
+# labs/ref's `make check-all` must catch all 15 planted bugs. The labs come
+# later; each will get a step that checks its starter's `make check` FAILS
+# (its test passes the lab's bug) and its solution's PASSES, as in DD105-A.
+# scripts/ci/check-labs.sh is each check, and scripts/ci/in-image.sh runs it
+# in the course image, so every step below can be rehearsed on any machine
+# with Docker by running the same command.
+#
+# The image is the course image, hpretl/iic-osic-tools:2026.08, pinned by the
+# same digest as DD105-A's workflow, so CI runs the Verilator 5.050, cocotb
+# 2.0.1, pyuvm 4.0.1 and Python 3.12 that every expected output in the course
+# came from. pyvsc and cocotb-coverage aren't in the image: the first step
+# makes the course venv with `make venv`, as a student does, from PyPI with
+# both pinned (labs/common/requirements.txt). Each check runs with the
+# course's limits of 2 CPUs and 3 GB.
+#
+# Disk: the image is 3.76 GB to download and 11.7 GB unpacked (DD105-A's
+# measurement). GitHub documents 14 GB of SSD for its standard Linux runners,
+# which can't hold it, so the job first removes preinstalled toolchains this
+# course doesn't use, with jlumbroso/free-disk-space pinned by commit, and
+# then checks there is room.
+#
+# Time: one job, the checks one after another. Rehearsed on Nov 16, 2026 on a
+# local machine in asic-edu/gui-rig:2026.08 (the course image with X11 layers
+# added), with the same commands and limits, every check passing. With no
+# venv and an empty ccache: venv 14 s, selftest 38 s, labs/ref 16 s. Again
+# with the venv and the ccache that run left: 3 s, 31 s and 14 s. Add the
+# free-disk step and the pull of the image, which a local rehearsal can't
+# measure.
+#
+# The weekly run catches breakage from outside the repo: a digest Docker Hub
+# stops serving, a pinned package PyPI stops serving, or a change to GitHub's
+# runners.
+name: Labs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "labs/**"
+      - "scripts/ci/**"
+      - ".github/workflows/labs.yml"
+  pull_request:
+    paths:
+      - "labs/**"
+      - "scripts/ci/**"
+      - ".github/workflows/labs.yml"
+  schedule:
+    - cron: "41 6 * * 1"   # Mondays, 06:41 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: labs-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash   # bash -eo pipefail, so a failing check isn't hidden by tee
+
+env:
+  IMAGE: hpretl/iic-osic-tools@sha256:3c371645b19c6f6564dc8c7b21e39ad1c1833d274fe5b85639afe1ba9d7987e7
+
+jobs:
+  reference-solutions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      # The apt removals ("large-packages") take minutes and free little that
+      # we need, and the swap file stays, as on the machines the course was
+      # measured on.
+      - name: Make room for the course image
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
+        with:
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          tool-cache: false
+          swap-storage: false
+
+      # 3.8 GB of download and 11.7 GB unpacked, as DD105-A's workflow
+      # measured; the venv, the builds and the ccache add about 40 MB. The
+      # threshold is DD105-A's.
+      - name: Check there is room
+        run: |
+          df -h /
+          avail_gb=$(( $(df --output=avail -k / | tail -n 1) / 1024 / 1024 ))
+          if [ "$avail_gb" -lt 20 ]; then
+            echo "::error::Only $avail_gb GB free on /. The course image and the builds need about 20 GB."
+            exit 1
+          fi
+
+      - name: Pull the course image
+        run: docker pull "$IMAGE"
+
+      # ccache keys on what it compiles, so a restored cache can only make a
+      # build faster, never different. A new cache is saved after each run
+      # that passes.
+      - name: Restore the ccache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: .ccache
+          key: ccache-${{ github.run_id }}
+          restore-keys: ccache-
+
+      - name: The course venv
+        run: scripts/ci/in-image.sh scripts/ci/check-labs.sh venv | tee -a "$RUNNER_TEMP/ci.log"
+
+      # The steps below run even if one before them failed, so one run
+      # reports everything.
+      - name: labs/common selftest
+        if: success() || failure()
+        run: scripts/ci/in-image.sh scripts/ci/check-labs.sh selftest | tee -a "$RUNNER_TEMP/ci.log"
+
+      - name: labs/ref, check-all
+        if: success() || failure()
+        run: scripts/ci/in-image.sh scripts/ci/check-labs.sh ref | tee -a "$RUNNER_TEMP/ci.log"
+
+      - name: Summary
+        if: success() || failure()
+        run: |
+          {
+            echo '### Reference solutions'
+            echo '```'
+            grep -E '^(CI:|    ccache:)' "$RUNNER_TEMP/ci.log" || echo "no check finished"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # A check that fails keeps its build folders, so its logs are here.
+      - name: Keep the logs of a failed check
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: lab-logs
+          path: |
+            labs/**/build/build.log
+            labs/**/build/grade/**/run.log
+            labs/**/build/grade/**/results.xml
+            labs/**/build/runs/**/run.log
+          if-no-files-found: ignore

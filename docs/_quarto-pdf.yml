@@ -17,6 +17,10 @@ book:
       chapters:
         - guide/getting-started.md
         - labs/lab-01-overview.md
+    - part: "Reference"
+      chapters:
+        - reference/router-spec.md
+        - reference/the-router-in-one-page.md
 
 format:
   typst:

@@ -49,6 +49,12 @@ website:
             href: guide/getting-started.md
           - text: "2. Lab 01: Starter script"
             href: labs/lab-01-overview.md
+      - section: "Reference"
+        contents:
+          - text: "The packet router"
+            href: reference/router-spec.md
+          - text: "The router in one page"
+            href: reference/the-router-in-one-page.md
       - section: "Repo"
         contents:
           - text: "Lab packages"

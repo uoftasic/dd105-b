@@ -1,6 +1,6 @@
 # Agent guide: UofT ASIC course repos
 
-This is a course repository for the UofT ASIC Team (`uoftasic`). It holds teaching material for IC, RTL, FPGA and open-source ASIC flows. The site under `docs/` is built with Quarto and published on GitHub Pages by `.github/workflows/site.yml`. Everything students run lives outside `docs/`.
+This is the repository of DD105-B — Testbenches with UVM, a course of the UofT ASIC Team (`uoftasic`) on building testbenches in Python with pyuvm and cocotb on Verilator. It is the pyuvm version of DD105-A, which teaches the same material in SystemVerilog UVM. It was made from the team's course template, which is for courses on IC, RTL, FPGA and open-source ASIC flows. The site under `docs/` is built with Quarto and published on GitHub Pages by `.github/workflows/site.yml`. Everything students run lives outside `docs/`.
 
 Write for a student working through the course, not for whoever maintains the template. Concrete labs and pages a student can follow from start to finish are worth more than meta documentation.
 
@@ -22,15 +22,18 @@ Keep each kind of file in the folder listed for it.
 | `docs/reference/` | Yes | Optional lookup pages: cheat sheets, troubleshooting tables |
 | `docs/assets/img/` | Yes | Small diagrams and waveforms for the site |
 | `labs/<lab-id>/` | No | HDL, Python, testbenches, local data, graders |
-| `scripts/` | No | Course utilities and automation |
+| `labs/common/` | No | The router's RTL and bug catalogue, the shared cocotb + pyuvm build (`pyuvm.mk`), the course venv's `requirements.txt`, the base test (`py/dd105b_base.py`) and the graders, used by every lab |
+| `labs/ref/` | No | The router's reference pyuvm environment, which proves every planted bug can be caught |
+| `guide-examples/<slug>/` | No | The examples on guide page `<slug>`, each with a Makefile that includes `labs/common/pyuvm.mk` (none yet) |
+| `scripts/` | No | Course utilities and automation: `ci/` (the reference-solution checks), `figures/` (the scripts that draw `docs/assets/img/*.svg`) |
 | `notebooks/` | No | Exploratory or assignment notebooks |
 | `data/`, `figures/` | No | Shared datasets and source figures |
 
-Three files wire up the site. `docs/_quarto.yml` holds the site settings, sidebar, navbar and per-page PDFs; `docs/_quarto-pdf.yml` builds the whole course as one PDF; and `docs/_filters/course.lua` turns `<details>` answers into collapsed callouts (in PDFs it moves them to an Answers section at the end of each page). Write math as `$inline$` or `$$display$$`. The `{{...}}` tokens in the sample pages (course id, title and description) are filled in by `scripts/init-template.py`; see `TEMPLATE.md`.
+Three files wire up the site. `docs/_quarto.yml` holds the site settings, sidebar, navbar and per-page PDFs; `docs/_quarto-pdf.yml` builds the whole course as one PDF; and `docs/_filters/course.lua` turns `<details>` answers into collapsed callouts (in PDFs it moves them to an Answers section at the end of each page). Write math as `$inline$` or `$$display$$`. The template's `{{...}}` tokens (course id, title and description) were filled in by `scripts/init-template.py` when the course was made; see `TEMPLATE.md`.
 
 ## Course structure
 
-Every course follows the same shape, so a student always knows whether they should be reading or doing, and what comes next. The sample pages show it: `docs/index.md`, `docs/guide/getting-started.md` and `docs/labs/lab-01-overview.md`.
+Every course follows the same shape, so a student always knows whether they should be reading or doing, and what comes next. The template's sample pages still show it (`docs/index.md`, `docs/guide/getting-started.md` and `docs/labs/lab-01-overview.md`) until DD105-B's own pages replace them.
 
 ### Home page
 
@@ -54,6 +57,13 @@ The sidebar in `docs/_quarto.yml` and the chapter list in `docs/_quarto-pdf.yml`
 
 `docs/guide/` is reading only. No commands the student has to run. If a page needs the student to run or build something, make it a numbered step in the matching lab writeup and leave a one-line pointer in the guide ("You'll measure this yourself in Lab 02, Part 3."). Pencil-and-paper questions can go in a short "Check yourself" block at the end of the page.
 
+In DD105-B, as in DD105-A:
+
+- Every guide page ends with "Check yourself", and each answer is in a collapsed `<details>` block.
+- Every example that a page says runs, or prints something, has its source in `guide-examples/<slug>/` with a Makefile that includes `labs/common/pyuvm.mk`, and its run command in `guide-examples/README.md`. The output on the page is copied from a run in the course image.
+- A fact about how pyuvm, cocotb, pyvsc, cocotb-coverage or Verilator behaves comes from a run, or from the tool's own documentation or source. The design note's measurements (`dd105b_design.md` in the course research) are where the known ones come from; a page agrees with them.
+- ChipVerify pages appear only as further reading at the end of a guide page, with a one-line correction beside any page that is wrong for pyuvm or wrong in general. Never copy ChipVerify's text or code.
+
 ### Lab writeups
 
 `docs/labs/<lab-id>-overview.md` is the one place for doing. In this order:
@@ -61,7 +71,7 @@ The sidebar in `docs/_quarto.yml` and the chapter list in `docs/_quarto-pdf.yml`
 1. What the student will build or measure, in two or three lines, and a link to `labs/<lab-id>/`.
 2. Before you start: which guide pages to read first, and any setup.
 3. A time estimate. Leave optional parts out of it, or give their time separately ("about 2 h, plus 20 min for the optional part").
-4. Numbered parts, each with numbered steps. Open each part with the one question it answers, and end it with a concrete "You should see …" check. A setup part, such as the sample lab's Part 1, can skip the question.
+4. Numbered parts, each with numbered steps. Open each part with the one question it answers, and end it with a concrete "You should see …" check. A setup part, such as Lab 01's Part 1, can skip the question.
 5. Optional parts, if any, after all the required parts, with "(optional)" in the header. If a required part depends on an optional one, the optional part isn't optional: fix one or the other.
 6. Finishing, with these three things in this order:
    1. You're done when: one checkable line tied to the student's own work, such as `make` printing PASS on the deck they edited. A PASS from the shipped package doesn't count, because it passes before the student has done anything.
@@ -98,7 +108,7 @@ For a course that runs on the workbench, Lab 01 Part 1 is "Load the course", in 
 - Check the course-specific tool versions that the printed outputs depend on.
 - List only the troubleshooting rows specific to this course, and link IC101's [Troubleshooting](https://uoftasic.com/ic101/reference/troubleshooting.html) page for the rest. Keep fallback routes that work without `mod`.
 
-The sample lab needs only Python, so its Part 1 installs the Python requirements instead.
+DD105-B's Lab 01, Part 1 is that part: `mod add dd105-b`, and the versions of Verilator, cocotb, pyuvm, Python and Surfer. The course venv (pyvsc and cocotb-coverage) is made with `make venv` in Lab 03's Part 1, where the labs first need it.
 
 ### Package READMEs and reference pages
 
@@ -108,7 +118,7 @@ Reference pages (`docs/reference/`) and `solutions/` READMEs are lookup-shaped: 
 
 ## Adding a lab
 
-Labs are the main unit of coursework. Name them `lab-NN-short-name` (for example `lab-02-counter-sv`). The sample lab is just `lab-01`; give real labs a short name.
+Labs are the main unit of coursework. Name them `lab-NN-short-name` (for example `lab-02-a-layered-testbench-without-pyuvm`). The template's sample lab is just `lab-01`; DD105-B's labs have short names.
 
 1. Create `labs/<lab-id>/` with at least:
    - `README.md`: link to the writeup and how to run
@@ -121,6 +131,17 @@ Labs are the main unit of coursework. Name them `lab-NN-short-name` (for example
 4. Cross-link: the writeup links to `labs/<lab-id>/` on GitHub, and the package README links to `docs/labs/<lab-id>-overview.md`.
 5. If the lab has a reference solution and a checker, run the checker in CI on both the solution and the starter: the solution must pass and the starter must fail. [REFERENCE-SOLUTION-CI.md](REFERENCE-SOLUTION-CI.md) says how, with two courses' workflows as examples.
 
+In DD105-B a lab folder has a `Makefile` that names its design, its bound assertions and its tests and includes `../common/pyuvm.mk`, its testbench in `tb/` (Python, and from Lab 05 the assertion files), a `README.md` and a `solutions/` folder; the router's RTL and its bugs are shared, in `labs/common/`. Every pyuvm test derives from `dd105b_base.BaseTest` (`RouterBaseTest` for the router); a lab whose tests are plain cocotb (Lab 01's cocotb test, Lab 02) sets `BASE_TEST := 0`. A lab that imports pyvsc or cocotb-coverage sets `NEEDS_VENV := 1`, and a lab with a register model sets `REG_MODEL`, which the graders build before any verdict. From Lab 03 on, each lab's starter is the previous lab's solution. `BUG_LIST` puts first the bug that the starter misses, so `make check` fails on the starter. Add the lab as a step in `.github/workflows/labs.yml` (`scripts/ci/check-labs.sh lab <lab-id>`), which checks that the starter's `make check` fails and the solution's passes.
+
+DD105-B keeps DD105-A's lab arc and each lab's own bugs: Lab 01 runs on SimProc's ALU with A01 to A03, Lab 02 owns B05 and B09, Lab 03 B07 and B08, Lab 04 B06 and B13, Lab 05 B10, B11 and B12, Lab 06 B01 to B04 and B14, and Lab 07 B15 and every bug. The bug catalogue's numbering and meaning are DD105-A's. These decisions (Vraj, Nov 16, 2026) shape the labs:
+
+- Constraints use pyvsc 1.1.0 and coverage uses cocotb-coverage 2.0, from the course venv; Lab 07 merges coverage with cocotb-coverage's own `merge_coverage()` (`make cov`), not a course script.
+- Verilator 5.050 throughout. There is no Icarus path.
+- Students write Lab 06's register predictor and its reset and bit-bash sequences, which pyuvm 4.0.1 doesn't have.
+- Lab 01 quotes DD105-A's measured SystemVerilog UVM numbers rather than building the SV environment.
+- DD105-B carries its own copy of everything it shares with DD105-A (router, assertions, graders), with no module shared between the courses; `README.md` says where each came from. A change the router needs for DD105-B is made in this copy.
+- The capstone and its rubric are like DD105-A's.
+
 Don't paste long HDL into site pages. Link to the files under `labs/` instead.
 
 ## Adding a guide page
@@ -132,8 +153,8 @@ Don't paste long HDL into site pages. Link to the files under `labs/` instead.
 
 Quarto resolves page links and images the same way: relative to the page they're written in.
 
-- From a page in `docs/guide/` or `docs/labs/`, another page is `../labs/lab-01-overview.md` or `../guide/yosys-synth.md`, the home page is `../index.md`, and an image is `../assets/img/foo.png`.
-- From `docs/index.md`, they're `guide/yosys-synth.md`, `labs/lab-01-overview.md` and `assets/img/foo.png`.
+- From a page in `docs/guide/` or `docs/labs/`, another page is `../labs/lab-01-overview.md` or `../reference/router-spec.md`, the home page is `../index.md`, and an image is `../assets/img/foo.png`.
+- From `docs/index.md`, they're `reference/router-spec.md`, `labs/lab-01-overview.md` and `assets/img/foo.png`.
 
 The link check in `.github/workflows/docs-link-check.yml` reads the Markdown with the same rules, and `scripts/check_site.py` checks every local link and anchor in the rendered site when `.github/workflows/site.yml` builds it.
 
@@ -159,6 +180,7 @@ The link check in `.github/workflows/docs-link-check.yml` reads the Markdown wit
 - SystemVerilog/Verilog goes under `labs/<id>/src/`, or `rtl/` and `tb/` if you split them. Stay consistent within the course.
 - Heavy outputs (GDS, large FSDB/VCD, PDK caches) go in a local `results/` or in LFS, never under `docs/`.
 - Preview the site locally with `quarto preview docs`, then open http://localhost:4200.
+- Run lab builds in the course image (`scripts/ci/in-image.sh` runs a command there). Every expected output on a page is copied from a run in it.
 
 ## Don't
 
@@ -172,4 +194,7 @@ The link check in `.github/workflows/docs-link-check.yml` reads the Markdown wit
 - Repo conventions: `CONTRIBUTING.md`
 - Bootstrap tokens and Pages checklist: `TEMPLATE.md`
 - CI for a course's reference solutions: `REFERENCE-SOLUTION-CI.md`
-- Sample lab: `labs/lab-01/` and `docs/labs/lab-01-overview.md`
+- The shared build, the venv and the graders: `labs/common/README.md`
+- The reference environment: `labs/ref/README.md`
+- The reference-solution checks: `.github/workflows/labs.yml` and `scripts/ci/`
+- The template's sample lab, until DD105-B's Lab 01 replaces it: `labs/lab-01/` and `docs/labs/lab-01-overview.md`

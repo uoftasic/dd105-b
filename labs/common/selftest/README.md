@@ -11,12 +11,12 @@ DD104's rule applies here too: a grader that says PASS when it did nothing is wo
 DD104 shipped one, and it told a student `3 of 3 ALU bugs caught` about a testbench that raised
 `NameError` on every core.
 
-A pyuvm run can fail quietly in ways a plain cocotb test can't. `self.logger.error()` fails nothing,
+A pyuvm run can go wrong without failing its test, in ways a plain cocotb test can't. `self.logger.error()` fails nothing,
 so a scoreboard can log a thousand mismatches in a test that passes; pyuvm raises `AssertionError`
 for a register model that is wrong, which reads exactly like a check; and Verilator stops a run at
 its first failed assertion unless the error limit is raised. `../verdict.py` is the one place that
 tells a check that fired from a run that broke, and `../dd105b_base.py`'s `BaseTest` is what turns a
-logged error into a failing test. This folder proves both still do their job.
+logged error into a failing test. This folder checks that both still work.
 
 ## Files
 

@@ -8,9 +8,9 @@ DD105 -- build broken routers from the bug catalogue.
 
 THE FAULTY BUILD
 
-A cold UVM build of the router takes 1.5 to 2.5 minutes on 2 CPUs, and even a
-rebuild after a one-line design edit takes about 25 s, so building fifteen
-broken routers one at a time would cost fifteen builds where one will do.
+DD105-B builds the router for cocotb in seconds, but fifteen broken routers
+built one at a time would still be fifteen builds where one will do, and a
+change of +BUG would need a rebuild.
 `--all` writes a single copy of the RTL with every bug in it, each one
 switched off unless it is selected. Each anchored line from bugs.py keeps its
 place in its file, and the one expression the bug changes becomes a choice

@@ -25,4 +25,5 @@ with `vcd2fst`.
 |---|---|
 | `tb_smoke.sv` | The shipped test |
 | `tb_examples.sv` | Runs each timing example in the spec and prints it as a table: `make TB_SRC=tb_examples.sv` |
+| `check_examples.py` | DD105-B: runs `tb_examples.sv` on the golden RTL and on the faulty build, and compares every table with the spec page, cell by cell: `python3 check_examples.py` |
 | `Makefile` | The targets above |

@@ -1,17 +1,19 @@
-// DD105-A Lab 05: assertions for the router's valid/ready rules.
+// DD105-B Lab 05: assertions for the router's valid/ready rules. DD105-A's
+// Lab 05 file, which is the reference for both courses; only these comments
+// differ.
 //
-// Plain SystemVerilog with no UVM in it, so any testbench can use it: this
-// lab binds it into the router (router_sva_bind.sv), and a testbench in
-// another language could bind it the same way and read the counters. The
-// rule names (I1, O2, ...) are the ones in the router specification,
-// docs/reference/router-spec.md, "Valid/ready rules".
+// Plain SystemVerilog, so a Python testbench can use it: this lab binds it
+// into the router (router_sva_bind.sv), and the pyuvm testbench reads the
+// counters through cocotb. The rule names (I1, O2, ...) are the ones in the
+// router specification, docs/reference/router-spec.md, "Valid/ready rules".
 //
 // Every assertion has its own failure counter, n_<rule>, and n_fail is their
-// sum; the top module passes n_fail to the scoreboard, which reports it at
-// the end of the test. A failure also calls $error, which this simulator
-// prints as "%Error: ... Assertion failed in ...". Its default error limit is
-// 1, so the first failure ends the run unless the run has
-// +verilator+error+limit+N; this lab's Makefile passes a large limit, so
+// sum; the course's BaseTest reads cocotb.top.u_sva.n_fail at the end of the
+// test and fails the test if it isn't 0. A failure also calls $error, which
+// Verilator prints as "%Error: ... Assertion failed in ...". Its default
+// error limit is 1, so the first failure would end the run, which cocotb
+// reports as SimFailure; labs/common/pyuvm.mk passes
+// +verilator+error+limit+100000 to every run of a lab with assertions, so
 // every failure prints and the counters keep counting.
 //
 // Every rule here is about normal operation, so every assertion is disabled

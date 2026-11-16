@@ -1,0 +1,14 @@
+{
+  "A01": {"name": "A01_sub_operands_swapped", "tier": 1, "dd104": "B01_sub_operands_swapped",
+          "summary": "SUB computes B - A instead of A - B",
+          "hides_behind": "SUB rX, rX, the idiom for clearing a register",
+          "teaches": "random operands find it at once; DD104's full sweep counted 65,024 wrong SUBs of 65,536"},
+  "A02": {"name": "A02_nand_is_nor", "tier": 1, "dd104": "B02_nand_is_nor",
+          "summary": "NAND computes ~(A | B), which is NOR",
+          "hides_behind": "NAND rX, rX, the only way to write NOT",
+          "teaches": "'I tested NAND' and 'I tested NAND on two different values' are different sentences"},
+  "A03": {"name": "A03_zero_flag_low_nibble", "tier": 1, "dd104": "B03_zero_flag_low_nibble",
+          "summary": "Z looks only at ALUout[3:0]",
+          "hides_behind": "every check that compares results and not flags",
+          "teaches": "flags are architectural state; a value-only check cannot see this bug at all"}
+}

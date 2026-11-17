@@ -21,6 +21,7 @@ book:
         - labs/lab-03-constraints-and-coverage-overview.md
         - labs/lab-04-the-same-testbench-in-pyuvm-overview.md
         - labs/lab-05-protocol-rules-and-backpressure-overview.md
+        - labs/lab-06-the-register-block-overview.md
     - part: "Reference"
       chapters:
         - reference/router-spec.md

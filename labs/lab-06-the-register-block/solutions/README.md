@@ -145,8 +145,8 @@ With no `BUG`, `make check` grades B01. The starter says
 Every random value in this testbench comes from Python's `random`, one after another, so a piece
 that draws one value more moves every value after it (chain spec, decision 8). `RouterTest` runs
 `RouterLab06Vseq` first, because a reset sequence has to run while the registers hold their reset
-values, so whatever the sequence draws moves Lab 04's and Lab 05's packets. These probe builds,
-not shipped, measure it:
+values, so whatever the sequence draws moves Lab 04's and Lab 05's packets. These runs measure it;
+the second and fourth are probe builds, not shipped:
 
 - The starter's `RouterTest` printed Lab 05's solution's `[PHASE]`, `[DROP]`, `[HOLES]` and `[SB]`
   lines on seeds 1 to 5, line for line, apart from the new `[SB] registers:` line. Its
@@ -161,8 +161,8 @@ not shipped, measure it:
   `DROP_CNT` read, which includes Part 5's two drops (`0000332a` against `00003229`). The `[SB]`
   totals were Lab 05's plus Part 5's 12 packets.
 - The page's runs at each stage agree: `RouterTest`'s first two `[SB]` lines are Lab 05's after
-  Parts 2, 3 and 4, although each adds hundreds of cycles to the front of the test, and change
-  only with Part 5's step.
+  Parts 2, 3 and 4, although by Part 4 `RouterLab06Vseq` runs for about 5,900 cycles before Lab
+  04's steps begin, and they change only with Part 5's step.
 
 So the solution's counts move only through those 8 draws.
 
@@ -176,7 +176,7 @@ Probe builds, not shipped, behind claims on the page:
 | the setup of Part 3, step 2 written through the model (`wr_reg()`), no predictor | `FAIL: 5 errors`, the same five `check_reg` errors as the raw writes (Part 3, step 2): pyuvm doesn't update the mirror after its own write |
 | the predictor with `UVM_PREDICT_READ` after a read | the golden router `ok`, `5 of 5 caught.` with the same counts: nothing in this testbench compares a volatile field (Part 3, step 1) |
 | `STATUS`'s fields configured from bit 2 down | `make regcheck`: `the model doesn't build: AssertionError: STATUS -- _add_field:                 Fields FULL overlap                 with field                 OVERSIZE`; `make check`: `BROKEN  the register model` and `VERDICT: FAIL -- the register model doesn't build, so nothing was graded.` (Part 2, step 2) |
-| the bit bash taking the mirror after the read | the golden router `ok`, `[RegBitBashSeq] 582 writes and 582 reads ... 0 mismatches`; B03 caught with 2 errors, both the predictor's, instead of 4 (Part 3, step 5) |
+| the bit bash taking the mirror after the read | the golden router `ok`, with `[RegBitBashSeq] 582 writes and 582 reads of 10 registers (ID, CTRL, STATUS, INT_EN, DROP_CNT, LEVEL, ROUTE0, ROUTE1, ROUTE2, ROUTE3); 0 mismatches`; B03 caught with 2 errors, both the predictor's, instead of 4 (Part 3, step 5) |
 
 The pyuvm 4.0.1 source agrees with the probes: `uvm_reg_field.predict_read()` returns the reset
 value for `W1C`, `WC` and 12 other policies; the map predicts after a register's `write()` or
@@ -244,8 +244,9 @@ from it:
 - **"Nothing was checked."** Lab 05's scoreboard failed a test in which no output beat matched;
   this one fails a test in which no beat matched and no register was read, because a register
   test checks its reads. DD105-A's Lab 06 made the same change.
-- **No back door.** pyuvm raises `UVMNotImplemented` for one (the course design), so DD105-A's
-  Part 6 isn't here, and nothing on the page reads the register flip-flops through cocotb.
+- **No back door.** pyuvm raises `UVMNotImplemented` for a back-door access (the course design
+  measured it, and the map's source raises it), so DD105-A's Part 6 isn't here, and nothing on
+  the page reads the register flip-flops through cocotb.
 - **`RegSeq.post_body()`** logs one line per sequence, `[RegResetSeq] 0 writes and 7 reads of 7
   registers (...)`, which the page greps where DD105-A's grepped UVM's `Verifying reset value`
   lines.

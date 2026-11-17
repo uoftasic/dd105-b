@@ -90,9 +90,9 @@ are `pready` and `pslverr`, which also depend on `psel`, `penable`, `pwrite` and
 cycle, so sample them at the end of the cycle, as you would any APB slave's.
 
 A **handshake** on a stream happens in a cycle where `valid` and `ready` are both 1. The beat moves at
-the rising edge at the end of that cycle. Our testbenches change inputs 1 ns after a rising edge and
-look at outputs at the falling edge in the middle of the cycle, so nothing changes at the moment
-anything is sampled.
+the rising edge at the end of that cycle. This course's Python testbenches change inputs right after
+a rising edge and look at outputs at the falling edge in the middle of the cycle, so nothing changes
+at the moment anything is sampled.
 
 ## Packets
 

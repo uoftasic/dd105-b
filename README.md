@@ -109,9 +109,11 @@ The copy of `scripts/screenshots/`, from the same DD105-A commit, is in a later 
 | `labs/lab-01-one-alu-two-frameworks/rtl/alu.sv`, `labs/lab-01-one-alu-two-frameworks/bugs.json` | `labs/lab-01-one-alu-two-testbenches/rtl/alu.sv`, `bugs.json` | SimProc's ALU with DD104's three ALU bugs, A01 to A03, behind `+BUG` |
 | `scripts/screenshots/` | `scripts/screenshots/` | the tool that draws the labs' waveform figures in a headless Surfer or GTKWave |
 
-DD105-B's changes to these files are comments and links: the assertion files, the ALU and
-`inject.py` describe DD105-B (Python reads the counters, Verilator only), and the spec pages link
-to this repository. The router's RTL needed no change: its assertions already sit in their own
+DD105-B's changes to these files are comments, links and one sentence on each spec page: the
+assertion files, the ALU and `inject.py` describe DD105-B (Python reads the counters, Verilator
+only), the spec pages link to this repository, and each spec page says that this course's Python
+testbenches change the router's inputs right after a rising edge, where DD105-A's pages say 1 ns
+after. The router's RTL needed no change: its assertions already sit in their own
 file and are attached with `bind`, every assertion already counts its failures beside its `$error`
 (`n_<rule>`, summed in `n_fail`, which DD105-B's base test reads through cocotb), and `+BUG` is
 already a plusarg read once in an initial block. `labs/common/smoke/check_examples.py` (DD105-B's)

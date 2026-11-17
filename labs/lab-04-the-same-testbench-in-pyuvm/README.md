@@ -3,12 +3,13 @@
 Writeup: [`docs/labs/lab-04-the-same-testbench-in-pyuvm-overview.md`](../../docs/labs/lab-04-the-same-testbench-in-pyuvm-overview.md)
 
 This package is our solution to Lab 03, ported to pyuvm. It has an agent for the input stream, one
-for the APB port, and one output agent class that the environment makes once for each output,
-with a scoreboard (Lab 03's scoreboard and tracker in one component) and Lab 03's coverage as a
-subscriber, fed by analysis ports. The packet's constraints, the coverage, `FillPlan` and
-`close_holes()` are Lab 03's. Four pieces are left for you, marked `TODO (Part n)`: the second
-output agent, two parts of the scoreboard, the stall test and the factory override. The router
-and its planted bugs come from [`../common`](../common/README.md).
+for the APB port, and one output agent class that the environment makes once for each output it
+watches, with a scoreboard (Lab 03's scoreboard and tracker in one component) and Lab 03's
+coverage as a subscriber, fed by analysis ports. The packet's constraints, the coverage,
+`FillPlan` and `close_holes()` are Lab 03's. Four pieces are left for you, marked
+`TODO (Part n)`: the second output agent, two parts of the scoreboard, the stall test, and
+`NoroutePkt` with its factory override. The router and its planted bugs come from
+[`../common`](../common/README.md).
 
 Run it in the course image, from this folder:
 

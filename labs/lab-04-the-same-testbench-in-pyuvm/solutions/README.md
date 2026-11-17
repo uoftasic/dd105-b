@@ -158,7 +158,8 @@ A probe copy replaced the `pre_randomize()` draw with a random `to_disabled` and
 `vsc.dist(self.to_disabled, [vsc.weight(0, 3), vsc.weight(1, 1)])`. `make check-all` gave
 `2 of 2 caught.` on seeds 1 to 5, and the golden runs counted 187 to 211 NOROUTE drops in 804 to
 806 packets, against 218 in 804 for the solution on seed 1. Its golden runs took 5.6 to 5.8 s,
-against 5.1 to 5.2 s for the solution's. The page says a `dist` works too and uses the `pre_randomize()` version.
+against 5.1 to 5.2 s for the solution's. The page says a `dist` works too and uses the
+`pre_randomize()` version.
 
 ## The order of random draws
 
@@ -180,11 +181,12 @@ all on the golden router, on seeds 1 to 5:
   `RouterClassTest` and `RouterFillTest` printed the starter's lines, apart from the lines that
   report output 1's beats as checked instead of unwatched. `OutReadyDriver` draws only when
   `ready_pct` is between 0 and 100, so output 1's new driver, always ready, draws nothing.
-- **Part 4's additions come with the stall.** The solution's `RouterInjectTest` with the override
-  and the stall taken out (a probe copy) printed the starter's `RouterInjectTest` lines, apart
-  from the same output-1 lines and `25 of 41` bins instead of 24. The stall's draws come between
-  packets, because a sink at 5% draws once a cycle, so `RouterStallTest`'s packets differ from
-  `RouterRandTest`'s on the same seed, as well as by name.
+- **Without the stall and the override, the graded test is the starter's.** The solution's
+  `RouterInjectTest` with the override and the stall taken out (a probe copy) printed the
+  starter's `RouterInjectTest` lines, apart from the same output-1 lines and `25 of 41` bins
+  instead of 24. A sink at 5% draws once a cycle, so the stall's draws fall between the packets'
+  draws. This lab's additions can't come after Lab 03's stimulus, as the chain spec's rule asks,
+  so this probe takes them out instead.
 
 ## The scoreboard's levels
 
@@ -221,8 +223,8 @@ starter's.
 | Hard rule | B06, B13 | both, on seeds 1 to 5 |
 | Side catches | B12, B10 (reframed in Lab 05) | B12 and B10, 50 errors each on seed 1 |
 
-Every count in the table of all 15 bugs is DD105-A's (`solutions/README.md` of its Lab 04), and so
-are the coverage counts. Where the spec left a choice:
+Every count in the table of all 15 bugs is DD105-A's (`solutions/README.md` of its Lab 04). Where
+the spec left a choice:
 
 - **Output 1's ready in the starter.** `RouterBaseTest` sets `out1_ready` to 0, and the starter has
   no agent on output 1, so `RouterEnv.run_phase` holds the ready of an output with no agent at 1,
@@ -259,5 +261,6 @@ What the Lab 05 builder needs to know about this code:
 - cocotb seeds by test name, so Lab 05's `RouterTest` won't send this lab's packets; a probe class
   named `RouterInjectTest` in Lab 05's `test_router.py` would.
 - `close_holes()`'s packets must keep coming from the constructor (above).
-- `RouterLabTest.run_phase` ends the test on the scoreboard's `stop` event; a Lab 05 test that
-  starts sink sequences must start them before the body.
+- `RouterLabTest.run_phase` resets the router, starts the body and the watchdog, and ends the test
+  when one of them or the scoreboard's `stop` event finishes first. It is where Lab 05's sink
+  sequences would start, before the body (the chain spec's Lab 05 risk about `get_next_item()`).

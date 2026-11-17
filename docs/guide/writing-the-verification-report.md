@@ -5,10 +5,10 @@ hand over, so that someone else can check your claim without redoing your work?*
 
 DD104's capstone ended with a [bug report](https://uoftasic.com/dd104/guide/writing-the-bug-report.html)
 about one bug, built around a test that reproduces it and the command that runs that test. This
-course's capstone ends with a **verification report**, which claims that a whole design follows its
-specification, as far as a written plan describes the specification. The report gives the evidence
-for that claim and says where the evidence stops. You'll write one for the router in Lab 07. In
-Part 4 you copy `labs/lab-07-capstone/REPORT-template.md` into your repository as `REPORT.md` and
+course's capstone ends with a **verification report**, which claims that a whole design follows
+each rule of its specification that a written plan lists. The report gives the evidence for that
+claim and says where the evidence stops. You'll write one for the router in Lab 07. In Part 4 you
+copy `labs/lab-07-capstone/REPORT-template.md` into your repository as `REPORT.md` and
 fill in its hunt table, and in [Part 8](../labs/lab-07-capstone-overview.md#part-8-the-report) you
 fill in the rest.
 
@@ -80,8 +80,9 @@ on seeds 1 to 10, which incremented it at 15 on seeds 4, 6, 7, 9 and 10. To chec
     make seeds TEST=CountTest SEEDS="1 2 3 4 5 6 7 8 9 10"   # 10 ok  (10 runs)
 ```
 
-Sections 2 and 3, which describe the environment and the plan's status, are left out here because
-the counter's environment is one test, and its plan is three rows.
+Sections 2 and 3, which describe the environment and the plan's status, are left out here, because
+the counter's environment is one test and the example has no written plan. A plan for it would
+have three rows, one for each rule in the summary.
 
 ## Numbers and the commands behind them
 
@@ -89,21 +90,23 @@ Every number in that report comes from the output of a command that the report n
 lines in the indented blocks are pasted character for character, so a reader can check each one.
 A summary in your own words can't be checked like that. "The regression passed" could mean any
 number of tests on any seeds, with or without a run that crashed. The line `10 ok  (10 runs)`,
-under the command that printed it, says that there were ten runs, that all ten passed and that
-none was BROKEN, which is how `make seeds` marks a run that crashed or raised an exception that
-isn't a check. A reader can run the same command and compare that one line with yours.
+under the command that printed it, says that there were ten runs and that all ten passed.
+`make seeds` marks a run that crashed, or that raised an exception that isn't a check, as BROKEN
+and counts it separately on the same line, so the line also tells you that none of the ten runs
+crashed. A reader can run the same command and compare that one line with yours.
 
 The comment at the top of the template asks for the same thing ("paste the line the tool printed,
-not your summary of it"). In Lab 07 you keep that output as you go. In Part 6 you send the
-regression through `tee` into `results/`, in Part 7 you send the three `make check-all` runs there
-too, and in Part 8 you copy that folder into your repository beside the report.
+not your summary of it"). So that you have those lines when you write the report, Lab 07 has you
+save the output of the runs that the report quotes as you go. In Part 6 you send the regression's output
+through `tee` into `results/`, in Part 7 you do the same with the three `make check-all` runs, and
+in Part 8 you copy that folder into your repository beside the report. The last step of Part 8 is
+to open the repository on GitHub and check that a reader who has only that page could find the
+command behind every number in your report.
 
 The template's "Environment" line asks for the commit of your repository that the report
 describes, because a seed repeats a run only on the same code. (Regressions and seeds shows that
 one more random draw anywhere in a test changes every random choice made after it, in any
-coroutine, and that renaming a test changes its stimulus too.) The last step
-of Part 8 is to open the repository on GitHub and check that a reader who has only that page could
-find the command behind every number in your report.
+coroutine, and that renaming a test changes its stimulus too.)
 
 ## The sign-off sentence
 
@@ -111,9 +114,8 @@ Section 8 of the template asks for one sentence that starts "This router..." and
 it's true, so the sentence tends to come out long. For the counter you'd like to write
 "This counter saturates at 15", but your evidence is `CountTest` on seeds 1 to 10, and only five
 of those seeds incremented the counter at 15, so the report's sentence names the test, the seeds
-and those five. Because the sentence has to be true, you have to put into it every condition that
-your evidence depends on, and a reader can then decide whether those conditions are good enough for
-what they need.
+and those five. Every condition that your evidence depends on has to go into the sentence, and a
+reader can then decide whether those conditions are good enough for what they need.
 
 ## Section 7: the limits
 
@@ -124,13 +126,13 @@ the counter's report, section 7 says that on half the seeds the counter was neve
 15, so the rule that the wrap bug breaks was never tried on them. For the router, the items come
 from your own work in Lab 07:
 
-- the rows of your plan that have no checker, or whose checker no sequence exercises, which you
-  put in the plan's Open items in Part 2;
+- the rows of your plan that nothing checks, or that nothing makes happen, which you put in the
+  plan's Open items in Part 2;
 - coverage bins that stayed empty, and why;
-- the seeds you ran, and the ones you didn't;
-- anything that depends on X, which a two-state simulator like Verilator doesn't have; for
-  example, the specification warns that the router's state before its first reset is undefined,
-  but on Verilator it happens to start at all zeros;
+- the seeds you ran, and the seeds you didn't run;
+- anything that depends on X, which Verilator never shows, because it has only two states; for
+  example, the specification says that the router's state before its first reset is undefined,
+  but on Verilator the router happens to start at all zeros;
 - the fact that catching the fifteen planted bugs shows only that your environment catches those
   fifteen, and says nothing about a bug unlike all of them.
 
@@ -141,8 +143,9 @@ columns are in the order in which you fill them in. You copy the first check tha
 `make hunt`, and then write your diagnosis, which is the rule that the router broke and the file in
 `labs/common/rtl/` that you'd look in. Only after that do you run `make verdict`, and then you fill
 in the bug's name and the sequence that made it show. You write the diagnosis before you see the
-answer because it records how well a failure message from your environment led you to the fault,
-and because it's a habit you'll need when there is no `make verdict` to ask.
+answer so that it records how well a failure message from your environment led you to the fault.
+It's also practice for the times when there is no `make verdict` to ask, and the log is all you
+have to work from.
 
 A hunt that comes back `quiet` gets a row too. `quiet` means that nothing `RouterTest` drives tells
 that design from a correct one, so in that row you write which rows of your plan could be hiding
@@ -170,9 +173,10 @@ resets with traffic in flight that you write in Part 5, `make check-all` catches
    <details>
    <summary>Answer</summary>
 
-   Any two of: the plan's open items (rows with no checker), the seeds you didn't run, the bins
-   that stayed empty and why, the fact that a two-state simulator says nothing about X, and the
-   fact that catching fifteen planted bugs says nothing about a sixteenth unlike them.
+   Any two of: the plan's open items (rows that nothing checks or nothing makes happen), the seeds
+   you didn't run, the bins that stayed empty and why, the fact that a two-state simulator says
+   nothing about X, and the fact that catching fifteen planted bugs says nothing about a sixteenth
+   unlike them.
 
    </details>
 

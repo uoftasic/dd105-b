@@ -112,9 +112,10 @@ the cycle in which the router went wrong?
    `router.wait` records, for each packet an output delivers, the longest any of its beats waited
    for `out_ready`: `none` is 0 cycles, `short_wait` 1 to 3, `long_wait` 4 to 20 and `stalled` more
    than 20. `oversize` counts packets of 9 beats or more on the input, before the router cuts them.
-   Lab 04's sink flips a coin every cycle. At 100% a beat never waits, and at 5% a beat waits
-   about 20 cycles on average, so a packet whose longest wait is 1 to 3 cycles is rare, and output
-   1 delivered none in this run.
+   Lab 04's sink sets `out_ready` again in every cycle, whatever is on the output. At 100% it is
+   always 1, so a beat never waits, and at 5% it is 1 in one cycle in twenty, so a beat waits about
+   20 cycles on average. A packet whose longest wait is 1 to 3 cycles is rare, and output 1
+   delivered none in this run.
 
 4. Now run Lab 04's graded test on its own:
 
@@ -395,8 +396,8 @@ prediction matches cycle 26.
 
 ## Part 3: A sink that answers each beat
 
-What changes when each sink takes its beats at its own pace, instead of flipping a coin every
-cycle?
+What changes when each sink answers each beat at its own pace, instead of setting `out_ready` in
+every cycle whatever is on the output?
 
 1. Read the output agent in `tb/router_agents.py`: `OutCfg`, `ReadyItem`, `SinkSeq`, `SinkDriver`
    and `OutAgent`. `OutCfg.mode` picks how the sink answers. In `SNK_PCT`, the default, the driver

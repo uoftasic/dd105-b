@@ -23,18 +23,27 @@ from pyuvm.error_classes import UVMConfigItemNotFound
 class ResetState:
     """Shared through ConfigDB under "RESET". The reset driver
     (router_env.ResetDriver) sets `soon` right after the rising edge before
-    the one at which it pulls rst_n low, and clears it when it lets rst_n go,
-    so `soon` is already set one whole cycle before the first reset cycle.
-    `epoch` counts the resets started.
+    the one at which it pulls rst_n low, records the time it did so in
+    `soon_time`, and clears `soon` when it lets rst_n go. `epoch` counts the
+    resets started.
 
-    The APB driver looks at both after every rising edge, so psel is 0 in
-    every reset cycle (rule A4) and a transfer that a reset cuts short is
-    started again afterwards. The source driver abandons a packet whose epoch
-    has moved (rule I3)."""
+    So right after a rising edge a driver can tell three things apart: no
+    reset coming; a reset that starts at the next edge (`soon` set in this
+    same time step), when a transfer already under way must carry on for one
+    more cycle, since rule A1 holds until rst_n is 0; and a reset that starts
+    at this edge (`soon` set at an earlier one), when it must stop at once.
+    The APB driver uses that to keep psel at 0 in every reset cycle (rule A4)
+    and start an interrupted transfer again afterwards. The source driver
+    abandons a packet whose epoch has moved (rule I3)."""
 
     def __init__(self):
         self.soon = False
+        self.soon_time = 0
         self.epoch = 0
+
+    def starts_now(self):
+        """Right after a rising edge: rst_n falls at this edge, or is low."""
+        return self.soon and self.soon_time < get_sim_time("step")
 
 
 def reset_state(comp):

@@ -20,6 +20,7 @@ step with the design only prints more of the same.
 """
 
 from cocotb.triggers import Event, FallingEdge, RisingEdge
+from cocotb.utils import get_sim_time
 from cocotb_coverage.coverage import CoverCross, CoverPoint, coverage_db
 from pyuvm import (ConfigDB, uvm_agent, uvm_analysis_port, uvm_component, uvm_driver, uvm_env,
                    uvm_monitor, uvm_sequence, uvm_sequence_item, uvm_sequencer)
@@ -43,7 +44,8 @@ class ResetItem(uvm_sequence_item):
 
 class ResetDriver(uvm_driver):
     """Drives rst_n. For each item: right after rising edge x it sets
-    ResetState.soon, right after edge x+1 it pulls rst_n low, and right after
+    ResetState.soon (and soon_time), right after edge x+1 it pulls rst_n low,
+    and right after
     the edge that ends the item's last reset cycle it lets rst_n go and
     clears `soon`. So rst_n changes just after a rising edge both ways, as
     router-spec.md's Reset section asks, and every cycle is wholly in reset
@@ -60,6 +62,7 @@ class ResetDriver(uvm_driver):
             it = await self.seq_item_port.get_next_item()
             await RisingEdge(d.clk)
             self.rst.soon = True
+            self.rst.soon_time = get_sim_time("step")
             await RisingEdge(d.clk)
             d.rst_n.value = 0
             self.rst.epoch += 1
@@ -331,3 +334,8 @@ class RouterEnv(uvm_env):
         self.regs.map.set_sequencer(self.apb.sqr)
         self.regs.map.set_adapter(self.adapter)
         self.predictor.regs = self.regs
+
+    def report_phase(self):
+        self.logger.info(f"[ENV] {self.rst.epoch} resets driven; {self.apb.drv.restarts} APB transfers "
+                         f"started again after a reset; {self.src.drv.abandoned} packets abandoned "
+                         "at a reset or a wait limit")

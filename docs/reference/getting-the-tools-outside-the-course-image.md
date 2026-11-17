@@ -51,9 +51,9 @@ hpretl/iic-osic-tools@sha256:3c371645b19c6f6564dc8c7b21e39ad1c1833d274fe5b85639a
 
 On our machine, `docker image inspect` reports the image under that digest as `linux/amd64`, with
 61 layers and 11.7 GB unpacked. DD105-A's page, which pins the same digest, measured its download
-at 3.76 GB. The course's CI (`.github/workflows/labs.yml`)
-runs every lab in it through `scripts/ci/in-image.sh`, a single `docker run` command with the
-course's limits of 2 CPUs and 3 GB. From the top of a clone, with Docker and the image on your
+at 3.76 GB. The course's CI (`.github/workflows/labs.yml`) runs every lab in it through
+`scripts/ci/in-image.sh`, a single `docker run` command with the course's limits of 2 CPUs and
+3 GB. From the top of a clone, with Docker and the image on your
 machine, this builds and runs Lab 01's pyuvm testbench the way the CI does:
 
 ```bash
@@ -61,7 +61,7 @@ export IMAGE=hpretl/iic-osic-tools@sha256:3c371645b19c6f6564dc8c7b21e39ad1c1833d
 scripts/ci/in-image.sh make -C labs/lab-01-one-alu-two-frameworks
 ```
 
-It ends with `ok: 0 errors   1.10 s`. `in-image.sh` puts `--skip` in front of your command, which
+Our run of it ended with `ok: 0 errors   1.10 s`. `in-image.sh` puts `--skip` in front of your command, which
 tells the image's entrypoint to run the command instead of starting its desktop, and the entrypoint
 prints `[INFO] SKIPPING UI STARTUP` when it does.
 
@@ -99,18 +99,20 @@ pyvsc                          1.1.0
 ```
 
 `--system-site-packages` is what lets the venv see a cocotb and a pyuvm installed for the system's
-Python. In the image there's a second way in: the image sets `PYTHONPATH` to a list of folders that
-includes `/usr/local/lib/python3.12/dist-packages`, where its cocotb, pyuvm and pytest are, and `pyuvm.mk` passes your `PYTHONPATH` on to the simulator after the lab's own folders. So in
-the image every venv sees those packages, made with `--system-site-packages` or not. When we made a
-venv without it and installed cocotb, pyuvm and the course's two packages into it, `pip` listed the
-image's pytest 9.1.1 in the venv, and a run's log said
+Python. In the image the venv sees them another way as well. The image sets `PYTHONPATH` to a list
+of folders that includes `/usr/local/lib/python3.12/dist-packages`, where its cocotb, pyuvm and
+pytest are, and `pyuvm.mk` passes your `PYTHONPATH` on to the simulator after the lab's own
+folders. So in the image every venv sees those packages, whether it was made with
+`--system-site-packages` or not. We made a venv without that option and installed cocotb, pyuvm and
+the course's two packages into it; `pip` listed the image's pytest 9.1.1 in the venv, although we
+hadn't installed pytest, and a run's log said
 `Initialized cocotb v2.0.1 from /usr/local/lib/python3.12/dist-packages/cocotb`.
 
 ## Everything in one venv
 
-On a machine of your own, you'll probably install cocotb and pyuvm with `pip` into a venv, rather
-than into the system's Python. The labs run that way if you point `SYSTEM_PY` and `PYTHON` at the
-venv's `python` and put the venv where `VENV_DIR` expects it. We checked this in the course image,
+If you install cocotb and pyuvm with `pip` into a venv, rather than into the system's Python, the
+labs run when you point `SYSTEM_PY` and `PYTHON` at the venv's `python` and put the venv where
+`VENV_DIR` expects it. We checked this in the course image,
 from the top of a clone mounted at `/w`, with `PYTHONPATH` unset so that the image's own cocotb and
 pyuvm were out of reach:
 
@@ -139,8 +141,8 @@ The three `[SB]` lines are the ones
 [Lab 06, Part 1](../labs/lab-06-the-register-block-overview.md#part-1-the-lab-05-testbench-against-the-registers)
 shows, and `make check` gave the starter's verdict from that part,
 `VERDICT: FAIL -- your test passes B01_status_write_clears_all too.` The venv came to 102 MB, made
-in 14.0 s. It has no pytest, because nothing the course installs asks for it; the image has pytest
-9.1.1.
+in 14.0 s. It has no pytest, because nothing the course installs asks for it, and that is why cocotb
+printed the second line.
 
 ## Installing on other systems
 
@@ -173,8 +175,8 @@ which Python and which cocotb each one needs:
 pyucis, which pyvsc needs, pulls in an MCP server stack (mcp, starlette, uvicorn, httpx2 and more),
 which the course doesn't use
 ([`labs/common/README.md`](https://github.com/uoftasic/dd105-b/blob/main/labs/common/README.md#the-course-venv)).
-Install the versions the labs were measured with, as the command under
-[Everything in one venv](#everything-in-one-venv) does, so that your outputs match the pages.
+The labs were measured with the versions that the command under
+[Everything in one venv](#everything-in-one-venv) installs.
 
 For Verilator, DD105-A's page
 ([Getting the tools outside the course image](https://uoftasic.com/dd105-a/reference/getting-the-tools-outside-the-course-image.html#verilator-5.050))

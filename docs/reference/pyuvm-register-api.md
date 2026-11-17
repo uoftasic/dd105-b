@@ -107,7 +107,7 @@ reg_map.add_reg(reg, offset="0x0", rights="RW")
 | `uvm_reg(name, reg_width)` | your register class calls this from its `__init__()`; the width is in bits |
 | `reg.configure(parent, ...)` | the register block. `configure()` calls the register's `build()` and adds the register to the block (`s20:75-79`) |
 | `address` | a string, written the way Python's `hex()` writes it (see [Addresses are strings](#addresses-are-strings)) |
-| `hdl_path` | kept, and used by nothing, since pyuvm has no back door; Lab 06 passes `""` |
+| `hdl_path` | kept, and read by nothing in pyuvm, which has no back door; Lab 06 passes `""` |
 | `throw_error_on_read`, `throw_error_on_write` | copied into each field as it is configured; Lab 06 passes `False, False` |
 | `reg_map.configure(parent, base_addr)` | the block, and a base address that no register's address uses |
 | `add_reg(reg, offset, rights)` | the map files the register under `hex(int(offset, 16) + int(address, 16))` (`s21:100-104`). `rights` must be one of the 26 policy names, or `add_reg()` raises `UVMFatalError`; pyuvm keeps it, and nothing in pyuvm reads it back except `get_access_policy()` |
@@ -189,20 +189,26 @@ The router's four policies behave like this:
 | `W1C` | `STATUS`'s three | clears the bits written as 1 (`0xc` and `0xa` give `0x4`) | goes back to the reset value |
 | `WC` | `NOROUTE_CNT`, `FULL_CNT` | clears every bit | goes back to the reset value |
 
-Two rows differ from what the policy's name says:
+In two places these results differ from SystemVerilog UVM's, as UVM 2020-3.2 implements it in
+[`uvm_reg_field.svh`](https://github.com/uoftasic/dd105-a/blob/main/third_party/uvm/src/reg/uvm_reg_field.svh),
+in DD105-A's copy of the library:
 
 - `UVM_PREDICT_READ` puts a field back at its reset value, whatever was read, under 14 policies:
   `WO`, `WOC`, `WOS`, `WO1`, `NOACCESS`, `W1`, `W1T`, `W0T`, `WC`, `WS`, `W1C`, `W1S`, `W0C` and
-  `W0S` (`s19:494-511`). The router's `STATUS` (`W1C`) and `DROP_CNT` (`WC`) are among them, so a
-  predictor that predicts a read with `UVM_PREDICT_READ` leaves both at 0 after every read.
+  `W0S` (`s19:494-511`). SystemVerilog UVM leaves the mirror as it was under the first five of
+  those and takes the value read under the other nine (`uvm_reg_field.svh`, lines 985 to 1031).
+  The router's `STATUS` (`W1C`) and `DROP_CNT` (`WC`) are among the nine, so in pyuvm a predictor
+  that predicts a read with `UVM_PREDICT_READ` leaves both at 0 after every read.
   `UVM_PREDICT_DIRECT` takes the value read under every policy, and it's what Lab 06's predictor
   uses after a read ([Part 3, step 1](../labs/lab-06-the-register-block-overview.md#part-3-the-predictor-and-the-bit-bash)
   shows the difference on your own model with `make predict`).
-- A `W1` field should take the first value written after a reset and ignore later writes, but
-  under `UVM_PREDICT_WRITE` it toggles the bits written as 1, like `W1T`: `0xc` and `0xa` give
-  `0x6`, not `0xa`. The test for `W1T` in `predict_write()` is `field_access in ("W1T")`
-  (`s19:438`), and `("W1T")` is the string `"W1T"` rather than a tuple, so the test asks whether
-  `"W1"` is a substring of it, which it is. The router has no `W1` field.
+- A `W1` field should take the first value written after a reset and ignore later writes, as
+  pyuvm's own comment on the policy says (`s19:416-417`) and SystemVerilog UVM does
+  (`uvm_reg_field.svh`, line 893). In pyuvm, under `UVM_PREDICT_WRITE`, it toggles the bits
+  written as 1 instead, like `W1T`: `0xc` and `0xa` give `0x6`, not `0xa`. The test for `W1T` in
+  `predict_write()` is `field_access in ("W1T")` (`s19:438`), and `("W1T")` is the string `"W1T"`
+  rather than a tuple, so the test asks whether `"W1"` is a substring of it, which it is. The router
+  has no `W1` field.
 
 ## predict()
 
@@ -211,9 +217,10 @@ reg.predict(value, be=-1, kind=uvm_predict_e.UVM_PREDICT_DIRECT,
             path=uvm_door_e.UVM_FRONTDOOR, map=None, fname="", lineno=0)
 ```
 
-A register's `predict()` (`s20:193-212`) passes each field its own bits of `value` and calls the
-field's `predict()`, which has the same arguments (`s19:575-594`). The field sets its mirror and
-its desired value to the result (`s19:568-570`). `predict()` returns `True` unless the operation's
+A register's `predict()` (`s20:193-212`) gives each field its own bits of `value`, through the
+field's `do_predict()` (`s20:214-233`), and the field sets its mirror and its desired value to the
+result (`s19:568-570`). A field has a `predict()` of its own, with the same arguments
+(`s19:575-594`). `predict()` returns `True` unless the operation's
 status is `UVM_NOT_OK`.
 
 Pass `kind` and `path` by name. `kind` is the third parameter, so `predict(value, kind)` hands the
@@ -265,7 +272,7 @@ For a front-door operation the map builds a `uvm_reg_bus_op` and hands it to you
 `reg2bus()`, starts the item that `reg2bus()` returns on the map's sequencer and waits for the
 driver to finish it, then calls `bus2reg(item, rw)` and returns the status that `bus2reg()` put in
 `rw.status`, with `rw.data` for a read (`s21:299-406`). A read whose status is `ERROR_RESP` returns
-0 as its value (`s20:346-347`). The map doesn't touch the mirror, and the register doesn't either.
+0 as its value (`s20:346-347`). Neither the map nor the register changes the mirror.
 `RegOpsTest`, on the golden router:
 
 ```text
@@ -367,7 +374,7 @@ and what pyuvm 4.0.1 has in its place.
 | auto-predict, which updates the mirror after each operation the model sends | off, with no method to turn it on (see below) | `s24:125`, `s21:8`, `s21:345-347`; `RegAutoPredictTest` |
 | check-on-read in the map, `mirror(UVM_CHECK)` on a register | neither; `read(..., check_t.CHECK)` compares nothing | `RegPolicyTest`; `RegOpsTest`, above |
 | `mirror()`, `update()`, `needs_update()`, `peek()`, `poke()`, `set()`, `get()` and `get_reset()` on a register | none of them. A field has `get()` and `get_reset()`, and a register has `set_desired()` and `get_desired()`. The block's list of things still to write includes `needs_update`, `update` and `mirror` | `RegPolicyTest`; `s18:31-33` |
-| `uvm_reg_hw_reset_seq`, `uvm_reg_bit_bash_seq`, `uvm_reg_access_seq`, `uvm_reg_mem_built_in_seq` | none of them. The enumeration `uvm_reg_mem_tests_e` has a value for running each of the first three (`UVM_DO_REG_HW_RESET`, `UVM_DO_REG_BIT_BASH`, `UVM_DO_REG_ACCESS`), and no file defines the sequences | `RegPolicyTest`; `s17:149-164` |
+| `uvm_reg_hw_reset_seq`, `uvm_reg_bit_bash_seq`, `uvm_reg_access_seq`, `uvm_reg_mem_built_in_seq` | none of them. The enumeration `uvm_reg_mem_tests_e` has a value for running each of the first three (`UVM_DO_REG_HW_RESET`, `UVM_DO_REG_BIT_BASH`, `UVM_DO_REG_ACCESS`), and no file in pyuvm 4.0.1 defines the sequences | `RegPolicyTest`; `s17:149-164` |
 | the back door, and HDL paths | `path_t.BACKDOOR` raises `UVMNotImplemented`, and so does `add_hdl_path()` on a block | `RegBackdoorTest`; `s21:316-317`, `s21:370-371`, `s18:77-78` |
 | a user-defined front door | `path_t.USER_FRONTDOOR` raises `UVMNotImplemented` | `RegBackdoorTest`; `s21:318-319`, `s21:372-373` |
 | `uvm_mem` | raises `UVMNotImplemented` | `RegPolicyTest`; `s22:16-19` |
@@ -387,7 +394,7 @@ REGAPI in pyuvm: uvm_reg_predictor; not in pyuvm: uvm_reg_hw_reset_seq, uvm_reg_
 REGAPI enable_auto_predict: False in s21_uvm_reg_map, False in s24_uvm_reg_includes
 ```
 
-and the back door, in `RegBackdoorTest`:
+The back door, in `RegBackdoorTest`:
 
 ```text
 REGAPI CTRL.read(map, path_t.BACKDOOR, check_t.NO_CHECK): raised UVMNotImplemented: map -- BACKDOOR not implemented
@@ -403,7 +410,7 @@ Auto-predict is a module-level variable, `enable_auto_predict`, which is `False`
 `s24_uvm_reg_includes` (`s24:125`). The map's module imports it by name (`s21:8`), which makes a
 copy when pyuvm is imported, so setting it in `s24_uvm_reg_includes` afterwards changes nothing.
 Set in `s21_uvm_reg_map`, it makes the map call `predict()` on its predictor after each operation
-(`s21:345-347`, `s21:398-400`), and the only predictor pyuvm accepts is a `uvm_reg_predictor`
+(`s21:345-347`, `s21:398-400`), and `set_predictor()` accepts only a `uvm_reg_predictor`
 (`s21:122-130`), which has no `predict()`. `RegAutoPredictTest` turns it on each way:
 
 ```text

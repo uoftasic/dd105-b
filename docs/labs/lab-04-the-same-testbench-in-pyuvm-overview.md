@@ -24,12 +24,12 @@ Package: [`labs/lab-04-the-same-testbench-in-pyuvm/`](https://github.com/uoftasi
   [Routing](../reference/router-spec.md#routing) section.
 - Copy this table into your notes and fill it in as you go:
 
-  | | `make run` (`RouterInjectTest`) | `make check-all` |
-  |---|---|---|
-  | The port as shipped (Part 1) | | |
-  | After Part 2 | | |
-  | After Part 3 | | |
-  | After Part 4 | | |
+  | | `make check-all` |
+  |---|---|
+  | The port as shipped (Part 1) | |
+  | After Part 2 | |
+  | After Part 3 | |
+  | After Part 4 | |
 
 Time: about 2 h. Every file you change is Python, so nothing in this lab rebuilds the simulator,
 and a run of the graded test takes about 5 s.
@@ -124,7 +124,7 @@ Does the port do what the Lab 03 testbench did, and which of this lab's bugs doe
    ```
 
    ending in `ok: 0 errors   5.13 s`. The routes are written as in Lab 03, with one character per
-   route: `0` or `1` for the output, `-` for disabled. Write the run time in your table.
+   route: `0` or `1` for the output, `-` for disabled.
 
    The third run, `RouterRandTest`, runs the same code on different packets. Its first phase has
    the routes `-110`, and it ends with:
@@ -534,6 +534,8 @@ makes them or the driver that sends them?
     2 of 2 caught.
    ```
 
+   Write the result in your table.
+
 6. You can also apply a factory override from the command line, without a test class. pyuvm 4.0.1
    has no plusarg for this, so the base test reads one of its own, `+OVERRIDE`, and calls
    `uvm_factory().set_type_override_by_name()` with the two class names before it builds anything.
@@ -689,8 +691,8 @@ Where did the lines go, compared with your Lab 03 testbench, and what did they b
 
    </details>
 
-Check: your notes have a line count for both testbenches, and your table has a run time and a
-`make check-all` result for each part.
+Check: your notes have a line count for both testbenches, and your table has a `make check-all`
+result for each part.
 
 ## Finishing
 

@@ -1,6 +1,6 @@
 # Lab 07: Capstone
 
-In this lab you take your Lab 06 testbench to sign-off. You write a verification plan from the
+In this lab you take the Lab 06 testbench to sign-off. You write a verification plan from the
 specification, run every test on ten seeds and read the merged coverage, and hunt three mystery
 bugs, each dealt from all fifteen in the catalogue. The package you start from misses one of the
 fifteen. You catch it by writing the assertions for the rules about reset and a sequence that resets
@@ -36,15 +36,16 @@ you:
 | `tb/router_sva.sv`, `tb/router_sva_bind.sv` | the APB port and `irq` in the bound module, and a counter for each rule about reset; the assertions are yours (Part 5) |
 | `tb/router_vseq.py` | `reset()` in the base sequence; `RouterResetVseq` and `RouterSaturateVseq`, whose bodies are yours (Parts 5 and 6); `RouterLab07Vseq`, four phases of random traffic whose resets are yours (Part 5) |
 | `tb/test_router.py` | `RouterTest` runs `RouterLab07Vseq` last; three new tests, `RouterLab07Test`, `RouterResetTest` and `RouterSaturateTest` |
-| `Makefile` | `BUG_LIST`: all fifteen bugs, B15 first, because `make check` grades the first |
+| `Makefile` | `RouterLab07Test` in `TESTS`, and `BUG_LIST`: all fifteen bugs, B15 first, because `make check` grades the first |
 | `PLAN-template.md`, `REPORT-template.md` | the plan and the report you fill in |
 
-Time: about 3 h 30 min. About 30 minutes of that is waiting for the machine, as we measured it on
-the course's 2 CPUs: the two regressions took 8 min 27 s and 9 min 21 s, each of the three runs of
-`make check-all` took 114 to 118 s, and a run of `RouterTest` takes about 12 s. The assertions
-are SystemVerilog, so writing them rebuilds the simulator, which took us 2.5 s; the sequences are
-Python and the tests you add are a line in the Makefile, and neither rebuilds anything. You'll
-spend most of the rest writing the plan, eight assertions, two sequences and the report.
+Time: about 3 h 30 min. About 30 minutes of that is waiting for the machine, as we measured it in
+the course image with 2 CPUs: the two regressions took 8 min 27 s and 9 min 21 s, each of the three
+runs of `make check-all` took 114 to 118 s, and a run of `RouterTest` takes about 12 s. The
+assertions are SystemVerilog, so `make build` rebuilds the simulator after you write them, which
+took us 2.5 s. The sequences are Python and the two tests you add are names in the Makefile's
+`TESTS`, so neither needs a rebuild. You'll spend most of the rest writing the plan, eight
+assertions, two sequences and the report.
 
 ## Part 1: Your repository and the first build
 
@@ -121,13 +122,14 @@ spend most of the rest writing the plan, eight assertions, two sequences and the
 
    `RouterLab07Vseq`, which `RouterTest` now starts after everything Lab 06's `RouterTest` ran.
    Its four phases of random traffic, and its reads of every register at the end, take those
-   cycles. Each phase sends 150 packets on a random
-   routing table of its own and random interrupt enables, while both sinks change their modes. It
-   doesn't run your two sequences yet. It goes last because every random value in the testbench
-   comes from Python's `random`, one after another, so a sequence that ran earlier would move every
-   packet after it, as Lab 06's Part 5 step did. We ran `RouterTest` with `RouterLab07Vseq` left
-   out, on seeds 1 to 5, and it printed Lab 06's lines number for number (on seed 1,
-   `1135 packets in: 311 to output 0, 288 to output 1, 177 NOROUTE, 359 FULL`, and
+   cycles. Each phase sends 150 packets on a random routing table of its own and random interrupt
+   enables, while both sinks change their modes. It doesn't yet run the reset and saturation
+   sequences that you write in Parts 5 and 6. It goes last because every random value in the
+   testbench comes from Python's `random`, one after another, so a sequence that ran earlier would
+   change every packet after it, as the payload of the 9-beat packet you sent in Lab 06, Part 5
+   changed the packets of Labs 04 and 05 that ran after it. We ran `RouterTest` with
+   `RouterLab07Vseq` left out, on seeds 1 to 5, and it printed Lab 06's lines number for number
+   (on seed 1, `1135 packets in: 311 to output 0, 288 to output 1, 177 NOROUTE, 359 FULL`, and
    `irq checked in 13918 cycles`), so nothing we added changes a run that has no reset in it.
 
    </details>
@@ -185,11 +187,13 @@ happen?
    needs 255 drops with no clear or reset between them, but `RouterInjectTest` and
    `RouterLab07Vseq` both clear `DROP_CNT` at the end of each of their phases.
 
-   Nothing in the environment checks `in_ready` (I4, I5, I6, RT5), the cycle a beat appears (O8),
-   that the outputs come from flip-flops (O3), what `CTRL.EN` does (EN1), the APB master's rules
-   (A1 to A3), `pready` (A5, A6) or `LEVEL` (RG4), and nothing in this lab adds a check for them,
-   so those rows stay "nothing". Put them in the plan's Open items, because Part 8's report has to
-   say what the environment doesn't show.
+   Nothing in the environment compares `in_ready` with what the specification says it should be
+   (I4, I5, I6, RT5); the source driver reports it only when it stays 0 for 1000 cycles with a beat
+   on offer. Nothing checks the cycle a beat appears (O8), that the outputs come from flip-flops
+   (O3), what `CTRL.EN` does (EN1), the APB master's rules (A1 to A3), `pready` (A5, A6) or
+   `LEVEL` (RG4) either, and nothing in this lab adds a check for any of them, so those rows stay
+   "nothing". Put them in the plan's Open items, because Part 8's report has to say what the
+   environment doesn't show.
 
    </details>
 
@@ -241,14 +245,14 @@ Does a regression that passes on every seed tell you the environment is finished
    <summary>Answer</summary>
 
    Only the four in `router.corner`. The seven in `router.pkt.x_fate_level` are ones the
-   specification rules out, as they were in Labs 04 to 06, because a packet is FULL only at a level
-   of 9 or more, and written to an output only at 8 or less. `noroute_saturated` and
+   specification rules out, as they have been since Lab 03, because a packet is FULL only at a
+   level of 9 or more, and written to an output only at 8 or less. `noroute_saturated` and
    `full_saturated` are drops whose counter is already 255 (row DR2), and `reset_with_beats` and
    `reset_mid_packet` are a reset with beats in a buffer and a reset with a packet half accepted
    (RS2 and RS3). You found the same rows in Part 2 by reading the environment, and the
    regression's bins point at them too. So a regression that passes on every seed doesn't tell you
-   the environment is finished. 100 passes mean that no check fired in 100 runs, and the
-   four empty bins are situations that the stimulus never made, so no check ever saw them.
+   the environment is finished. 100 passes mean that no check fired in 100 runs, and the four
+   empty bins are situations that the stimulus never made, so no check ever saw them.
 
    </details>
 
@@ -410,11 +414,11 @@ busy?
    ```
 
    The rebuild took us 2.5 s. You should see `ok: 0 errors, 0 assertions   11.50 s` from
-   `make run`, and the same `[SB]` lines as in Part 1. None of the assertions fails. The golden router obeys every one of these rules that is
-   its own, and `a_A4` checks a rule of the APB master's, which our APB driver obeys. If one of
-   yours does fail, its `%Error` line names it, and the mistake is in that assertion. So far the
-   only reset they have seen is the one at time 0, two cycles long, when the router holds
-   nothing.
+   `make run`, and the same `[SB]` lines as in Part 1. None of the assertions fails. Seven of the
+   eight check the router's own rules, which the golden router keeps, and `a_A4` checks a rule of
+   the APB master's, which our APB driver keeps. If one of yours does fail, its `%Error` line
+   names it, and the mistake is in that assertion. So far the only reset they have seen is the one
+   at time 0, two cycles long, when the router holds nothing.
 
 4. Write `RouterResetVseq.body()` in `tb/router_vseq.py`. Its `TODO` lists the situations to reach.
    The first is the specification's example E8, in which output 0 is stalled with a packet in its
@@ -505,10 +509,10 @@ Does each drop counter stop at 255, and how will you know that the regression go
 
    No. None of the fifteen bugs changes what a counter does at 255. We ran `make check-all` with
    Part 5's work in and none of Part 6's, and it printed `15 of 15 caught.` on seed 1, with B15 at
-   `50 errors, 14 assertions`. The new sequence reads `DROP_CNT` past 255, and a check that you
-   already had looks at those reads. The scoreboard compares every `DROP_CNT` read with its own
-   counts, which stop at 255, so it would catch a counter that wraps. Until now nothing gave row DR2
-   of your plan any evidence either way.
+   `50 errors, 14 assertions`. The new sequence reads `DROP_CNT` past 255, and the scoreboard,
+   which you already had, compares every `DROP_CNT` read with its own counts, which stop at 255,
+   so it would catch a counter that wraps. Until now nothing gave row DR2 of your plan any
+   evidence either way.
 
    </details>
 

@@ -1,13 +1,12 @@
 # Lab 05: Protocol rules and backpressure
 
-In this lab you'll write three SystemVerilog assertions for the router's output rules, which the
-testbench binds into the router and whose failures the base test counts. Then you'll finish a sink
-driver that answers each output beat with an item from a sequence, and write a virtual sequence
-that changes the routing table, the traffic and the backpressure together. You start from our Lab
-04 testbench, which already catches two of this lab's three planted bugs, B10 and B12. Your
-assertions show the rule each one breaks and the cycle in which it breaks it. The third bug, B11,
-shows only on packets of more than 8 beats, which no Lab 04 test sends, and your virtual sequence
-sends them.
+In this lab you'll write three SystemVerilog assertions for the router's output rules. The testbench
+binds them into the router, and the base test counts their failures. Then you'll finish a sink
+driver that answers each output beat with an item from a sequence, and write a virtual sequence that
+changes the routing table, the traffic and the backpressure together. You start from our Lab 04
+testbench, which already catches two of this lab's three planted bugs, B10 and B12. Your assertions
+show the rule each one breaks and the cycle in which it breaks it. The third bug, B11, shows only on
+packets of more than 8 beats, which no Lab 04 test sends, and your virtual sequence sends them.
 
 Package: [`labs/lab-05-protocol-rules-and-backpressure/`](https://github.com/uoftasic/dd105-b/tree/main/labs/lab-05-protocol-rules-and-backpressure)
 
@@ -80,11 +79,11 @@ the cycle in which the router went wrong?
    DD105-B BaseTest: 0 errors logged, 0 assertion failures (u_sva.n_fail)
    ```
 
-   In Lab 04 `BaseTest`'s line ended `no bound assertions`. Now it reads the bound assertions'
-   failure count, `cocotb.top.u_sva.n_fail`, at the end of every test, and fails the test if it
-   isn't 0. These aren't Lab 04's packets, because cocotb seeds each test from its name, as you
-   saw in Lab 04, Part 1, step 3. The run's first `[PHASE]` line shows the routes `--01`, with
-   output 0 ready in 5% of cycles; this part's last step uses that phase.
+   In Lab 04 the last line ended `no bound assertions`. Now `BaseTest` reads the bound
+   assertions' failure count, `cocotb.top.u_sva.n_fail`, at the end of every test, and fails the
+   test if it isn't 0. These aren't Lab 04's packets, because cocotb seeds each test from its name,
+   as you saw in Lab 04, Part 1, step 3. The run's first `[PHASE]` line shows the routes `--01`,
+   with output 0 ready in 5% of cycles; this part's last step uses that phase.
 
 3. Look at the coverage of that run:
 

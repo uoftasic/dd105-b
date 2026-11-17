@@ -1,13 +1,14 @@
 # Lab 05: Protocol rules and backpressure
 
 In this lab you'll write three SystemVerilog assertions for the router's output rules. The testbench
-binds them into the router, and the base test counts their failures. Then you'll finish a sink
-driver that answers each output beat with an item from a sequence, and write a virtual sequence that
-changes the routing table, the traffic and the backpressure together. You start from our Lab 04
-testbench, which already catches two of this lab's three planted bugs, B10 and B12. Your assertions
-fail on both of them as well, and each failure names a rule that the router broke. On B10 the first
-one comes 8 cycles before the scoreboard's first error. The third bug, B11, shows only on packets of
-more than 8 beats, which no Lab 04 test sends, and your virtual sequence sends them.
+binds them into the router, and the base test fails any test in which one of them fails. Then
+you'll finish a sink driver that answers each output beat with an item from a sequence, and write a
+virtual sequence that changes the routing table, the traffic and the backpressure together. You
+start from our Lab 04 testbench, which already catches two of this lab's three planted bugs, B10
+and B12. Your assertions fail on both of them as well, and each failure names a rule that the
+router broke. On B10 your first assertion failure comes 8 cycles before the scoreboard's first
+error. The third bug, B11, shows only on packets of more than 8 beats. No Lab 04 test sends packets
+that long, so you'll send them from your virtual sequence.
 
 Package: [`labs/lab-05-protocol-rules-and-backpressure/`](https://github.com/uoftasic/dd105-b/tree/main/labs/lab-05-protocol-rules-and-backpressure)
 
@@ -19,14 +20,16 @@ Package: [`labs/lab-05-protocol-rules-and-backpressure/`](https://github.com/uof
   (I1, I2, O1, O2, O6, O7 and O8) are the ones defined there.
 
 The package is Lab 04's testbench with our solution to Lab 04 in it: the agent for output 1, the
-scoreboard's queue of output 1's beats, the real `level()`, `RouterStallTest`, `NoroutePkt` and
-the factory override. If your own Lab 04 printed `2 of 2 caught.`, your code did the same job, but
-use ours anyway, because this lab adds to the same three files. What we added for you:
+scoreboard's queue of output 1's beats, a `level()` that gives output 1's real level,
+`RouterStallTest`, `NoroutePkt` and the factory override. If your own Lab 04 printed
+`2 of 2 caught.`, your code does the same job, but use ours anyway, because this lab's additions are
+already in our copies of the same three files, `router_agents.py`, `router_env.py` and
+`test_router.py`. We added these pieces for you:
 
 | File | What Lab 05 adds |
 |---|---|
 | `tb/router_sva.sv`, `tb/router_sva_bind.sv` | the assertion module and the `bind` that puts it in the router; you write three of its assertions (Part 2) |
-| `tb/router_agents.py` | `SinkDriver`, which replaces `OutReadyDriver` and can answer each beat with an item from a sequence, `SinkSeq` (you finish the driver in Part 3); an oversize length kind in `RouterPkt`, switched off until a sequence gives it a weight; how long each output beat waited, which the output monitor records; the cycle in which each APB transfer completed; and `gap_one_in` and `w_over` on `RouterRandSeq`, which `send_rand()` sets (Part 4) |
+| `tb/router_agents.py` | `SinkDriver`, which replaces `OutReadyDriver` and can answer each beat with a `ReadyItem` from the sink's sequence, `SinkSeq` (you finish the driver in Part 3); an oversize length kind in `RouterPkt`, switched off until a sequence gives it a weight; how long each output beat waited, which the output monitor stamps on the beat; the cycle in which each APB transfer completed, which the APB monitor stamps on the transfer; and `gap_one_in` and `w_over` on `RouterRandSeq`, which `send_rand()` sets (Part 4) |
 | `tb/router_env.py` | the coverage group `router.wait`, an `oversize` bin in `router.pkt.len`, and a scoreboard that follows route writes made while packets are coming in |
 | `tb/router_vseq.py` | the virtual sequences; you write `RouterLab05Vseq` (Part 4) |
 | `tb/test_router.py` | `RouterTest` (Lab 04's `RouterInjectTest`, then your virtual sequence), `RouterLab05Test` (the sequence alone) and `RouterSinkTest` (Part 3); the base test now starts a `SinkSeq` on each output |
@@ -82,9 +85,10 @@ the cycle in which the router went wrong?
 
    In Lab 04 the `BaseTest` line ended `no bound assertions`. Now `BaseTest` reads the bound
    assertions' failure count, `cocotb.top.u_sva.n_fail`, at the end of every test, and fails the
-   test if it isn't 0. These aren't Lab 04's packets, because cocotb seeds each test from its name,
-   as you saw in Lab 04, Part 1, step 3. The run's first `[PHASE]` line shows the routes `--01`,
-   with output 0 ready in 5% of cycles; this part's last step uses that phase.
+   test if it isn't 0. The packets differ from the ones `RouterInjectTest` sent in Lab 04, because
+   cocotb seeds each test from its name (you saw this in Lab 04, Part 1, step 3), and this test is
+   `RouterTest`. The run's first `[PHASE]` line shows the routes `--01`, with output 0 ready in 5%
+   of cycles, and step 7 of this part uses that phase.
 
 3. Look at the coverage of that run:
 
@@ -109,13 +113,13 @@ the cycle in which the router went wrong?
                not hit: ('out1', 'short_wait')
    ```
 
-   `router.wait` records, for each packet an output delivers, the longest any of its beats waited
-   for `out_ready`: `none` is 0 cycles, `short_wait` 1 to 3, `long_wait` 4 to 20 and `stalled` more
-   than 20. `oversize` counts packets of 9 beats or more on the input, before the router cuts them.
-   Lab 04's sink sets `out_ready` again in every cycle, whatever is on the output. At 100% it is
-   always 1, so a beat never waits, and at 5% it is 1 in one cycle in twenty, so a beat waits about
-   20 cycles on average. A packet whose longest wait is 1 to 3 cycles is rare, and output 1
-   delivered none in this run.
+   For each packet that an output delivers, `router.wait` records the longest time that any of its
+   beats waited for `out_ready`. Its bins are `none` for 0 cycles, `short_wait` for 1 to 3,
+   `long_wait` for 4 to 20 and `stalled` for more than 20. `oversize` counts packets of 9 beats or
+   more on the input, before the router cuts them. Lab 04's sink decides `out_ready` anew in every
+   cycle, without looking at what is on the output. At 100% it is always 1, so a beat never waits,
+   and at 5% it is 1 in one cycle in twenty, so a beat waits about 20 cycles on average. So a
+   packet whose longest wait is 1 to 3 cycles is rare, and output 1 delivered none in this run.
 
 4. Now run Lab 04's graded test on its own:
 
@@ -139,11 +143,12 @@ the cycle in which the router went wrong?
    <summary>Answer</summary>
 
    Every packet comes from Python's `random`, one draw after another, so anything that drew one
-   more number would change every packet after it. Nothing new draws in Lab 04's tests. Every sink
-   in them stays in `SNK_PCT`, Lab 04's mode, where `SinkDriver` runs Lab 04's loop: it draws only
-   when `ready_pct` is between 0 and 100, and it asks for no items. `SinkSeq` decides each item's
-   values only after `start_item()` returns, which happens when the driver asks for the item, so
-   it waits there and draws nothing. The new oversize kind has a weight of 0.
+   more number would change every packet after it. In Lab 04's tests, none of this lab's new code
+   draws a number. Every sink in them stays in `SNK_PCT`, Lab 04's mode, where `SinkDriver` runs
+   Lab 04's loop, which draws only when `ready_pct` is between 0 and 100 and asks for no items.
+   `SinkSeq` decides each item's values only after `start_item()` returns, which happens when the
+   driver asks for the item, so in these tests it waits in `start_item()` and draws nothing. The
+   new oversize kind has a weight of 0.
 
    </details>
 
@@ -169,10 +174,10 @@ the cycle in which the router went wrong?
    ```
 
    `make check`, which grades the first bug in the list, says
-   `VERDICT: FAIL -- your test passes B11_cut_packet_has_no_last too.` Lab 04's stall test already
-   makes the two `out_ready` signals differ and lets beats wait on a stalled output, and that is
-   all B12 and B10 need. B11 needs a packet of more than 8 beats, and none of Lab 04's tests sends
-   one.
+   `VERDICT: FAIL -- your test passes B11_cut_packet_has_no_last too.` B12 shows only when the two
+   `out_ready` signals differ, and B10 only when a beat has to wait for `out_ready`. Lab 04's stall
+   test already makes both happen. B11 needs a packet of more than 8 beats, and none of Lab 04's
+   tests sends one.
 
 6. Look at the first errors for the two bugs the testbench catches:
 
@@ -205,12 +210,12 @@ the cycle in which the router went wrong?
    <details>
    <summary>Answer</summary>
 
-   O8 puts a beat into an empty output two cycles after its input handshake, so `80` is on the
-   output from cycle 23. B10 loads `e5` over it as soon as `e5` gets there, two cycles after its
-   own handshake, so `out0_data` first changes in cycle 26. The scoreboard sees only beats that
-   are taken, and output 0's sink took nothing until cycle 34, when it took `e5` where the
-   scoreboard expected `80`. The router went wrong 8 cycles before the scoreboard could see
-   anything.
+   By O8, a beat that goes into an empty output appears two cycles after its input handshake, so
+   `80` is on the output from cycle 23. B10 loads `e5` over it as soon as `e5` gets there, two
+   cycles after its own handshake, so `out0_data` first changes in cycle 26. The scoreboard sees
+   only beats that are taken, and output 0's sink took nothing until cycle 34, when it took `e5`
+   where the scoreboard expected `80`. The router went wrong 8 cycles before the scoreboard could
+   see it.
 
    </details>
 
@@ -277,7 +282,8 @@ Which rule did B10 break, and in which cycle?
    cat build/runs/RouterTest-s1-B10/exit_status
    ```
 
-   You should see the run stop at the first failure, then `1`:
+   You should see the run stop at the first failure, and `cat` print `1` after it. The failure
+   looks like this:
 
    ```text
    [260000] %Error: router_sva.sv:53: Assertion failed in router.u_sva.u_out0.a_O2: O2: out_data or out_last changed while the beat waited
@@ -378,19 +384,20 @@ Which rule did B10 break, and in which cycle?
    can fail only on the 8th beat of a packet that has a 9th, and nothing in `RouterTest` sends a
    packet longer than 8 beats yet, so on B11 the router never has a packet to cut.
 
-   B12 moves output 1 on `out0_ready`. In phase 1 output 0 is ready in 5% of cycles and output
-   1 in all of them, so in most cycles output 1's sink takes the beat on its pins, but the buffer
-   behind them doesn't move on to the next beat. The pins show a handshake in each of those
-   cycles with the same data. That is what the scoreboard saw in cycle 34: it had already matched
-   `c2`, and the sink took `c2` again where `3b` was due. Each repeat is one more beat of the
-   packet on output 1's pins, so once eight beats in a row have had no `out_last`, O6 fails. O1 and
-   O2 are about cycles in which `out_ready` is 0, and `out1_ready` is 1 all through phase 1; the
-   run stops at its 50th error in cycle 83, long before phase 2 stalls output 1.
+   B12 makes output 1's buffer move on `out0_ready`. In phase 1 output 1's sink is ready in every
+   cycle, so it takes whatever beat is on output 1's pins. Output 0 is ready in only 5% of
+   cycles, so in most of those cycles the buffer behind output 1's pins doesn't move on to the next
+   beat, and the pins show a handshake with the same data again. In cycle 34 the scoreboard, which
+   had already matched `c2`, saw the sink take `c2` again where `3b` was due. Each repeat is one
+   more beat of the packet on output 1's pins, so once eight beats in a row have had no `out_last`,
+   O6 fails. O1 and O2 check only cycles in which `out_ready` is 0, and `out1_ready` is 1 all
+   through phase 1. The run stops at its 50th error in cycle 83, long before phase 2 stalls
+   output 1.
 
    </details>
 
-Check: `make check-all` prints `50 errors, 284 assertions` for B10, and your answer to Part 1's
-prediction matches cycle 26.
+Check: `make check-all` prints `50 errors, 284 assertions` for B10, and the cycle you predicted in
+Part 1 matches cycle 26.
 
 ## Part 3: A sink that answers each beat
 
@@ -399,31 +406,32 @@ every cycle whatever is on the output?
 
 1. Read the output agent in `tb/router_agents.py`: `OutCfg`, `ReadyItem`, `SinkSeq`, `SinkDriver`
    and `OutAgent`. `OutCfg.mode` picks how the sink answers. In `SNK_PCT`, the default, the driver
-   is Lab 04's: right after every rising edge `out_ready` is 1 with probability `ready_pct`
-   percent. In the other modes it is a reactive driver. The router decides when a beat appears,
-   and the driver answers each beat with a `ReadyItem` from `SinkSeq`: with `pre_ready` set,
-   `ready` is already 1 when the beat appears; otherwise the sink waits `delay` cycles after the
-   beat's first cycle on offer, then raises `ready`. `SNK_FAST` makes every item `pre_ready`,
+   works as Lab 04's did, and sets `out_ready` to 1 right after every rising edge with probability
+   `ready_pct` percent. In the other modes it is a reactive driver. The router decides when a beat
+   appears, and the driver answers each beat with a `ReadyItem` from `SinkSeq`. With `pre_ready`
+   set, `ready` is already 1 when the beat appears; otherwise the sink waits `delay` cycles after
+   the beat's first cycle on offer, then raises `ready`. `SNK_FAST` makes every item `pre_ready`,
    `SNK_SLOW` gives every beat a delay of 4 to 20, and `SNK_RANDOM` randomizes each item. In those
    modes the driver looks at the output at the falling edge in the middle of each cycle, decides
    the next cycle's `ready` there, and drives it just after the rising edge; that loop is written
    for you.
 
-   pyuvm's driver has `get_next_item()`, which waits until its sequence hands over an item, and no
-   `try_next_item()`. The base test starts a `SinkSeq` on each sink before it resets the router,
-   and the sequence never ends. Why does the driver need a sequence like that, when the source
-   driver can work with sequences that send a few packets and stop?
+   pyuvm's driver has `get_next_item()`, which waits until its sequence hands over an item. It
+   doesn't have `try_next_item()`. The base test starts a `SinkSeq` on each sink before it resets
+   the router, and the sequence never ends. Why does the driver need a sequence like that, when the
+   source driver can work with sequences that send a few packets and stop?
 
    <details>
    <summary>Answer</summary>
 
    The source driver can wait in `get_next_item()`, because nothing happens on the input until it
-   has a packet. The sink driver can't wait there: it drives `out_ready` in every cycle, and the
-   router puts a beat on the output whether or not the sink has an item for it. `SinkSeq` is always
-   waiting in `start_item()` with the next item, so the driver's `get_next_item()` returns in the
-   same time step, and the loop goes on to drive the next cycle's `out_ready`. If no sequence were
-   running on the sink, the driver would stop at that call for the rest of the test, `out_ready`
-   would keep the last value it drove, and no beat on that output would be answered again.
+   has a packet. The sink driver can't wait there, because it drives `out_ready` in every cycle,
+   and the router puts a beat on the output whether or not the sink has an item for it. `SinkSeq`
+   is always waiting in `start_item()` with the next item, so the driver's `get_next_item()`
+   returns in the same time step, and the loop goes on to drive the next cycle's `out_ready`. If
+   no sequence were running on the sink, the driver would stop at that call for the rest of the
+   test, `out_ready` would keep the last value it drove, and no beat on that output would be
+   answered again.
 
    </details>
 
@@ -502,7 +510,7 @@ every cycle whatever is on the output?
    The run passed, so every phase's `DROP_CNT` read matched the scoreboard's count, which means
    the scoreboard predicted all 115 FULL drops. The packets differ from step 2's (804 of them
    instead of 805), because each item `SinkSeq` makes in `SNK_RANDOM` draws from `random`, and
-   your driver asks for its items in other cycles than the shipped one did. Output 1 has no
+   your driver asks for its items in different cycles from the shipped driver. Output 1 has no
    `stalled` packet, because a `ReadyItem`'s longest wait is 13 cycles and nothing stalls output
    1 in this test.
 
@@ -537,10 +545,10 @@ place?
    <details>
    <summary>Answer</summary>
 
-   Each sink's `SinkSeq` is started by the base test and runs for the whole test, one item per
-   beat. A virtual sequence steers the backpressure by changing `mode` and `ready_pct` in the
-   sink's `OutCfg`: the sequence reads `mode` for every item, and the driver reads `mode` every
-   cycle, and `ready_pct` too while the mode is `SNK_PCT`. Starting another sequence on a sink's
+   The base test starts each sink's `SinkSeq`, and it runs for the whole test, one item per beat.
+   A virtual sequence steers the backpressure by changing `mode` and `ready_pct` in the sink's
+   `OutCfg`. `SinkSeq` reads `mode` for every item, and the driver reads `mode` in every cycle,
+   and `ready_pct` as well while the mode is `SNK_PCT`. Starting another sequence on a sink's
    sequencer would compete with the one already running there.
 
    </details>
@@ -564,8 +572,8 @@ place?
    the scoreboard's routing table at once, which was safe because the tests wrote routes only
    between phases. Now the APB monitor stamps each transfer with the cycle it completed in,
    `write_apb` puts a route write in `pending` with that cycle, and `write_in` applies it at the
-   first header of a later cycle. Why the
-   cycle, and not the order in which the two calls arrive?
+   first header of a later cycle. Why does the scoreboard go by the cycle, and not by the order in
+   which the two calls arrive?
 
    <details>
    <summary>Answer</summary>
@@ -604,19 +612,19 @@ place?
    await self.par(traffic(), self.backpressure(), moves())
    ```
 
-   `send_rand()` takes `gap_one_in`, which makes one beat in that many wait 1 to 3 idle cycles
-   first (4, as in Lab 04, unless you give it), and `w_over`, the weight of oversize packets
-   against 100 for the other lengths.
+   `send_rand()` takes two settings. `gap_one_in` makes one beat in that many wait 1 to 3 idle
+   cycles first, and it's 4, as in Lab 04, unless you give it. `w_over` is the weight of oversize
+   packets, against 100 for the other lengths.
 
 5. Predict how each oversize packet should come out, and which bug your sequence now reaches.
 
    <details>
    <summary>Answer</summary>
 
-   Cut to 8 beats, with `out_last` on the 8th; the router takes the rest from the input and throws
-   them away (example E6 in the specification). With B11, the 8th beat has no `out_last`, so O6
-   fails on it, and the scoreboard, which already expected the cut, sees the wrong `out_last` on
-   the same beat.
+   Each one should come out cut to 8 beats, with `out_last` on the 8th, and the router takes the
+   rest of its beats from the input and throws them away (example E6 in the specification). Your
+   sequence now reaches B11. Under B11 the 8th beat has no `out_last`, so O6 fails on it, and the
+   scoreboard, which already expected the cut, sees the wrong `out_last` on the same beat.
 
    </details>
 
@@ -639,7 +647,8 @@ place?
 
    The first 806 packets are the ones from Part 1, and our sequence sent the other 317. Our
    `make cov` of the two runs showed `top` at `87.50 %   49 of 56 bins` and `router.wait` at
-   `14 of 14 bins`; the seven empty bins are the seven of `x_fate_level` that no test can hit.
+   `14 of 14 bins`. The seven empty bins are the seven of `x_fate_level` that the specification
+   rules out, so no test can hit them.
 
 7. Run the grader:
 
@@ -647,7 +656,7 @@ place?
    make check-all
    ```
 
-   You should see `3 of 3 caught.` Ours:
+   You should see `3 of 3 caught.` Our run printed:
 
    ```text
          ok  the golden design                        0 errors, 0 assertions          7.1s
@@ -714,8 +723,9 @@ place?
    Output 1's first handshake of the run is in cycle 352, when the second half of step 2 sends it
    new packets, and that is the scoreboard's first chance to compare a beat on output 1. O2
    watches the pins, so it fails in the first cycle the beat on output 1 changes while it waits.
-   In `RouterTest`'s phase 1 the readies differed the other way round, output 1 ready and output
-   0 stalled, and then the scoreboard sees the extra beats at once.
+   In `RouterTest`'s phase 1 the readies differ the other way round, with output 1 ready and
+   output 0 stalled, so output 1's sink takes the repeated beats and the scoreboard sees them at
+   once.
 
    </details>
 
@@ -740,13 +750,14 @@ Questions:
    <details>
    <summary>Answer</summary>
 
-   In `RouterTest`, the scoreboard from cycle 34 and O6 on output 1 from cycle 40; in
-   `RouterLab05Test`, O2 on output 1 from cycle 33 and O1 from cycle 38, the scoreboard in cycle 352
-   (Part 4, step 8), and O6 on output 1 in cycle 359. O7 says what an output does not depend on, and
-   the specification points out that no single trace can show that. You can only see its
-   consequences, when the two `out_ready` signals differ and output 1 then does something that O1,
-   O2, O6 or the scoreboard's model forbids. Lab 04's stall test was the first test to make them
-   differ while both outputs carried traffic, which is why your Lab 04 testbench already caught B12.
+   In `RouterTest` the scoreboard reported errors from cycle 34, and O6 on output 1 failed from
+   cycle 40. In `RouterLab05Test` O2 on output 1 failed from cycle 33 and O1 from cycle 38, the
+   scoreboard's first error was in cycle 352 (Part 4, step 8), and O6 on output 1 failed in cycle
+   359. O7 says what an output does not depend on, and the specification points out that no single
+   trace can show that. You can only see its consequences, when the two `out_ready` signals differ
+   and output 1 then does something that O1, O2, O6 or the scoreboard's model forbids. Lab 04's
+   stall test was the first test to make them differ while both outputs carried traffic, which is
+   why your Lab 04 testbench already caught B12.
 
    </details>
 
@@ -757,8 +768,9 @@ Questions:
    <summary>Answer</summary>
 
    It would fail. A reset lowers `out_valid` at once, with no handshake (the specification's
-   Valid/ready rules and example E8), and that is what O1's consequent forbids. Rules about
-   normal operation don't hold across a reset, so their assertions are switched off during one.
+   Valid/ready rules and example E8), but O1's consequent needs `out_valid` to be 1 in the next
+   cycle. Rules about normal operation don't hold across a reset, so their assertions are switched
+   off during one.
 
    </details>
 

@@ -19,12 +19,12 @@ Keep each kind of file in the folder listed for it.
 | `docs/index.md` | Yes | Home page with the course path table |
 | `docs/guide/` | Yes | Guide pages: concepts, figures, worked examples. Reading only. |
 | `docs/labs/` | Yes | Lab writeups only (`lab-NN-*-overview.md`) |
-| `docs/reference/` | Yes | Optional lookup pages: cheat sheets, troubleshooting tables |
+| `docs/reference/` | Yes | Lookup pages: the router's specification and its one-page summary, pyuvm's register API, and getting the tools outside the course image |
 | `docs/assets/img/` | Yes | Small diagrams and waveforms for the site |
 | `labs/<lab-id>/` | No | HDL, Python, testbenches, local data, graders |
 | `labs/common/` | No | The router's RTL and bug catalogue, the shared cocotb + pyuvm build (`pyuvm.mk`), the course venv's `requirements.txt`, the base test (`py/dd105b_base.py`) and the graders, used by every lab |
 | `labs/ref/` | No | The router's reference pyuvm environment, which proves every planted bug can be caught |
-| `guide-examples/<slug>/` | No | The examples on guide page `<slug>`, each with a Makefile that includes `labs/common/pyuvm.mk` (none yet) |
+| `guide-examples/<slug>/` | No | The examples on guide or reference page `<slug>`, each with a Makefile that includes `labs/common/pyuvm.mk`; `guide-examples/README.md` lists the commands behind every output a page quotes |
 | `scripts/` | No | Course utilities and automation: `ci/` (the reference-solution checks), `figures/` (the scripts that draw `docs/assets/img/*.svg`), `screenshots/` (the tool that draws the waveform figures, `docs/assets/img/lab-*.png`) |
 | `notebooks/` | No | Exploratory or assignment notebooks |
 | `data/`, `figures/` | No | Shared datasets and source figures |
@@ -33,7 +33,7 @@ Three files wire up the site. `docs/_quarto.yml` holds the site settings, sideba
 
 ## Course structure
 
-Every course follows the same shape, so a student always knows whether they should be reading or doing, and what comes next. Lab 01's writeup, `docs/labs/lab-01-one-alu-two-frameworks-overview.md`, shows it for a lab. The template's sample pages, `docs/index.md` and `docs/guide/getting-started.md`, show it for the home page and a guide page until DD105-B's own pages replace them.
+Every course follows the same shape, so a student always knows whether they should be reading or doing, and what comes next. Lab 01's writeup, `docs/labs/lab-01-one-alu-two-frameworks-overview.md`, shows it for a lab, and `docs/index.md` for the home page. `docs/guide/getting-started.md` is still the template's sample of a guide page, until DD105-B's own replaces it.
 
 ### Home page
 
@@ -51,7 +51,7 @@ Every course follows the same shape, so a student always knows whether they shou
 - The row times add up to the total time stated on the home page. Leave optional lab parts out of the row times.
 - Lab titles take the form "Lab 01: Title" in the table, in the lab page's `#` header and in the sidebar.
 
-The sidebar in `docs/_quarto.yml` and the chapter list in `docs/_quarto-pdf.yml` list the same pages in the same order. The Previous and Next links at the bottom of each page (`page-navigation: true` in `docs/_quarto.yml`) follow the sidebar, so they walk the course path too.
+The sidebar in `docs/_quarto.yml` and the chapter list in `docs/_quarto-pdf.yml` list the same pages in the same order: seven numbered sections, each a Read row's guide pages followed by the lab of the next row, then the reference pages. The Previous and Next links at the bottom of each page (`page-navigation: true` in `docs/_quarto.yml`) follow the sidebar, so they walk the course path too.
 
 ### Guide pages
 
@@ -60,7 +60,7 @@ The sidebar in `docs/_quarto.yml` and the chapter list in `docs/_quarto-pdf.yml`
 In DD105-B, as in DD105-A:
 
 - Every guide page ends with "Check yourself", and each answer is in a collapsed `<details>` block.
-- Every example that a page says runs, or prints something, has its source in `guide-examples/<slug>/` with a Makefile that includes `labs/common/pyuvm.mk`, and its run command in `guide-examples/README.md`. The output on the page is copied from a run in the course image.
+- Every example that a page says runs, or prints something, has its source in `guide-examples/<slug>/` with a Makefile that includes `labs/common/pyuvm.mk`, and its run command in `guide-examples/README.md`. The output on the page is copied from a run in the course image. Reference pages follow the same rule; `guide-examples/pyuvm-register-api/` is the register API page's.
 - A fact about how pyuvm, cocotb, pyvsc, cocotb-coverage or Verilator behaves comes from a run, or from the tool's own documentation or source. The design note's measurements (`dd105b_design.md` in the course research) are where the known ones come from; a page agrees with them.
 - ChipVerify pages appear only as further reading at the end of a guide page, with a one-line correction beside any page that is wrong for pyuvm or wrong in general. Never copy ChipVerify's text or code.
 
@@ -147,7 +147,7 @@ Don't paste long HDL into site pages. Link to the files under `labs/` instead.
 ## Adding a guide page
 
 1. Add a kebab-case Markdown file under `docs/guide/` (for example `yosys-synth.md`).
-2. Add it to a Read row in the course path table, to the sidebar in `docs/_quarto.yml`, and to the chapters in `docs/_quarto-pdf.yml`, at the same position in each.
+2. Add it to a Read row in the course path table, to the sidebar in `docs/_quarto.yml`, and to the chapters in `docs/_quarto-pdf.yml`, at the same position in each. DD105-B's eighteen guide pages are already listed in all three by file name, so a page written at its listed path needs only its Read row's time, which the home page marks `READTIME` until every page in the row exists. The course PDF won't build while any page it lists is missing.
 3. Put images in `docs/assets/img/`.
 4. Link to `labs/` and `scripts/` with GitHub URLs (`https://github.com/uoftasic/<course-id>/tree/main/labs/...`).
 
@@ -192,6 +192,7 @@ The link check in `.github/workflows/docs-link-check.yml` reads the Markdown wit
 ## Quick references
 
 - Repo conventions: `CONTRIBUTING.md`
+- The examples the pages quote, and the commands behind them: `guide-examples/README.md`
 - Bootstrap tokens and Pages checklist: `TEMPLATE.md`
 - CI for a course's reference solutions: `REFERENCE-SOLUTION-CI.md`
 - The shared build, the venv and the graders: `labs/common/README.md`

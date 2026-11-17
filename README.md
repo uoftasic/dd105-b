@@ -10,11 +10,12 @@ DD105-B is the pyuvm version of [DD105-A](https://uoftasic.com/dd105-a/), and co
 same seven labs in the same order, and a capstone and rubric like DD105-A's. The testbenches are
 Python: pyuvm 4.0.1 on cocotb 2.0.1, with pyvsc 1.1.0 for constrained random and cocotb-coverage 2.0
 for functional coverage, on Verilator 5.050. The only SystemVerilog a student writes is the
-assertions in Lab 05.
+assertions in Labs 05 and 07.
 
-This repository is being built. The shared build, the graders, the reference environment, CI and
-Labs 01 to 07 are in place. The guide pages aren't yet, and the site's home page and Getting
-started page are still the template's samples.
+This repository is being built. The shared build, the graders, the reference environment, CI,
+Labs 01 to 07, the home page and the four reference pages are in place. The guide pages aren't yet:
+the home page, the sidebar and the course PDF's chapters name all eighteen, so the course PDF
+won't build until they exist, and `docs/guide/getting-started.md` is still the template's sample.
 
 ## Quick start
 
@@ -75,8 +76,9 @@ quarto render docs --profile pdf --to typst    # whole course as one PDF in docs
 | `docs/` | Yes | The course site; `docs/index.md` is the home page and has the Course path |
 | `docs/guide/` | Yes | Guide pages: reading only, no commands |
 | `docs/labs/` | Yes | Lab writeups: every command a student runs, in numbered parts and steps |
-| `docs/reference/` | Yes | Lookup pages: the router's specification and a one-page summary |
+| `docs/reference/` | Yes | Lookup pages: the router's specification, a one-page summary of it, pyuvm's register API, and getting the tools outside the course image |
 | `labs/` | No | Runnable packages |
+| `guide-examples/` | No | The examples that the guide and reference pages quote, one folder per page, each built with `labs/common/pyuvm.mk`; [`guide-examples/README.md`](guide-examples/README.md) lists the commands behind every output a page quotes |
 | `scripts/` | No | `check_site.py`, the link check for the rendered site; `ci/`, the reference-solution checks; `figures/`, the script that draws the router's block diagram; `screenshots/`, the tool that draws the waveform figures |
 | `notebooks/`, `data/`, `figures/` | No | Repo scaffolding, unused by DD105-B |
 
@@ -138,7 +140,9 @@ each docstring naming DD105-B.
 
 DD105-B doesn't use DD105-A's `third_party/uvm` (the SystemVerilog UVM library), so it isn't copied.
 DD105-A's `docs/reference/register-layer.md` documents SystemVerilog UVM's register layer, whose
-API pyuvm's doesn't follow, so it isn't copied either.
+API pyuvm's doesn't follow, so it isn't copied either; `docs/reference/pyuvm-register-api.md` is
+DD105-B's own page for Lab 06. `docs/reference/getting-the-tools-outside-the-course-image.md`
+follows DD105-A's page of that name, and its Verilator build steps are quoted from that page.
 
 ## Contributing
 

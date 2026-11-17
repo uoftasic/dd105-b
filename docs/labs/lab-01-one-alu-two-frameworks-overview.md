@@ -183,8 +183,8 @@ What does the cocotb test cost to build and run on Verilator, and what does it r
    Verilator turns the ALU into C++, and g++ compiles it into a simulator together with Verilator's
    and cocotb's own support code. The ccache line counts seven compiled files. One of them,
    `Vtop__ALL.o`, is the ALU. The other six, such as `verilated.o`, `verilated_vpi.o` and
-   `verilator.o` (`build.log` lists them all), are the same for any design. Part 3 shows how much
-   of the 7.3 s they take.
+   `verilator.o` (`build.log` lists them all), are Verilator's and cocotb's support code. Part 3
+   shows how much of the 7.3 s they take.
 
    </details>
 

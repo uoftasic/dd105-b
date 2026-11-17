@@ -188,8 +188,8 @@ happen?
    `RouterLab07Vseq` both clear `DROP_CNT` at the end of each of their phases.
 
    Nothing in the environment compares `in_ready` with what the specification says it should be
-   (I4, I5, I6, RT5); the source driver reports it only when it stays 0 for 1000 cycles with a beat
-   on offer. Nothing checks the cycle a beat appears (O8), that the outputs come from flip-flops
+   (I4, I5, I6, RT5); the source driver reports only an `in_ready` that stays 0 for 1000 cycles
+   with a beat on offer. Nothing checks the cycle a beat appears (O8), that the outputs come from flip-flops
    (O3), what `CTRL.EN` does (EN1), the APB master's rules (A1 to A3), `pready` (A5, A6) or
    `LEVEL` (RG4) either, and nothing in this lab adds a check for any of them, so those rows stay
    "nothing". Put them in the plan's Open items, because Part 8's report has to say what the

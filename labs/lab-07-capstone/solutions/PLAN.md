@@ -105,7 +105,7 @@ The `I`, `O` and `A` ids are the specification's own; the others are this plan's
 ## Open items
 
 1. Nothing checks `in_ready` against the specification (I4, I5, I6, RT5); the source driver
-   reports it only when it stays 0 for 1000 cycles. Nothing checks the cycle a beat appears or
+   reports only an `in_ready` that stays 0 for 1000 cycles. Nothing checks the cycle a beat appears or
    that the outputs come from flip-flops (O3, O8) either. Assertions for I5 and I6, with the
    `CTRL.EN` written over APB kept beside them, and a scoreboard check of each beat's first cycle
    against O8's formula would close them.

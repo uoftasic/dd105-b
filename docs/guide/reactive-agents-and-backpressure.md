@@ -198,8 +198,8 @@ seeds 2 and 3, 12 came up 225 and 235 times, and on all three seeds each of the 
 how often each one comes out, so count what the stimulus actually produced.
 
 The solver is also slow for a job that runs once per beat. The 2,000 calls to pyvsc's
-`randomize()` took 2.09 s, which is 957 a second, and the run as a whole took 6.51 s against
-1.03 s with `random.randint`. The router's sinks make one item for every beat that leaves the
+`randomize()` took 2.02 s, which is 988 a second, and the run as a whole took 6.36 s against
+1.04 s with `random.randint`. The router's sinks make one item for every beat that leaves the
 router, so Lab 05's `ReadyItem` draws from Python's `random` instead. Its `randomize()` first
 picks the range a delay comes from (0 for half the items, 1 to 3 for three in ten, 4 to 12 for the
 rest) and then the value inside it, and `router.wait` is where you check the result.

@@ -151,7 +151,7 @@ The model's mirror follows the bus only if something tells the model about each 
 calling a register's `predict()` with the value written or read. pyuvm's map can do that itself
 after each operation it sends, which SystemVerilog UVM calls auto-predict, but in pyuvm 4.0.1 the
 switch for it, `enable_auto_predict`, is off. Turned on, it needs a predictor object, and pyuvm's
-`uvm_reg_predictor` class is empty: it has no methods of its own. So in pyuvm the mirror moves only
+`uvm_reg_predictor` class is empty, with no methods of its own. So in pyuvm the mirror moves only
 when your code calls `predict()`, and the place to do that is a **predictor** of your own, a
 `uvm_subscriber` connected to the bus monitor's analysis port. It sees every transfer the monitor
 reports, whoever started it, and calls `predict()` on the register at that address.
@@ -230,7 +230,7 @@ compares any read with the mirror unless you write the comparison. `read()` take
 [RAL] read(CHECK) of CTRL returned PASS_RESP with 0007, against a mirror of 0003
 ```
 
-and nothing else was logged. In Lab 06 your predictor does the comparing: it compares every read
+and nothing else was logged. In Lab 06 your predictor does the comparing. It compares every read
 it sees with the mirror, outside the volatile fields. The router's `STATUS`, `DROP_CNT` and `LEVEL`
 are all volatile, so the predictor can't check them, and the Lab 06 scoreboard keeps its own copies
 of `STATUS` and `INT_EN`, which it updates cycle by cycle the way the router does, and checks

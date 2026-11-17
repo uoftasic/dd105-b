@@ -13,7 +13,9 @@
 #               scratch in the clone unless it is already there
 #   selftest    labs/common/selftest with FULL=1: the verdict classifier on its
 #               recorded runs, and every grader end to end on its small ALU
-#   ref         labs/ref: `make check-all` must catch all 15 planted bugs
+#   ref         labs/ref: `make check-all` must catch all 15 planted bugs, and
+#               `make seeds NSEEDS=5` must find RouterAllTest ok on the golden
+#               router on seeds 1 to 5 (it needs the course venv)
 #   lab <lab>   the starter's `make check` must FAIL with the verdict
 #               "your test passes <bug> too", and the solution's must PASS
 #
@@ -74,10 +76,15 @@ step_ref() {
   say "labs/ref: make check-all, expecting 15 of 15 caught"
   run_make labs/ref check-all
   if [ "$RC" -ne 0 ] || ! grep -qx ' 15 of 15 caught\.' "$OUT"; then
-    fail "labs/ref: expected 15 of 15 caught, got: $(grep -m1 -E 'caught\.|NO COUNT|VERDICT' "$OUT")"
+    fail "labs/ref: expected 15 of 15 caught, got: $(grep -m1 -E 'caught\.|NO COUNT|VERDICT|course venv' "$OUT")"
+  fi
+  say "labs/ref: make seeds NSEEDS=5, expecting RouterAllTest ok on all five"
+  run_make labs/ref seeds NSEEDS=5
+  if [ "$RC" -ne 0 ] || ! grep -qx '  5 ok  (5 runs)' "$OUT"; then
+    fail "labs/ref: expected 5 ok on seeds 1 to 5, got: $(grep -m1 -E 'runs\)|course venv' "$OUT")"
   fi
   make -C labs/ref clean
-  pass "labs/ref: 15 of 15 caught."
+  pass "labs/ref: 15 of 15 caught; RouterAllTest ok on seeds 1 to 5"
 }
 
 BACKUP=""
@@ -137,5 +144,5 @@ case "${1:-}" in
   selftest) step_selftest ;;
   ref)      step_ref ;;
   lab)      step_lab "${2:-}" ;;
-  *)        sed -n '2,28p' "$0"; exit 2 ;;
+  *)        sed -n '2,29p' "$0"; exit 2 ;;
 esac

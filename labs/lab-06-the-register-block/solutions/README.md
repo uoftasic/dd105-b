@@ -122,7 +122,7 @@ The seven bins the regression leaves empty are the seven of `router.pkt.x_fate_l
 specification rules out, as in Labs 04 and 05. DD105-A's regression reached the same total (A:
 `covergroup : 87.5% (49/56)`).
 
-The solution's `RouterTest` on seed 1 ends with:
+The solution's `RouterTest` on seed 1 prints these `[SB]` and `[RAL]` lines at its end:
 
 ```text
 [SB] 1135 packets in: 311 to output 0, 288 to output 1, 177 NOROUTE, 359 FULL; the highest level a header saw was 16
@@ -160,9 +160,11 @@ the second and fourth are probe builds, not shipped:
   every `[PHASE]`, `[HOLES]` and `[DROP]` line after it was Lab 05's, apart from the first
   `DROP_CNT` read, which includes Part 5's two drops (`0000332a` against `00003229`). The `[SB]`
   totals were Lab 05's plus Part 5's 12 packets.
-- The page's runs at each stage agree: `RouterTest`'s first two `[SB]` lines are Lab 05's after
-  Parts 2, 3 and 4, although by Part 4 `RouterLab06Vseq` runs for about 5,900 cycles before Lab
-  04's steps begin, and they change only with Part 5's step.
+- The page's runs at each stage agree: the packet and beat counts in `RouterTest`'s first two
+  `[SB]` lines are Lab 05's after Parts 2, 3 and 4, although by Part 4 `RouterLab06Vseq` runs for
+  about 5,900 cycles before Lab 04's steps begin, and they change only with Part 5's step. (The
+  `DROP_CNT` read count in the second line grows from 6 to 38 with the bit bash's 32 reads of
+  `DROP_CNT`, and to 39 with Part 4's `rd_all_regs()`.)
 
 So the solution's counts move only through those 8 draws.
 

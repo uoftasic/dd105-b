@@ -10,7 +10,7 @@ You set up the workbench in [IC101](https://uoftasic.com/ic101/), and you used t
 all through [DD104](https://uoftasic.com/dd104/). DD105-B runs in that container too. Everything in
 the course is simulation, so it needs no PDK and no synthesis flow.
 
-Getting to the course files takes three steps:
+Setting up takes three steps:
 
 - Start the noVNC desktop from your `workspace` clone with `./scripts/start_vnc.sh`
   (`scripts\start_vnc.bat` on Windows).
@@ -29,9 +29,9 @@ Getting to the course files takes three steps:
 `/foss/designs`, so the course folder and your files in it are on your own disk, and deleting the
 container doesn't delete your work.
 
-Labs 01 and 02 use Verilator, cocotb, pyuvm and Surfer, which are all in the image. From Lab 03 on,
-the labs also use pyvsc, for constrained-random stimulus, and cocotb-coverage, for functional
-coverage. Neither of those is in the image. In Lab 03, Part 1 you install them once, with
+Labs 01 and 02 run on the image alone. Verilator, cocotb, pyuvm and Surfer are all in it. From
+Lab 03 on, the labs also use pyvsc, for constrained-random stimulus, and cocotb-coverage, for
+functional coverage. Neither of those is in the image. In Lab 03, Part 1 you install them once, with
 `make venv`, into a Python virtual environment (a *venv*) that also sees the image's own packages.
 pip downloads them, so that step needs the network. The venv goes in your workspace, at
 `/foss/designs/.venvs/dd105-b`, so it survives a restart of the container. Ours came to 37 MB.

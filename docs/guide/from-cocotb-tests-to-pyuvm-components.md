@@ -187,10 +187,11 @@ DD105-B BaseTest: 0 errors logged, no bound assertions
   the run phase is over. They're where a component gathers and checks its results and prints its
   summary, and `BaseTest`'s line comes from the test's `final_phase`.
 
-Every phase but `connect_phase` went from the top down in this run, and pyuvm 4.0.1's source
-agrees: `connect_phase` is the only phase besides `run_phase` that it sends through the tree from the
-bottom up. SystemVerilog UVM runs every phase from the bottom up except `build_phase` and
-`final_phase`, so a SystemVerilog UVM reference will give you a different order for the others.
+In this run `connect_phase` went from the bottom up, the `run_phase` tasks started in the same
+order, and every other phase went from the top down, which is the order in which pyuvm 4.0.1's
+source sends them through the tree. SystemVerilog UVM runs every phase from the bottom up except
+`build_phase` and `final_phase`, so a SystemVerilog UVM reference will give you a different order
+for the others.
 pyuvm also has only these nine phases. It leaves out SystemVerilog UVM's run-time phases (reset,
 configure, main and shutdown, which run alongside `run_phase` there), and it has no drain time.
 
@@ -338,7 +339,8 @@ with a packet class. `create()` takes only a name and a parent.
   difference from SystemVerilog UVM.
 - ChipVerify's [UVM Phases](https://www.chipverify.com/uvm/uvm-phases). Its code is SystemVerilog.
   Correction for pyuvm 4.0.1: it says that only `build_phase` and `final_phase` run from the top
-  down, and in pyuvm every phase but `connect_phase` does, as `PhaseOrderTest` shows. It also lists
+  down, and in pyuvm every phase but `connect_phase` and the start of `run_phase` does, as
+  `PhaseOrderTest` shows. It also lists
   the run-time phases (reset, configure, main and shutdown), which pyuvm doesn't have.
 - ChipVerify's [UVM Objection](https://www.chipverify.com/uvm/uvm-objection). Its code is
   SystemVerilog, and its point that a run phase with no objection ends at time 0 holds in pyuvm,

@@ -7,8 +7,8 @@ router's ten registers on pyuvm's `uvm_reg` classes, with its adapter, a predict
 register sequences; a monitor that reports `rst_n` and `irq` every cycle; and scoreboard checks on
 `STATUS` reads, on `PSLVERR` and on reads of bad addresses. Eight pieces are left for you, marked
 `TODO (Part n)`: the fields of `STATUS`, `DROP_CNT`, `LEVEL` and the `ROUTE` registers, the
-adapter, the reset sequence, the predictor and its connections, the bit-bash sequence, the `irq`
-check, and this lab's virtual sequence. The router and its planted bugs come from
+adapter, the reset sequence, the predictor, the predictor's connections in the env, the bit-bash
+sequence, the `irq` check, and this lab's virtual sequence. The router and its planted bugs come from
 [`../common`](../common/README.md).
 
 Run it in the course image, from this folder:

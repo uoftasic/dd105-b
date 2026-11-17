@@ -49,6 +49,8 @@ website:
             href: guide/getting-started.md
           - text: "2. Lab 01: One ALU, two frameworks"
             href: labs/lab-01-one-alu-two-frameworks-overview.md
+          - text: "3. Lab 02: A layered testbench without pyuvm"
+            href: labs/lab-02-a-layered-testbench-without-pyuvm-overview.md
       - section: "Reference"
         contents:
           - text: "The packet router"

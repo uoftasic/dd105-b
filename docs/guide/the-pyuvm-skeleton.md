@@ -110,7 +110,8 @@ The function phases take no simulated time. `run_phase` is a coroutine, and pyuv
 component's `run_phase` at the same moment, each as a cocotb task of its own. SystemVerilog UVM runs
 every phase but `build_phase` and `final_phase` from the bottom up, and has twelve more run-time
 phases (`reset_phase`, `main_phase` and so on) beside `run_phase`. pyuvm 4.0.1's `s09_phasing.py`
-runs only `connect_phase` from the bottom up and has no run-time phases, so if you read SystemVerilog
+runs only `connect_phase` from the bottom up, starts the `run_phase` tasks in that order too, and has
+no run-time phases, so if you read SystemVerilog
 UVM material, expect the order of the later phases to differ. Here is the start of `SkPhaseTest`'s
 output:
 
@@ -224,7 +225,7 @@ logged error prints a line and fails nothing. `SkPlainErrorTest` derives from py
 logs one error at 50 ns, and with `make run TEST=SkPlainErrorTest BASE_TEST=0` it printed:
 
 ```text
-    50.00ns ERROR    ..-pyuvm-skeleton/sk_tests.py(183) [uvm_test_top]: a check failed at 50 ns
+    50.00ns ERROR    ..-pyuvm-skeleton/sk_tests.py(184) [uvm_test_top]: a check failed at 50 ns
     50.00ns INFO     cocotb.regression                  sk_tests.SkPlainErrorTest passed
 ```
 
@@ -239,7 +240,7 @@ and in `final_phase` it prints one line with the count and raises `AssertionErro
 0. `SkErrorTest` logs the same error and derives from `BaseTest`:
 
 ```text
-    50.00ns ERROR    ..-pyuvm-skeleton/sk_tests.py(174) [uvm_test_top]: a check failed at 50 ns
+    50.00ns ERROR    ..-pyuvm-skeleton/sk_tests.py(175) [uvm_test_top]: a check failed at 50 ns
 DD105-B BaseTest: 1 error logged, no bound assertions
 ```
 
@@ -252,7 +253,9 @@ failed nothing.
 `final_phase` runs from the top down, so the test's `final_phase` runs before its children's. In
 `SkPhaseTest` the `DD105-B BaseTest:` line came straight after `final_phase` on `uvm_test_top` and
 before it on `env`. An error that a component logs in its own `final_phase` comes too late to be
-counted, so put your checks in `check_phase` or `report_phase`.
+counted. `SkFinalErrorTest` has a component that does that, and the run printed
+`DD105-B BaseTest: 0 errors logged` before the error and ended `ok: 0 errors`. So put your checks in
+`check_phase` or `report_phase`.
 
 ## Check yourself
 
@@ -283,7 +286,7 @@ counted, so put your checks in `check_phase` or `report_phase`.
    </details>
 
 3. A scoreboard compares its counts in `final_phase` and logs an error when they disagree. The run
-   logs the error and passes. Why?
+   logs the error and passes, as `SkFinalErrorTest` did. Why?
 
    <details>
    <summary>Answer</summary>

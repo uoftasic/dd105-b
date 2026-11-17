@@ -12,5 +12,5 @@ TOPLEVEL     := ALU
 DUT_SRCS     := ../../labs/lab-01-one-alu-two-frameworks/rtl/alu.sv
 PY_DIRS      := .
 TEST_MODULES := sk_tests
-TESTS        := SkPhaseTest SkNoObjTest SkErrorTest SkPlainErrorTest SkHangTest
+TESTS        := SkPhaseTest SkNoObjTest SkErrorTest SkPlainErrorTest SkHangTest SkFinalErrorTest
 include ../../labs/common/pyuvm.mk

@@ -189,7 +189,7 @@ A `dist` is one more constraint, so a call can add others on the same variable. 
 
 The weights came out right, 5 / 10 of the draws for `ADD`, and asking for `SUB` never failed. pyvsc
 tries up to four of the `dist`'s entries as targets, and if none of them fits, it falls back to the
-field's whole range. The weights in a `dist` can be enum names, as here, or numbers.
+field's own range of values. The weights in a `dist` can be enum names, as here, or numbers.
 
 The labs put the `dist` on a selector and choose the other fields from it with `vsc.if_then`. Lab
 03's packet has a `kind`, weighted 25 / 50 / 25, and a `length` that `c_len` chooses from the kind.

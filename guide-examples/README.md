@@ -24,7 +24,7 @@ randomizes small pyvsc classes and prints one line per experiment; `cr_tests.py`
 
 | Command | What the page quotes |
 |---|---|
-| `make run TEST=CrItemTest` | the eleven `[ITEM]` lines and `Solve failure: set 'solve_fail_debug=1' for more details` |
+| `make run TEST=CrItemTest` | the ten `[ITEM]` lines and `Solve failure: set 'solve_fail_debug=1' for more details` |
 | `make run TEST=CrSkewTest` | the two `[SKEW]` lines (and the figure, `scripts/figures/constrained_random_skew.py`) |
 | `make run TEST=CrAttrTest` | the two `[ATTR]` lines |
 | `make run TEST=CrDistTest` | the four `[DIST]` lines |
@@ -63,6 +63,7 @@ test, in which every component prints a line in every phase.
 | `make run TEST=SkPlainErrorTest` | `BROKEN: no BaseTest line` |
 | `make run TEST=SkHangTest` | `FAIL: SimTimeoutError` at 1000 ns |
 | `make run TEST=SkPhaseTset` | `No tests left after filtering`, and `BROKEN: every test skipped` |
+| `make run TEST=SkFinalErrorTest` | `DD105-B BaseTest: 0 errors logged` before the `ERROR` line, and `ok: 0 errors` |
 
 The tree of Lab 04's testbench in the figure `scripts/figures/the_pyuvm_skeleton_tree.py` comes
 from a probe of Lab 04's solution, which the script's docstring describes.

@@ -14,6 +14,7 @@ cocotb needs one; nothing drives it.
   SkPlainErrorTest the same, deriving from pyuvm's uvm_test
   SkHangTest       raises an objection and never drops it, with a timeout
                    of 1 us on @pyuvm.test()
+  SkFinalErrorTest a component that logs an error in its own final_phase
 """
 
 import pyuvm
@@ -189,4 +190,22 @@ class SkHangTest(BaseTest):
     async def run_phase(self):
         self.raise_objection()
         await Timer(10, "us")
+        self.drop_objection()
+
+
+class SkLateChecker(uvm_component):
+    """Logs an error in its final_phase, after the test's final_phase has run."""
+
+    def final_phase(self):
+        self.logger.error("a check failed in final_phase")
+
+
+@pyuvm.test()
+class SkFinalErrorTest(BaseTest):
+    def build_phase(self):
+        self.checker = SkLateChecker.create("checker", self)
+
+    async def run_phase(self):
+        self.raise_objection()
+        await Timer(10, "ns")
         self.drop_objection()

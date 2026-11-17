@@ -20,8 +20,7 @@ two outputs, and with Lab 04's sinks `make cov` reports:
             not hit: ('out1', 'short_wait')
 ```
 
-No packet on output 1 had a longest wait of 1 to 3 cycles. Every packet there either went through
-without waiting or had at least one beat that waited 4 cycles or more. In
+No packet on output 1 had a longest wait of 1 to 3 cycles. In
 [Part 3](../labs/lab-05-protocol-rules-and-backpressure-overview.md#part-3-a-sink-that-answers-each-beat)
 you'll finish a sink driver that answers each beat separately, with an item from a sequence. This
 page shows how an agent like that is put together in pyuvm, using a small design of our own in
@@ -165,7 +164,7 @@ bins, but it counts every beat, where `router.wait` counts each packet once, by 
 | per beat, delays 0 to 12 from `random.randint` | 164 | 465 | 1371 | 0 | 6.03 |
 | per beat, delays 0 to 12 from pyvsc's `randomize()` | 143 | 380 | 1477 | 0 | 6.48 |
 
-![How long each of 2,000 beats waited, for four of the sinks in the table](../assets/img/reactive-wait-histograms.svg){width=720 fig-alt="Four bar charts, one above the other, sharing an x-axis of wait in cycles from 0 to 40 or more. Coin flip at 5 percent: between about 50 and 100 beats at each wait up to 17, falling slowly to between 12 and 47 from 18 to 39, with a tall last bar of 244 beats at 40 or more. Coin flip at 50 percent: 973 beats at 0, 495 at 1, 259 at 2, 136 at 3, roughly halving each cycle to almost nothing by 10. Per beat from random.randint, delays 0 to 12: bars of 131 to 184 at every wait from 0 to 12, and nothing after. Per beat from pyvsc's randomize: bars of 112 to 143 at 0 to 4 and 117 at 8, and 150 to 206 at 5 to 7 and 9 to 12, the tallest at 12."}
+![How long each of 2,000 beats waited, for four of the sinks in the table](../assets/img/reactive-wait-histograms.svg){width=720 fig-alt="Four bar charts, one above the other, sharing an x-axis of wait in cycles from 0 to 40 or more. Coin flip at 5 percent: between 38 and 99 beats at each wait from 0 to 17, then between 12 and 47 at each wait from 18 to 39, with a tall last bar of 244 beats at 40 or more. Coin flip at 50 percent: 973 beats at 0, 495 at 1, 259 at 2, 136 at 3, 68 at 4, and fewer than 40 at each wait from 5 to 10. Per beat from random.randint, delays 0 to 12: bars of 131 to 184 at every wait from 0 to 12, and nothing after. Per beat from pyvsc's randomize: bars of 112 to 143 at 0 to 4 and 117 at 8, and 150 to 206 at 5 to 7 and 9 to 12, the tallest at 12."}
 
 A coin-flip sink gives each beat the same chance of being taken in every cycle, so its waits fall
 off geometrically. If $p$ is `ready_pct` as a fraction, a beat waits $w$ cycles with probability
@@ -200,11 +199,10 @@ how often each one comes out, so count what the stimulus actually produced.
 
 The solver is also slow for a job that runs once per beat. The 2,000 calls to pyvsc's
 `randomize()` took 2.09 s, which is 957 a second, and the run as a whole took 6.51 s against
-1.03 s with `random.randint`. The router's sinks
-make one item for every beat that leaves the router, so Lab 05's `ReadyItem` draws from Python's
-`random` instead. Its `randomize()` first picks the range a delay comes from (0 for half the items,
-1 to 3 for three in ten, 4 to 12 for the rest) and then the value inside it, and `router.wait` is
-where you check the result.
+1.03 s with `random.randint`. The router's sinks make one item for every beat that leaves the
+router, so Lab 05's `ReadyItem` draws from Python's `random` instead. Its `randomize()` first
+picks the range a delay comes from (0 for half the items, 1 to 3 for three in ten, 4 to 12 for the
+rest) and then the value inside it, and `router.wait` is where you check the result.
 
 ## The sink's configuration object
 

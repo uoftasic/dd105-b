@@ -7,13 +7,14 @@ You'll need the answer as soon as you start Lab 05. Your Lab 04 testbench alread
 that lab's three planted bugs, B10 and B12, but on B10 the first error it logs is
 `output 0: got e5 last in cycle 34, expected 80`. The scoreboard sees a beat only when a sink takes
 it, so that line is about the first wrong beat that output 0's sink took. While a beat waits on a
-stalled output, the scoreboard has no way to notice it going wrong, and
+stalled output, the scoreboard has no way to notice it going wrong.
 [Part 1](../labs/lab-05-protocol-rules-and-backpressure-overview.md#part-1-the-lab-04-testbench-against-this-labs-bugs)
-of the lab has you work out how many cycles before that line the router broke its rule. A check
-that watches the pins themselves fires in the cycle in which the rule is broken, and its message
-can say which rule it was. A check of that kind is a SystemVerilog **concurrent assertion**.
-Assertions are the only SystemVerilog you write in this course: the testbench stays in Python, and
-the assertions go in a module of their own that the build puts inside the design. In
+of the lab has you work out how many cycles before that line the router broke its rule.
+
+A check that watches the pins themselves fires in the cycle in which the rule is broken, and its
+message can say which rule it was. A check of that kind is a SystemVerilog **concurrent
+assertion**. Assertions are the only SystemVerilog you write in this course. The testbench stays in
+Python, and the assertions go in a module of their own, which the build puts inside the design. In
 [Lab 05, Part 2](../labs/lab-05-protocol-rules-and-backpressure-overview.md#part-2-assertions-for-the-output-rules)
 you'll write three of them for the router's outputs, in a checker that the lab's package already
 binds into the router.
@@ -125,8 +126,8 @@ error limit, which is 1. The course's makefile raises the limit for every run of
 
 That line is followed by a second `%Error` line, which says `Verilog $stop`, and then `Aborting...`.
 The number in brackets is the simulation time in picoseconds, so the failure was at 720 ns. Our
-clock has a 10 ns period with rising edges at 10 ns, 20 ns and so on, so cycle $n$ ends at the
-rising edge at $10n$ ns, and the failure was found at the edge that ends cycle 72. A `|=>` failure
+clock has a 10 ns period, and, as in the labs, cycle $n$ is the period that ends at the rising edge
+at $10n$ ns, so the failure was found at the edge that ends cycle 72. A `|=>` failure
 is reported in the cycle of the consequent, so the beat was still waiting in cycle 71, and
 `out_valid` was 0 in cycle 72. The waveform of the same run shows both cycles:
 
@@ -175,23 +176,22 @@ five are the checker's.
 ## Reading the count in the test
 
 pyuvm knows nothing about the checker. A failed assertion prints an `%Error` line and adds to a
-counter, and neither of those raises anything in Python, so a test that never looks at the counter
-ends the way it would have ended anyway. To see that, the example's `+UNCOUNTED` makes `StageTest`
-skip `BaseTest`'s read of `n_fail`, as a test written without it would. On the same seed the
-stimulus is the same, so `make run BUG=drop PLUSARGS=+UNCOUNTED` printed the same five `%Error`
-lines, and then:
+counter, and neither of those raises anything in Python, so a test that never reads the counter
+passes as if no assertion had failed. The example's `+UNCOUNTED` makes `StageTest` skip `BaseTest`'s
+read of `n_fail`, to show what happens in a test that never reads it. On the same seed the stimulus
+is the same, so `make run BUG=drop PLUSARGS=+UNCOUNTED` printed the same five `%Error` lines, and
+then:
 
 ```text
 DD105-B BaseTest: 0 errors logged, no bound assertions
 ```
 
-and cocotb's summary said `PASS` for the test, as `results.xml` did. A grader that read only
-cocotb's results would have called this run a pass. The course's grader also searches the log for
-failed assertions, so it still said `caught: 0 errors`, with the note
+and cocotb's summary said `PASS` for the test, as `results.xml` did. The course's grader also
+searches the log for failed assertions, so it still said `caught: 0 errors`, with the note
 `5 assertion failure(s) are in the log and the test passed: it doesn't read u_sva.n_fail, as BaseTest does.`
-That catch comes from the grader's reading of the log, though, and cocotb itself reported a
-passing test, so a testbench that relies on assertions has to turn their count into a failure on
-its own. Every pyuvm test in the labs derives from `BaseTest`, which reads
+A grader that read only cocotb's results, or you reading cocotb's summary, would have taken the run
+for a pass, so a testbench that relies on assertions has to turn their count into a failing test
+itself. Every pyuvm test in the labs derives from `BaseTest`, which reads
 `cocotb.top.u_sva.n_fail` at the end of every test of a design that has a checker bound into it,
 and fails the test if the count isn't 0.
 
@@ -224,15 +224,15 @@ c_S1: cover property (@(posedge clk) disable iff (!rst_n) out_valid && !out_read
   n_covered++;
 ```
 
-With the course's build flags, that statement never ran: `n_covered` was 0 in every run on this
-page, the golden one included. Verilator runs a cover property's statement in a build with its
-user coverage switched on. We built the stage once with `make build VFLAGS=--coverage-user` and ran
-it with the same `VFLAGS`, and then `n_covered` counted the same 83 cycles as `n_tried`, and the run
-also wrote Verilator's own coverage file, `coverage.dat`. The labs build without that switch, and
-`make cov` reads cocotb-coverage's files, not `coverage.dat`, so in this course the evidence that a
-rule was exercised comes from a counter that you write yourself, like `n_tried`, or from a
-cocotb-coverage bin. Lab 05's `router.wait` is one
-of those: for each packet an output delivers, it records the longest that any of its beats waited.
+With the course's build flags that statement never ran, and `n_covered` was 0 in every run on
+this page, the golden one included. It does run in a build with Verilator's user coverage switched
+on. We built the stage once with `make build VFLAGS=--coverage-user` and ran it with the same
+`VFLAGS`, and then `n_covered` counted the same 83 cycles as `n_tried`, and the run wrote
+Verilator's own coverage file, `coverage.dat`. The labs build without that switch, and `make cov`
+reads cocotb-coverage's files, not `coverage.dat`, so in this course the evidence that a rule was
+exercised comes from a counter that you write yourself, like `n_tried`, or from a cocotb-coverage
+bin. Lab 05's `router.wait` is one of those: for each packet an output delivers, it records the
+longest that any of its beats waited.
 
 ## Which rules suit an assertion
 
@@ -279,11 +279,12 @@ Lab 05 you'll see both fire on the same bugs, often many cycles apart.
    <details>
    <summary>Answer</summary>
 
-   The read of the checker's count. `BaseTest` looks for `u_sva.n_fail` under `cocotb.top`, and
-   "no bound assertions" means it didn't read one: the design has no checker bound into it as
-   `u_sva`, or the test has turned the read off, as `+UNCOUNTED` does in the example. A failed
-   assertion raises nothing in Python, so without that read the test passes. Check that the bind
-   file is in `SVA_SRCS` and that the test derives from `BaseTest`.
+   The read of the checker's count. The `%Error` lines show that a checker is bound and its
+   assertions fail, but "no bound assertions" means `BaseTest` didn't find
+   `cocotb.top.u_sva.n_fail`: the checker is bound under another instance name than `u_sva`, its
+   sum of the counters isn't called `n_fail`, or the test has changed `SVA_FAILS`, as `+UNCOUNTED`
+   does in the example. A failed assertion raises nothing in Python, so without that read the test
+   passes.
 
    </details>
 

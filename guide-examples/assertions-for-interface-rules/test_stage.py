@@ -12,8 +12,8 @@ switches on a planted bug (stage.sv).
 
 The timing rule is the course's: the test changes the stage's inputs right
 after a rising edge and reads its pins at the falling edge in the middle of
-the cycle. The clock's period is 10 ns and its first rising edge is at
-10 ns, so cycle n ends at the rising edge at 10n ns.
+the cycle. The clock's period is 10 ns and it starts high at time 0, so
+cycle n ends at the rising edge at 10n ns.
 """
 
 import random

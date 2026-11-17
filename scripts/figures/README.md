@@ -12,7 +12,7 @@ python3 scripts/figures/<script>.py
 
 With the versions in `requirements.txt` (schemdraw 0.23 and matplotlib 3.10.9), rerunning a script
 reproduces its SVG byte for byte, apart from `router_block.py`, whose SVG was drawn in the course
-image (see its docstring). To look at a figure while you work on it, set `FIG_PREVIEW=<folder>` and
+image, which has matplotlib 3.11.1 (`circuit_style.py`'s docstring says so). To look at a figure while you work on it, set `FIG_PREVIEW=<folder>` and
 the script also writes a PNG there; the site doesn't use the PNGs.
 
 A script whose figure plots numbers from a run says in its docstring which run of which guide

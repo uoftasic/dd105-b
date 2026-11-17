@@ -90,16 +90,15 @@ in Lab 04's traffic as soon as you wrote it, because `INT_EN` was still 0 there,
 set a `STATUS` bit whose enable was 0. The step you write next ends with `INT_EN` at `0b111`, and it
 runs before Lab 04's traffic starts. With every enable on, `STATUS & INT_EN` equals `STATUS`, so a
 router that ignores the enables raises `irq` exactly when a correct one does. With that step in
-place, only the cycles of your own step before it turns the enables on can catch B02. So in *Made
-to happen by*,
-write the situation that the rule needs (for IRQ1, a `STATUS` bit set while its enable is 0) and
-the step that creates it. A test's name on its own doesn't tell you whether the situation ever
+place, only the cycles of your own step before it turns the enables on can catch B02. So in
+*Made to happen by*, write the situation that the rule needs (for IRQ1, a `STATUS` bit set while
+its enable is 0) and the step that creates it. A test's name on its own doesn't tell you whether the situation ever
 happened in it.
 
 ## Coverage against the plan
 
-You fill in *Seen in coverage* from the regression's coverage. The starter's regression's merged
-coverage began
+You fill in *Seen in coverage* from the regression's coverage. The merged coverage of the
+starter's regression began
 
 ```text
   top                                           81.67 %   49 of 60 bins

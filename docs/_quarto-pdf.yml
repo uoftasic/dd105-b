@@ -13,20 +13,50 @@ book:
   output-file: "dd105-b-course"
   chapters:
     - index.md
-    - part: "Course path"
+    - part: "1. Two frameworks"
       chapters:
         - guide/getting-started.md
+        - guide/what-a-framework-buys-you.md
+        - guide/from-cocotb-tests-to-pyuvm-components.md
         - labs/lab-01-one-alu-two-frameworks-overview.md
-        - labs/lab-02-a-layered-testbench-without-pyuvm-overview.md
-        - labs/lab-03-constraints-and-coverage-overview.md
-        - labs/lab-04-the-same-testbench-in-pyuvm-overview.md
-        - labs/lab-05-protocol-rules-and-backpressure-overview.md
-        - labs/lab-06-the-register-block-overview.md
-        - labs/lab-07-capstone-overview.md
-    - part: "Reference"
+    - part: "2. A layered testbench"
       chapters:
-        - reference/router-spec.md
-        - reference/the-router-in-one-page.md
+        - guide/python-classes-and-cocotb-concurrency.md
+        - guide/driving-and-sampling-on-the-clock.md
+        - labs/lab-02-a-layered-testbench-without-pyuvm-overview.md
+    - part: "3. Constraints and coverage"
+      chapters:
+        - guide/constrained-random-with-pyvsc.md
+        - guide/functional-coverage-you-can-read.md
+        - labs/lab-03-constraints-and-coverage-overview.md
+    - part: "4. pyuvm"
+      chapters:
+        - guide/the-pyuvm-skeleton.md
+        - guide/sequences-sequencers-and-drivers.md
+        - guide/monitors-analysis-ports-and-scoreboards.md
+        - guide/the-factory-and-configdb.md
+        - labs/lab-04-the-same-testbench-in-pyuvm-overview.md
+    - part: "5. Protocol rules"
+      chapters:
+        - guide/assertions-for-interface-rules.md
+        - guide/reactive-agents-and-backpressure.md
+        - guide/virtual-sequences.md
+        - labs/lab-05-protocol-rules-and-backpressure-overview.md
+    - part: "6. Registers"
+      chapters:
+        - guide/register-models-in-pyuvm.md
+        - guide/regressions-and-seeds.md
+        - labs/lab-06-the-register-block-overview.md
+    - part: "7. Capstone"
+      chapters:
+        - guide/verification-plans-and-sign-off.md
+        - guide/writing-the-verification-report.md
+        - labs/lab-07-capstone-overview.md
+  appendices:
+    - reference/the-router-in-one-page.md
+    - reference/router-spec.md
+    - reference/pyuvm-register-api.md
+    - reference/getting-the-tools-outside-the-course-image.md
 
 format:
   typst:

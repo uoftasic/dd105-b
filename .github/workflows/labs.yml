@@ -4,7 +4,7 @@
 # labs/ref's `make check-all` must catch all 15 planted bugs, with its
 # RouterAllTest passing the golden router on seeds 1 to 5. Each lab has a
 # step that checks its starter's `make check` FAILS (its test passes the
-# lab's bug) and its solution's PASSES, as in DD105-A; so far Lab 01 has one.
+# lab's bug) and its solution's PASSES, as in DD105-A; so far Labs 01 and 02 have one.
 # scripts/ci/check-labs.sh is each check, and scripts/ci/in-image.sh runs it
 # in the course image, so every step below can be rehearsed on any machine
 # with Docker by running the same command.
@@ -32,8 +32,9 @@
 # themselves, and five runs of RouterAllTest (37 s); its build is 8 s cold,
 # so a warm ccache saves it little. Lab 01's step, rehearsed on its own on
 # Nov 16 on ieee-asic-1 in the same image and limits, took 11 s with an empty
-# ccache and 3 s with a warm one. Add the free-disk step and the pull of the
-# image, which a local rehearsal can't measure.
+# ccache and 3 s with a warm one, and Lab 02's, rehearsed the same way, 10 s
+# and 2 s. Add the free-disk step and the pull of the image, which a local
+# rehearsal can't measure.
 #
 # The weekly run catches breakage from outside the repo: a digest Docker Hub
 # stops serving, a pinned package PyPI stops serving, or a change to GitHub's
@@ -135,6 +136,12 @@ jobs:
       - name: Lab 01
         if: success() || failure()
         run: scripts/ci/in-image.sh scripts/ci/check-labs.sh lab lab-01-one-alu-two-frameworks | tee -a "$RUNNER_TEMP/ci.log"
+
+      # The starter's monitor and scoreboard are empty, so its make check must
+      # miss B05 (the DST field read one bit low); the solution's must catch it.
+      - name: Lab 02
+        if: success() || failure()
+        run: scripts/ci/in-image.sh scripts/ci/check-labs.sh lab lab-02-a-layered-testbench-without-pyuvm | tee -a "$RUNNER_TEMP/ci.log"
 
       - name: Summary
         if: success() || failure()

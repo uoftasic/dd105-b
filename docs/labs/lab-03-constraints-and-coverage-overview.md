@@ -1,22 +1,22 @@
 # Lab 03: Constraints and coverage
 
-You'll add functional coverage to the Lab 02 testbench, with cocotb-coverage, and read it to find
-which drops and which output levels the testbench's random packets never reach. Then you'll
-constrain the packet, so that pyvsc's solver makes the mix of lengths you ask for. Last, you'll
-write the stimulus that reaches the two coverage holes where this lab's planted bugs, B07 and B08,
-are.
+You'll use cocotb-coverage to add functional coverage to the Lab 02 testbench, and read the
+coverage to find which kinds of drop and which output levels the testbench's random packets never
+produce. Then you'll add constraints to the packet so that pyvsc's solver makes 1-beat, 2-to-7-beat
+and 8-beat packets in the proportions you ask for. Last, you'll write stimulus that reaches the two
+coverage holes, because that's where this lab's planted bugs, B07 and B08, are.
 
 Package: [`labs/lab-03-constraints-and-coverage/`](https://github.com/uoftasic/dd105-b/tree/main/labs/lab-03-constraints-and-coverage)
 
 ## Before you start
 
 - Finish [Lab 02](lab-02-a-layered-testbench-without-pyuvm-overview.md). This lab's package is the
-  Lab 02 testbench with our solution's `monitor.py` and `scoreboard.py` in `tb/`. Around them it
+  Lab 02 testbench, with our solution's `monitor.py` and `scoreboard.py` in `tb/`. Around them it
   adds a packet that pyvsc randomizes, a sink that can stall, an APB read, a tracker that predicts
-  what the router does with each packet, and a check on `DROP_CNT`. Part 1 walks through each of
-  them. If your own monitor and scoreboard passed Lab 02's `make check-all`, you can copy them over
-  ours (the scoreboard's error messages on this page come from ours, so yours may differ).
-  Run the copy from the lab folder, which Part 1's first step takes you to:
+  what the router does with each packet, and a check on `DROP_CNT`, and Part 1 walks you through
+  each of them. If your own monitor and scoreboard passed Lab 02's `make check-all`, you can copy
+  them over ours. The scoreboard's error messages on this page come from ours, so yours may read
+  differently. Run the copy from the lab folder, which Part 1's first step takes you to:
 
   ```bash
   cp ../lab-02-a-layered-testbench-without-pyuvm/tb/monitor.py ../lab-02-a-layered-testbench-without-pyuvm/tb/scoreboard.py tb/
@@ -26,9 +26,9 @@ Package: [`labs/lab-03-constraints-and-coverage/`](https://github.com/uoftasic/d
   [Routing](../reference/router-spec.md#routing) section again, because this lab is about the level
   of an output and what the router does with a packet at each level.
 
-Time: about 1 h 30 min. Every file you change is Python, so nothing in this lab rebuilds the
-simulator. A run of the graded test took us about 3 s as shipped and about 5 s once Part 3's
-constraints are in, where Lab 02's test took 0.25 s.
+Time: about 1 h 30 min. Every file you change is Python, so once Part 1 has built the simulator,
+none of your changes makes it rebuild. A run of the graded test took us about 3 s as shipped and
+about 5 s once Part 3's constraints were in, against 0.25 s for Lab 02's test.
 
 ## Part 1: The venv and the testbench you start from
 
@@ -42,9 +42,9 @@ What does the starting testbench check, and does it catch this lab's two bugs?
    cd labs/lab-03-constraints-and-coverage
    ```
 
-2. The packets in this lab are made by pyvsc, a Python library of constraints with a solver, and
-   the coverage is counted by cocotb-coverage. Neither is in the course image, so make the course
-   venv, a Python virtual environment that holds both:
+2. The packets in this lab come from pyvsc, a Python library in which you write constraints and a
+   solver picks values that meet them, and the coverage is counted by cocotb-coverage. Neither is
+   in the course image, so make the course venv, a Python virtual environment that holds both:
 
    ```bash
    make venv
@@ -71,7 +71,7 @@ What does the starting testbench check, and does it catch this lab's two bugs?
    too, which is why it lists the image's cocotb 2.0.1 and pyuvm 4.0.1 beside pyvsc 1.1.0 and
    cocotb-coverage 2.0. Every run in this lab uses the venv's Python. Until the venv exists,
    `make check-all`, `make cov` and `make traps` stop at once with the message below, and
-   `make run` builds the simulator first and then stops with it:
+   `make run` builds the simulator first and then stops with the same message:
 
    ```text
    ========================================================================
@@ -94,11 +94,12 @@ What does the starting testbench check, and does it catch this lab's two bugs?
     ccache:  Hits: 17 / 28 (60.71%)  Misses: 11 / 28 (39.29%)
    ```
 
-   This is the same router, with the same fifteen bugs behind `+BUG`, as Lab 02's. Our counts
-   include Lab 01's and Lab 02's builds, which came to 11 hits and 10 misses, so this build's own
-   were 6 hits and 1 miss. The one file it compiled is `Vtop__ALL.o`, the router. Verilator writes
-   the RTL's file names, paths included, into the C++ it generates, and this lab's copy of the RTL
-   is in its own `build/rtl/`, so the C++ differs from Lab 02's.
+   This is the same router as Lab 02's, with the same fifteen bugs behind `+BUG`. The ccache's
+   counts add up over every build in your clone, as in Lab 02. Ours include Lab 01's and Lab 02's
+   builds, which came to 11 hits and 10 misses, so this build's own were 6 hits and 1 miss. The one
+   file it compiled is `Vtop__ALL.o`, from the C++ that Verilator wrote for the router. Verilator
+   writes the RTL's file names, paths included, into that C++, and this lab's copy of the RTL is in
+   its own `build/rtl/`, so the C++ differs from Lab 02's and the ccache had no compiled copy of it.
 
 4. Read the files in `tb/`. Most of them are Lab 02's:
 
@@ -106,28 +107,29 @@ What does the starting testbench check, and does it catch this lab's two bugs?
    |---|---|
    | `monitor.py`, `scoreboard.py` | Lab 02's monitor and scoreboard: our solution, or yours |
    | `driver.py` | Lab 02's `Driver`, `Sink` and `ApbMaster`, with two additions: `ApbMaster.read()`, and `Sink.stall`, which holds the sink's ready at 0 from the next rising edge on, for as long as it is `True` |
-   | `packet.py` | Lab 02's `Packet` and `RouterCfg`, and a new `RandPacket`, whose DST (`hdr_dst`) and length kind (`kind`) come from pyvsc's `randomize()`. Its constraint `c_dst` keeps a packet on an enabled route. Part 3 adds the weights on `kind` and the constraint that picks the length from `kind`. `RouterCfg` still reads `+N`, `+ROUTES` and `+SHOW`, but not Lab 02's `+DSTS` or `+LEN`, because the constraints now choose the DST and the length. |
+   | `packet.py` | Lab 02's `Packet` and `RouterCfg`, and a new `RandPacket`, whose DST (`hdr_dst`) and length kind (`kind`) come from pyvsc's `randomize()`. Its constraint `c_dst` keeps a packet on an enabled route. Part 3 adds the weights on `kind` and the constraint that picks the length from `kind`. `RouterCfg` still reads `+N`, `+ROUTES` and `+SHOW`, but not Lab 02's `+DSTS` or `+LEN`, because `RandPacket` now picks the DST and the length. |
    | `generator.py` | randomizes `RandPacket`s, where Lab 02's generator called Python's `random` |
    | `tracker.py` | new: follows output 0's level and decides what happens to each packet |
    | `coverage.py` | new: `sample_pkt()`, which the tracker calls once for every packet and which has no coverpoints yet, and `report()`, which writes the coverage file at the end of the test. Part 2 adds the coverpoints. |
    | `env.py` | Lab 02's `Env`, with `run()` split into steps a test can call one by one, and `check_drops()` |
    | `test_router.py` | `router_rand_test`, `router_fill_test` and Lab 02's `router_class_test`, which now checks `DROP_CNT` at the end too. `close_holes()` is empty: Part 4 fills it in. |
 
-   The tracker reads the input's and output 0's pins at the falling edge of every cycle, as the
-   monitors do, and handles the cycle's input handshake before its output handshake, so the level a
-   header sees counts only earlier cycles, as the Routing section defines it. From the routing
-   table and that level it decides each packet's fate: NOROUTE, FULL, or forwarded to output 0 or
-   1. Nothing watches output 1, and its sink is always ready, so its level never comes near 8 and
-   the tracker takes it as 0. The tracker counts the drops it predicts, and `Env.check_drops()`
-   reads `DROP_CNT` over APB and logs an error if the two disagree. Lab 02's scoreboard still
-   checks the packets that come out of output 0.
+   The tracker reads the pins of the input and of output 0 at the falling edge of every cycle, as
+   the monitors do. Within a cycle it handles the input handshake before the output handshake, so
+   the level that a header sees counts only the handshakes of earlier cycles, which is how the
+   Routing section defines the level. From the routing table and that level, the tracker decides
+   each packet's fate: NOROUTE, FULL, or forwarded to output 0 or 1. Nothing in the testbench
+   watches output 1, and its sink is always ready, so its level stays far below 8, and the tracker
+   takes it as 0. The tracker counts the drops it predicts, and `Env.check_drops()` reads
+   `DROP_CNT` over APB and logs an error if the router's count and the tracker's disagree. Lab 02's
+   scoreboard still checks the packets that come out of output 0.
 
    `router_rand_test` sets `CTRL.EN` and runs four phases. Each phase writes a random routing table
    with at least one disabled route and an enabled route to each output, sends 200 random packets
    with both sinks ready, waits for the outputs to drain, checks `DROP_CNT` and then clears it.
-   After the last phase it calls `close_holes()` and checks `DROP_CNT` once more. It ends with the
-   same `assert` as Lab 02's test, which fails it if the driver, the scoreboard or the `DROP_CNT`
-   check logged an error.
+   After the last phase it calls `close_holes()` and checks `DROP_CNT` once more. It ends with an
+   `assert` like the one in Lab 02's test, which now fails the test if the driver, the scoreboard or
+   the `DROP_CNT` check logged an error.
 
 5. Run the test:
 
@@ -156,11 +158,11 @@ What does the starting testbench check, and does it catch this lab's two bugs?
    ```
 
    and last, `ok: passed   4.14 s   log: build/runs/router_rand_test-s1/run.log`. A second run
-   took 3.04 s. The routes are written as Lab 02's `+ROUTES` was: one character per route, `0` or
-   `1` for the output, `-` for disabled.
+   took us 3.04 s. The `[PHASE]` lines give the routes in the form Lab 02's `+ROUTES` took, one
+   character per route: `0` or `1` for the output, and `-` for disabled.
 
 6. This lab's two bugs are B07 and B08. B07 counts a packet for a disabled route as a FULL drop as
-   well as a NOROUTE drop when the output its route names holds more than 8 beats. B08 drops a
+   well as a NOROUTE drop when the output that its route names holds more than 8 beats. B08 drops a
    packet that arrives when its output holds exactly 8 beats, although an output at 8 still has
    room for it. B07 changes no packet that comes out, only `FULL_CNT` (and `STATUS.FULL`), so the
    `DROP_CNT` check is the only check in the package that could see it. Write down whether you
@@ -193,11 +195,11 @@ What does the starting testbench check, and does it catch this lab's two bugs?
    <summary>Answer</summary>
 
    Both sinks are always ready, so every beat leaves its output within a couple of cycles of
-   arriving, and beats don't pile up: in 800 packets the highest level a header saw was 2. B08
+   arriving, and beats don't pile up. In 800 packets the highest level a header saw was 2. B08
    needs a header that arrives while its output holds exactly 8 beats. B07 needs a NOROUTE drop
-   while the output its route names holds more than 8 beats, but `c_dst` keeps every random packet
-   on an enabled route, so there are no NOROUTE drops at all (`0 NOROUTE`). The seed changes the
-   packets and the routing tables, but not the sinks or `c_dst`.
+   while the output that its route names holds more than 8 beats, but `c_dst` keeps every random
+   packet on an enabled route, so there are no NOROUTE drops at all (`0 NOROUTE`). The seed changes
+   the packets and the routing tables, but not the sinks or `c_dst`.
 
    </details>
 
@@ -213,10 +215,11 @@ What does `router_rand_test` send the router, and which fates and levels does it
 
 2. Open `tb/coverage.py`. The tracker calls `sample_pkt()` once for every packet, with a
    `PktRecord` (declared in `tracker.py`) that holds the packet's length, its DST, its fate
-   (`NOROUTE`, `FULL`, `OUT0` or `OUT1`, which are 0 to 3), and the level of the output its route
-   names in the cycle its header was accepted. In cocotb-coverage a coverpoint is a decorator on
-   the function that receives the values. Its `xf=` takes the value out of the function's
-   arguments, and each call counts that value in the bin it falls in. The length's coverpoint is:
+   (`NOROUTE`, `FULL`, `OUT0` or `OUT1`, which are 0 to 3), and the level of the output that its
+   route names, in the cycle in which its header was accepted. In cocotb-coverage a coverpoint is a
+   decorator on the function that receives the values. The coverpoint's `xf=` takes its value out of
+   the function's arguments, and each call of the function adds one to the bin that the value falls
+   in. The length's coverpoint is:
 
    ```python
    @CoverPoint("router.pkt.len", xf=lambda rec: rec.length, bins=list(range(1, 9)),
@@ -243,7 +246,8 @@ What does `router_rand_test` send the router, and which fates and levels does it
 
 3. Each run's `report()` writes the hit count of every bin to `coverage.xml` in its run folder, and
    `make cov` merges every `coverage.xml` under `build/runs` with cocotb-coverage's
-   `merge_coverage()`. So delete the old runs first, then run the test and read its coverage:
+   `merge_coverage()`, so a run left over from earlier would be counted too. Delete the old runs
+   first, then run the test and read its coverage:
 
    ```bash
    rm -rf build/runs
@@ -281,8 +285,9 @@ What does `router_rand_test` send the router, and which fates and levels does it
    cocotb-coverage puts a value in a bin when `value == bin`, unless the coverpoint is given a
    `rel=` function that says what "in the bin" means. The bins 0, 8 and 9 are numbers, so a level
    of 0 lands in `empty`. The bins `(1, 7)` and `(10, 16)` are tuples, and no number is equal to a
-   tuple, so `low` and `high` can never be hit. Nothing warns you, and you find it only by reading
-   the list of empty bins against what the test did, as you just did with the `[TRK]` line.
+   tuple, so `low` and `high` can never be hit. cocotb-coverage doesn't warn you about it, so you
+   have to find it by reading the list of empty bins against what the test did, as you just did
+   with the `[TRK]` line.
 
    </details>
 
@@ -304,8 +309,8 @@ What does `router_rand_test` send the router, and which fates and levels does it
                not hit: ('noroute', 'empty'), ('noroute', 'low'), ('noroute', 'at_8'), ('noroute', 'at_9'), ('noroute', 'high'), ('full', 'empty'), ('full', 'low'), ('full', 'at_8'), ('full', 'at_9'), ('full', 'high'), ('out0', 'at_8'), ('out0', 'at_9'), ... (5 more)
    ```
 
-5. `make cov` names only the empty bins. `build/coverage/merged.xml`, the merged file, has every
-   bin with its count. Look at the length's:
+5. `make cov` names only the empty bins, but the merged file, `build/coverage/merged.xml`, has
+   every bin with its count. Look at the length's bins:
 
    ```bash
    grep 'pkt.len.bin' build/coverage/merged.xml
@@ -332,7 +337,7 @@ What does `router_rand_test` send the router, and which fates and levels does it
    the same for a `rand_enum_t`, so each of the three kinds should come out about 267 times. Here
    they came out 263, 274 and 263. The six lengths from 2 to 7 share `LEN_MID`'s 274, so each is
    about 45. A third of the packets are single beats and a third are 8 beats long only because the
-   enum has three names, and in Part 3 you give the kinds weights of your own.
+   enum has three names. In Part 3 you give the kinds weights of your own.
 
    </details>
 
@@ -344,7 +349,7 @@ What does `router_rand_test` send the router, and which fates and levels does it
    <summary>Answer</summary>
 
    B08 needs a packet admitted to output 0 at a level of exactly 8, which is `('out0', 'at_8')`.
-   B07 needs a NOROUTE drop while the output its route names holds more than 8 beats, which is
+   B07 needs a NOROUTE drop while the output that its route names holds more than 8 beats, which is
    `('noroute', 'at_9')` or `('noroute', 'high')`.
 
    Seven bins are impossible by the specification, because a FULL drop happens only at a level of
@@ -369,11 +374,13 @@ Check: `router.pkt: 19 of 41 bins hit`, and `len1` at 263.
 How do you get the length distribution you ask for, and how do you know you got it?
 
 1. Open `traps/traps.py`. It has eight experiments, numbered 1 to 8, and each one randomizes a small
-   pyvsc class many times. Lines 1 to 3 use the shapes of this lab's packet, and lines 4 to 6 use
-   shapes that a test might use; line 7 times the solver, and line 8 shows when a pyvsc object
-   takes its random state. pyvsc's constraints are meant to work as SystemVerilog's do, so for each
-   of lines 1 to 6, write down what SystemVerilog's rules say it should show. DD105-A ran the same
-   experiments on Verilator's solver, which got several of them wrong.
+   pyvsc class over and over, most of them 1000 times. Each experiment prints one or more lines
+   that start with its number, so this page calls them lines 1 to 8. Lines 1 to 3 use the shapes of
+   this lab's packet, and lines 4 to 6 use shapes that a test might use. Line 7 times the solver,
+   and line 8 shows when a pyvsc object takes its random state. pyvsc's constraints are meant to
+   work as SystemVerilog's do, so for each of lines 1 to 6, write down what SystemVerilog's rules
+   say it should show. DD105-A ran the same experiments on Verilator's solver, which got several of
+   them wrong.
 
 2. Run it:
 
@@ -381,7 +388,7 @@ How do you get the length distribution you ask for, and how do you know you got 
    make traps
    ```
 
-   It runs with the venv's Python and no simulator, in 13 s, and you should see:
+   It runs with the venv's Python and no simulator, and took us 13 s. You should see:
 
    ```text
    1  three names, no constraint names kind      LEN_ONE  336  LEN_MID  342  LEN_MAX  322
@@ -421,17 +428,20 @@ How do you get the length distribution you ask for, and how do you know you got 
    4. With `solve_order`, `big` is chosen first, at 50/50, so about 500, and it came out 469.
       Without it, SystemVerilog makes each of the 8 solutions equally likely, so `big` is 1 in 8,
       about 125. pyvsc gave 342, so it doesn't choose evenly among the solutions.
-   5. Both should work, and both did, on a list of fixed size and on one whose size is random too.
+   5. A sum should work on a list of fixed size and on one whose size is random, and it worked on
+      both.
    6. Neither should repeat a value, and neither did.
 
-   Line 7 is pyvsc's speed. A two-field class was randomized 571 times a second, about 1.8 ms a
-   call, where `random.randint()` ran 2.8 million times a second. So the packet's payload bytes and
-   idle cycles come from Python's `random` in `build()`, and only the fields that a constraint
-   mentions come from the solver. Line 8 shows that a pyvsc object takes its random state from
-   Python's `random` at its first `randomize()`: seeding `random` again before that call gave a
-   different list from the first row's, and seeding it again after the call gave the same list as
-   the first row. The generator makes and randomizes every packet inside the test, so the run's
-   seed decides them.
+   Line 7 measures pyvsc's speed. A two-field class was randomized 571 times a second, about
+   1.8 ms a call, while `random.randint()` ran 2.8 million times a second. That's why the packet's
+   payload bytes and idle cycles come from Python's `random`, in `build()`, and the solver picks
+   only the packet's random fields: the DST, the kind and, once step 3 makes it random, the length.
+
+   Line 8 shows that a pyvsc object takes its random state from Python's `random` at its first
+   `randomize()`. Seeding `random` again between making the object and that first call gave a
+   different list from the first row's, and seeding it again after the first call gave the same
+   list as the first row. The generator makes and randomizes every packet inside the test, after
+   cocotb has seeded Python's `random` from the run's seed, so the seed decides every packet.
 
    </details>
 
@@ -455,8 +465,8 @@ How do you get the length distribution you ask for, and how do you know you got 
      and `vsc.else_then`: `self.length == 1` for `LEN_ONE`,
      `self.length.inside(vsc.rangelist((2, 7)))` for `LEN_MID`, and `self.length == 8` for
      `LEN_MAX`;
-   - in `post_randomize()`, delete the `if` and `else` branches that set `length`, so that only
-     the call to `build()` is left.
+   - in `post_randomize()`, delete the `if`, `elif` and `else` branches that set `length`, so that
+     only the call to `build()` is left.
 
 4. Before you run, write down how many of the 800 packets you expect in each length bin. Then run
    and read the coverage:
@@ -496,9 +506,9 @@ How do you get the length distribution you ask for, and how do you know you got 
    some spread is chance, so draw more packets and see whether the same lengths stay high. We drew
    3000 packets from this class outside the simulator, twice: lengths 2 to 5 came out 269 to 298
    times each, and 6 and 7 came out 180 to 197 times, against about 250 for an even spread. So
-   pyvsc's solver doesn't pick evenly among the values a constraint allows, here or in line 4 of the
-   experiments. A constraint fixes which lengths can come out; to know how often each one does, you
-   count them, which is what the length coverpoint is for.
+   pyvsc's solver doesn't pick evenly among the values that a constraint allows, either here or in
+   line 4 of the experiments. The constraint decides which lengths can come out, and to find out
+   how often each one does, you count them with the length coverpoint.
 
    </details>
 
@@ -528,14 +538,15 @@ What stimulus reaches B07's and B08's bins, and does the testbench catch the bug
    `self.lens = vsc.rand_list_t(vsc.uint8_t(), sz=8)`, and a constraint that keeps each length at
    most 8 (`with vsc.foreach(self.lens, idx=True) as i:` and `self.lens[i] <= 8`) and makes
    `self.lens.sum == 8`. A 0 means "no packet". Line 5 of the experiments showed that pyvsc solves
-   a sum on a list of either kind, so the fixed size of 8 is only a choice.
+   a sum on a list of fixed size and on one of random size, so a list of random size would work
+   too, and the fixed size of 8 is only our choice.
 
 3. Fill in `close_holes()`. The test's environment is `env`, and the steps are:
 
    - `await env.write_routes("0---")`: `ROUTE0` enabled to output 0, the other three disabled
      (with `PORT` 0);
-   - `env.snk0.stall = True`, then `await env.cycles(2)`, so the stall reaches the pin before any
-     beat can;
+   - `env.snk0.stall = True`, then `await env.cycles(2)`, so that `out0_ready` is already 0 before
+     any beat can reach output 0;
    - randomize a `FillPlan`, and for each length `n` that isn't 0, put `RandPacket.make(0, n)` on a
      list of packets;
    - one random packet for DST 0: `p = env.gen.new_packet()`, then
@@ -548,13 +559,15 @@ What stimulus reaches B07's and B08's bins, and does the testbench catch the bug
 
    Both tests that call `close_holes()` check `DROP_CNT` after it returns, so `close_holes()`
    doesn't need a check of its own. `RandPacket.make()` builds a fill packet without the solver,
-   with its beats back to back. `randomize_with()` and `it.length == n` would work too (line 3 of
-   the experiments), and `build()` would then put idle cycles before about one beat in four. A log
-   line that prints the plan's lengths will help you read the waveform later.
+   with its beats back to back. You could also make each fill packet with `randomize_with()` and
+   `it.length == n` (line 3 of the experiments showed that this works), but `build()` would then
+   put idle cycles before about one beat in four. A log line that prints the plan's lengths will
+   help you read the waveform later.
 
 4. The list stops after the packet for DST 1, with output 0 still stalled and holding 9 to 16
-   beats. Suppose it sent one more random packet for DST 0 there. What would the golden router do
-   with it, and what would this testbench report? Write down your answer before you open ours.
+   beats. Suppose `close_holes()` sent one more random packet for DST 0 at that point. What would
+   the golden router do with it, and what would this testbench report? Write down your answer
+   before you open ours.
 
    <details>
    <summary>Answer</summary>
@@ -595,9 +608,9 @@ What stimulus reaches B07's and B08's bins, and does the testbench catch the bug
       840.00ns INFO     tb.env                             [COV] router.pkt: 13 of 41 bins hit; coverage.xml written
    ```
 
-   and `ok: passed   1.79 s`. On seed 1 this plan is a single 8-beat packet. If the golden router
-   doesn't pass here, read the first error in the log: the router is the golden one, so the error
-   points at your stimulus.
+   and `ok: passed   1.79 s`. On seed 1 this plan is a single 8-beat packet. If your run fails
+   here, read the first error in the log. The router is the golden one, so the mistake is in your
+   stimulus.
 
 6. Run the graded test too, and read the coverage of both runs:
 
@@ -607,10 +620,10 @@ What stimulus reaches B07's and B08's bins, and does the testbench catch the bug
    ```
 
    The `[HOLES]` line of `router_rand_test` says
-   `filled to 8 by packets of 2 2 3 1 beats, then 7 beats for DST 0 and 7 for DST 1`, a different
-   plan from `router_fill_test`'s on the same seed, because cocotb seeds Python's `random` for each
-   test from the seed and the test's name, and `router_rand_test` has drawn 800 packets from it
-   before `close_holes()` starts. `make cov` reports:
+   `filled to 8 by packets of 2 2 3 1 beats, then 7 beats for DST 0 and 7 for DST 1`. That's a
+   different plan from `router_fill_test`'s on the same seed, because cocotb seeds Python's
+   `random` for each test from the seed and the test's name, and because `router_rand_test` has
+   drawn 800 packets from `random` before `close_holes()` starts. `make cov` reports:
 
    ```text
      top                                           58.54 %   24 of 41 bins
@@ -626,7 +639,8 @@ What stimulus reaches B07's and B08's bins, and does the testbench catch the bug
                not hit: ('noroute', 'empty'), ('noroute', 'low'), ('noroute', 'at_8'), ('noroute', 'at_9'), ('full', 'empty'), ('full', 'low'), ('full', 'at_8'), ('full', 'at_9'), ('full', 'high'), ('out0', 'at_9'), ('out0', 'high'), ('out1', 'low'), ... (3 more)
    ```
 
-   That leaves 17 bins never hit, and five of the 29 bins this testbench can reach are among them.
+   That leaves 17 bins never hit, and five of the 29 bins that this testbench can reach are among
+   them.
    Which are they, and what would hit each one?
 
    <details>
@@ -664,9 +678,10 @@ What stimulus reaches B07's and B08's bins, and does the testbench catch the bug
     56020.00ns ERROR    tb.env                             DROP_CNT read 00000101, expected 00000001 (FULL_CNT 0, NOROUTE_CNT 1)
    ```
 
-   `FULL_CNT` is bits 15:8, so the router counted the packet for DST 1 as NOROUTE and as FULL.
-   `make run BUG=B08` logs the same `DROP_CNT` line first, and then the scoreboard's report of the
-   packet that was dropped at level 8:
+   `FULL_CNT` is bits 15:8 and `NOROUTE_CNT` is bits 7:0, so the router counted the packet for DST 1
+   as NOROUTE and as FULL. `make run BUG=B08` logs the same `DROP_CNT` line first, because B08
+   counts the packet for DST 0 that it drops at level 8 as a FULL drop. Then comes the scoreboard's
+   report of that packet:
 
    ```text
     56020.00ns ERROR    tb.sb                              dst 0, 7 beats: 24 28 19 4b 53 55 0b, which went in at 55355 ns, never came out of output 0
@@ -683,7 +698,8 @@ What stimulus reaches B07's and B08's bins, and does the testbench catch the bug
 
    Add `clk`, `in_valid`, `in_data`, `in_last`, `out0_valid`, `out0_ready`, `out0_data` and
    `level0` from `router`, and look at 160 to 420 ns. `level0` is the router's own count of the
-   beats in output 0, the value `LEVEL` reads, and Surfer shows it in hex.
+   beats in output 0, which is the value that `LEVEL` reads in its `LEVEL0` field. Surfer shows it
+   in hex.
 
    ![router_fill_test on the golden router, 160 to 420 ns, in Surfer](../assets/img/lab-03-fill-golden.png)
 
@@ -695,7 +711,7 @@ What stimulus reaches B07's and B08's bins, and does the testbench catch the bug
 
    ![The same run with B08 switched on](../assets/img/lab-03-fill-b08.png)
 
-   *B08. The same packets, and `level0` stops at 08, because the packet `01 82` is dropped.
+   *B08. The same packets go in, and `level0` stops at 08, because the packet `01 82` is dropped.
    Output 0 delivers 8 beats.*
 
    Which rising edge ends the cycle in which the header `01` is accepted, what is `level0` in that
@@ -731,8 +747,9 @@ Questions:
    A pass says that the router agreed with the scoreboard and the tracker on everything the
    stimulus did. The empty bins showed that no header ever arrived while its output held 8 beats
    or more, and that the stimulus never made a NOROUTE or FULL drop. B07 and B08 sat in two of
-   those empty bins, so the checks never had a chance to see them, and once the stimulus reached
-   them, the same checks caught both.
+   those empty bins, so in the starter's runs the router with either bug switched on did the same
+   thing as the golden router. Once the stimulus reached those bins, the same checks caught both
+   bugs.
 
    </details>
 
@@ -741,8 +758,8 @@ Questions:
    <details>
    <summary>Answer</summary>
 
-   No. Every seed keeps the sinks always ready, so no seed lets output 0 reach 8. More seeds help
-   only with holes that random stimulus can reach, and Part 1's answer explains why it can't reach
+   No. On every seed the sinks are always ready, so output 0 never reaches 8. More seeds help only
+   with holes that the random stimulus can reach, and Part 1's answer explains why it can't reach
    these two.
 
    </details>

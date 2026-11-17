@@ -1,16 +1,16 @@
 # Lab 06: The register block
 
 In this lab you'll give the Lab 05 testbench a register model built on pyuvm's register classes. You
-write the fields of `STATUS`, `DROP_CNT`, `LEVEL` and the four `ROUTE` registers, the adapter that
-turns a register operation into an APB transfer, and a reset sequence, which reads the registers
-that the router doesn't change on its own and compares each with its reset value. Then you write the
-predictor, which keeps the model's copy of the registers in step with every transfer on the bus, and
-a bit-bash sequence, which writes each bit both ways and reads it back, apart from the bits that the
-router changes on its own. SystemVerilog UVM's library has these three pieces, and pyuvm 4.0.1
-doesn't, so here you write them yourself. After that you test the 246 addresses that the model can't
-reach, and make the scoreboard check `irq` against `STATUS` and `INT_EN` in every cycle. The Lab 05
-testbench misses all five of this lab's planted bugs (B01, B02, B03, B04 and B14), and with your
-additions it catches all five by the end of Part 5.
+write the fields of `STATUS`, `DROP_CNT`, `LEVEL` and the four `ROUTE` registers, and the adapter
+that turns a register operation into an APB transfer. You also write a reset sequence, a predictor
+and a bit-bash sequence. SystemVerilog UVM's library has all three ready to use, but pyuvm 4.0.1
+doesn't have them. The reset sequence reads each register that the router doesn't change on its own
+and compares it with its reset value. The predictor keeps the model's copy of the registers in step
+with every transfer on the bus, and the bit bash writes each bit both ways and reads it back, except
+the bits that the router changes on its own. After that you test the 246 addresses that the model
+can't reach, and make the scoreboard check `irq` against `STATUS` and `INT_EN` in every cycle. The
+Lab 05 testbench misses all five of this lab's planted bugs (B01, B02, B03, B04 and B14), and with
+your additions it catches all five by the end of Part 5.
 
 Package: [`labs/lab-06-the-register-block/`](https://github.com/uoftasic/dd105-b/tree/main/labs/lab-06-the-register-block)
 
@@ -31,14 +31,14 @@ added for you:
 |---|---|
 | `tb/router_ral.py` | the register model, the adapter, the predictor and the two register sequences; seven registers' fields, the adapter and the reset sequence are yours (Part 2), and so are the predictor and the bit-bash sequence (Part 3) |
 | `tb/router_agents.py` | `SysMonitor`, which reports `rst_n` and `irq` every cycle |
-| `tb/router_env.py` | the environment makes the register model, the adapter and the predictor, and you connect the predictor (Part 3); the scoreboard models `STATUS` and `INT_EN`, checks `STATUS` reads, `PSLVERR` and reads of bad addresses, and has an `irq` check for you to write (Part 5); its Lab 05 error `no beat was checked` is now `nothing was checked`, which a test that reads a register doesn't get |
-| `tb/router_vseq.py` | helpers that go through the model (`wr_reg`, `rd_reg`, `check_reg`, `rd_all_regs`), and `RouterLab06Vseq`, with one `TODO` per part |
+| `tb/router_env.py` | the environment makes the register model, the adapter and the predictor, and you connect the predictor (Part 3); the scoreboard models `STATUS` and `INT_EN`, checks `STATUS` reads, `PSLVERR` and reads of bad addresses, and has an `irq` check for you to write (Part 5); its Lab 05 error `no beat was checked` is now `nothing was checked`, and it fires only in a test that also reads no register |
+| `tb/router_vseq.py` | helpers that go through the model (`wr_reg`, `rd_reg`, `check_reg`, `rd_all_regs`), and `RouterLab06Vseq`, with one `TODO` for each of Parts 2, 4 and 5 and two for Part 3 |
 | `tb/test_router.py` | `RouterTest` runs `RouterLab06Vseq` first, then everything Lab 05's `RouterTest` ran; `RouterLab06Test` runs the sequence alone |
 | `src/predict.py` | `make predict`, which shows what `predict()` does to your model (Part 3) |
 
-Time: about 2 h 15 min. Every file you change is Python, so nothing in this lab rebuilds the
-simulator. A run of `RouterTest` takes about 8 s, and `make check-all`, which runs it six times,
-about 45 s.
+Time: about 2 h 15 min. Every file you change is Python, so after the build in Part 1 nothing you
+change rebuilds the simulator. A run of `RouterTest` takes about 8 s, and `make check-all`, which
+runs it six times, about 45 s.
 
 ## Part 1: The Lab 05 testbench against the registers
 
@@ -63,8 +63,8 @@ What does your Lab 05 testbench check about the registers?
     /foss/designs/modules/dd105-b/labs/lab-06-the-register-block/build/sim_build/Vtop is up to date.
    ```
 
-   Our counts include the builds of Labs 01 to 05, with the rebuild in Lab 05's Part 2, which came
-   to 35 hits and 14 misses, so this build's own were 6 hits and 1 miss.
+   Our counts include the builds of Labs 01 to 05 and the rebuild in Lab 05's Part 2. Those builds
+   came to 35 hits and 14 misses, so this build's own were 6 hits and 1 miss.
 
 2. Run the graded test, `RouterTest`, and pull the scoreboard's summary out of the log:
 
@@ -97,7 +97,7 @@ What does your Lab 05 testbench check about the registers?
    `random`. The other things this lab added (the sys monitor, the scoreboard's model of `STATUS`
    and `INT_EN`, the register model and the predictor) don't call `random` at all. We also ran our
    finished `RouterTest` with `RouterLab06Vseq` left out, on seeds 1 to 5, and it printed Lab 05's
-   lines every time. Part 5 comes back to this, when the numbers do change.
+   lines every time. Part 5 comes back to this, at the step where the numbers change.
 
    </details>
 
@@ -130,13 +130,13 @@ What does your Lab 05 testbench check about the registers?
    <details>
    <summary>Answer</summary>
 
-   A wrong reset value shows only between the reset and the first write to the register. A read
-   of `CTRL` in that window would show it, and so would a packet offered then, because `in_ready`
-   stays 0 after reset until software sets `CTRL.EN`. Lab 04's steps write `CTRL` before the first
-   packet and never read it, and the scoreboard wouldn't check a read of `CTRL` anyway: the only
-   register reads it checks are those of `DROP_CNT` and `STATUS`. Nothing checks that `in_ready`
-   stays 0 until `CTRL.EN` is set. B02 hides because nothing checks `irq` yet, as the third `[SB]`
-   line says.
+   A wrong reset value shows only between the reset and the first write to the register. In that
+   window a read of `CTRL` would return 1, and a packet offered then would be taken, although
+   `in_ready` should stay 0 after reset until software sets `CTRL.EN`. Lab 04's steps write `CTRL`
+   before the first packet and never read it, and the scoreboard wouldn't check a read of `CTRL`
+   anyway, because the only register reads it checks are those of `DROP_CNT` and `STATUS`. Nothing
+   checks that `in_ready` stays 0 until `CTRL.EN` is set. B02 hides because nothing checks `irq`
+   yet, as the third `[SB]` line says.
 
    </details>
 
@@ -220,11 +220,11 @@ with it?
    with, so `reg2bus()` turns it back into a number with `int(rw.addr, 16)`.
 
 4. Write `RegResetSeq.body()`. It puts the mirror (the model's copy of each register) at the reset
-   values, then reads each register that has a field it can check, one that isn't volatile, and
+   values. Then it reads each register that has at least one field that isn't volatile, and
    compares the value read with the register's reset value outside its volatile fields.
-   `reset_value(reg)` and `volatile_mask(reg)`, above the adapter, compute those for you. Then
-   write the Part 2 step of `RouterLab06Vseq` in `tb/router_vseq.py`, which starts the sequence;
-   its `TODO` gives the line.
+   `reset_value(reg)` and `volatile_mask(reg)`, above the adapter, compute the reset value and the
+   bits of the volatile fields for you. Then write the Part 2 step of `RouterLab06Vseq` in
+   `tb/router_vseq.py`. That step starts the sequence, and its `TODO` gives the line.
 
 5. Write down which of the ten registers you expect your sequence to read. Then run the test and
    look at the line the sequence logs when it ends:
@@ -246,8 +246,9 @@ with it?
    <details>
    <summary>Answer</summary>
 
-   Every field in them is volatile: the router sets `STATUS` bits on drops, counts drops in
-   `DROP_CNT` and changes `LEVEL` with every beat, without any write. A register model doesn't
+   Every field in those three is volatile, because the router changes it without any write. The
+   router sets a `STATUS` bit on a drop or an oversize packet, counts drops in `DROP_CNT`, and
+   changes `LEVEL` with every beat. A register model doesn't
    compare a volatile field, because the design may have changed it since the model last looked,
    and a reset sequence skips a register in which nothing would be compared. SystemVerilog UVM's
    built-in reset sequence skips the same three. If your sequence read more than seven registers,
@@ -281,7 +282,7 @@ with it?
 
    It would report errors although the router is right. The sequence puts the mirror at the reset
    values and compares every read with them, but the router is reset only once, at time 0, and
-   Lab 04's steps leave `CTRL.EN` at 1 and some of the routes set. We tried it: after
+   Lab 04's steps leave `CTRL.EN` at 1 and some of the routes set. When we ran it after
    `RouterInjectTest`'s steps, whose last routing table is `0---`, it reported `CTRL` and `ROUTE0`,
    both reading `0x1`. A reset sequence has to run while the registers still hold their reset
    values, which in this testbench means first.
@@ -333,14 +334,14 @@ sequence test?
    <summary>Answer</summary>
 
    `UVM_PREDICT_DIRECT`. After a read of `0x6`, `UVM_PREDICT_READ` left the mirror of `STATUS` at
-   0, and after a read of `0x302` it left `DROP_CNT`'s at 0, where the registers hold what was
-   read. In pyuvm 4.0.1, a read prediction puts a field whose policy is `W1C` or `WC`, or one of
-   twelve other policies, back at its reset value instead of the value read; an `RW` or `RO`
+   0, and after a read of `0x302` it left `DROP_CNT`'s at 0, although the registers held the values
+   that were read. In pyuvm 4.0.1, a read prediction puts a field whose policy is `W1C` or `WC`, or
+   one of twelve other policies, back at its reset value instead of the value read; an `RW` or `RO`
    field keeps the value read. `UVM_PREDICT_DIRECT` takes the value read for every policy. No
-   check in this testbench would notice the difference, since the mirror is never compared in a
-   volatile field: with `UVM_PREDICT_READ` our solution still passed the golden router and still
-   caught all five bugs. Code that uses the mirror of `STATUS`, for example to clear exactly the
-   bits it last read, would go wrong.
+   check in this testbench would notice the difference, because the `W1C` and `WC` fields here are
+   all volatile, and the mirror is never compared in a volatile field. With `UVM_PREDICT_READ` our
+   solution still passed the golden router and still caught all five bugs. Code that uses the
+   mirror of `STATUS`, for example to clear exactly the bits it last read, would go wrong.
 
    </details>
 
@@ -376,12 +377,12 @@ sequence test?
    <details>
    <summary>Answer</summary>
 
-   The mirror is wrong; the router returned what was written. The mirror changes only when
-   something calls `predict()`, and nothing has: the raw writes went around the model, and pyuvm
-   doesn't predict after the model's own operations either, because its auto-predict is off. We
-   wrote the five registers with `wr_reg()` instead, and the same five errors came back. The
-   testbench needs a predictor that updates the mirror from every transfer on the bus, whoever
-   started it.
+   The mirror is wrong, and the router returned what was written. The mirror changes only when
+   something calls `predict()`, and so far no code in the testbench calls it. The raw writes went
+   around the model, and pyuvm doesn't predict after the model's own operations either, because
+   its auto-predict is off. We wrote the five registers with `wr_reg()` instead, and the same five
+   errors came back. The testbench needs a predictor that updates the mirror from every transfer
+   on the bus, whoever started it.
 
    </details>
 
@@ -410,12 +411,13 @@ sequence test?
    `DROP_CNT` from Labs 04 and 05.
 
 4. Write `RegBitBashSeq.body()` in `tb/router_ral.py`. For every bit that isn't in a volatile
-   field, twice, it writes the register with that bit flipped from the mirror, takes the mirror,
-   reads the register back, and compares the value read with the mirror it took. It has to take
-   the mirror before the read, because once the read completes your predictor puts the value read
-   in the mirror, and a sequence that compared with it then would be comparing the value read with
-   itself. Then write the first Part 3 `TODO` of `RouterLab06Vseq`, which runs the bit bash before
-   the raw writes. Run the test and look at the two sequences' lines:
+   field, it does the same thing twice: it writes the register with that bit flipped from the
+   mirror, takes the mirror, reads the register back, and compares the value read with the mirror
+   it took. It has to take the mirror before the read, because once the read completes your
+   predictor puts the value read in the mirror, and a sequence that compared with it then would be
+   comparing the value read with itself. Then write the first Part 3 `TODO` of `RouterLab06Vseq`.
+   It runs the bit bash, before the raw writes of step 2. Run the test and look at the lines of
+   the two sequences and the predictor:
 
    ```bash
    make run
@@ -437,11 +439,11 @@ sequence test?
    <summary>Answer</summary>
 
    Bits 3 to 31, which belong to no field. A bit with no field is read-only and reads 0, and the
-   mirror has 0 there, so each write sets the bit to 1 and the read must still return 0. That way
-   the bit bash tests the reserved bits of every register that has them. In `STATUS`, `DROP_CNT`
-   and `LEVEL`, the reserved bits are the only ones it tests: 29 bits of `STATUS`, 16 of
-   `DROP_CNT` and 22 of `LEVEL`, two writes and two reads each. With all 32 bits of `ID`, `CTRL`,
-   `INT_EN` and each `ROUTE` register, that is 291 bits and 582 writes.
+   mirror has 0 there, so both writes write a 1 to the bit, and each read must still return 0
+   there. That way the bit bash tests the reserved bits of every register that has them. In
+   `STATUS`, `DROP_CNT` and `LEVEL` it tests only the reserved bits, with two writes and two reads
+   for each: 29 bits of `STATUS`, 16 of `DROP_CNT` and 22 of `LEVEL`. With all 32 bits of `ID`,
+   `CTRL`, `INT_EN` and each `ROUTE` register, that is 291 bits and 582 writes.
 
    </details>
 
@@ -460,9 +462,9 @@ sequence test?
    [uvm_test_top.env]: [RegBitBashSeq] writing a 0 to bit 1 of ROUTE3 (was 0x3) read back 0x2, not 0x1
    ```
 
-   We tried taking the mirror after the read instead: our bit bash then reported nothing on B03,
-   and only the predictor's two errors caught it. Where did the 1 written to `EN` come back, and
-   why did your Lab 05 testbench never notice B03?
+   When we took the mirror after the read instead, our bit bash reported nothing on B03, and only
+   the predictor's two errors caught it. Where did the 1 written to `EN` come back, and why did
+   your Lab 05 testbench never notice B03?
 
    <details>
    <summary>Answer</summary>
@@ -583,9 +585,9 @@ Does `irq` follow `STATUS` and `INT_EN` in every cycle?
    `STATUS[i] & INT_EN[i]`, with no delay. The scoreboard already models both registers cycle by
    cycle. Each drop, oversize packet, or write to `STATUS` or `INT_EN` waits in `changes` until
    `advance()` reaches the cycle in which it takes effect, as route writes waited in `pending` in
-   Lab 05, and `irq()` combines the two registers. Write the two Part 5 `TODO`s in
-   `RouterScoreboard.write_sys()`, which the sys monitor calls every cycle: in a reset cycle
-   `irq` must be 0, and in every other cycle it must equal `irq()`.
+   Lab 05. `irq()` combines the two registers into the value that `irq` should have. Write the two
+   Part 5 `TODO`s in `RouterScoreboard.write_sys()`, which the sys monitor calls every cycle: in a
+   reset cycle `irq` must be 0, and in every other cycle it must equal `irq()`.
 
 2. You haven't written any stimulus for `irq` yet. Write down which of B01 and B02 the check will
    catch with the stimulus you already have, then run `make check-all` and look at B02's error:
@@ -697,21 +699,22 @@ Does `irq` follow `STATUS` and `INT_EN` in every cycle?
    ```
 
    Up to Part 4, the packet and beat counts in the first two lines were Lab 05's: 1123 packets,
-   376 of them FULL. The total is now 12 more, the 12 packets your step sent, and only one of those
-   was a FULL drop, yet there are 359 FULL drops where Lab 05 had 376. Why did Lab 04's and
-   Lab 05's packets change now, and not in Parts 2 to 4?
+   376 of them FULL. The total is now 12 more, which are the 12 packets your step sent. Only one of
+   those 12 was a FULL drop, but there are 359 FULL drops where Lab 05 had 376. Why did Lab 04's
+   and Lab 05's packets change now, and not in Parts 2 to 4?
 
    <details>
    <summary>Answer</summary>
 
    The 9-beat packet's 8 payload bytes come from `random`, and every packet after them is drawn
    from a different place in the sequence of random numbers, so the routing tables, the packets
-   and the sinks' coin flips of Labs 04 and 05 all differ. Parts 2 to 4 drew nothing: by Part 4
-   your sequence ran for about 5,900 cycles before Lab 04's steps began, and every packet after it
-   was still Lab 05's, so time alone doesn't move them. We checked the draws too. We saved
-   `random`'s state before `RouterLab06Vseq` and put it back after: the sequence had drawn 8
-   values, and every routing table and random packet after it was Lab 05's again, as the
-   `[PHASE]` and `[HOLES]` lines showed.
+   and the sinks' coin flips of Labs 04 and 05 all differ. Parts 2 to 4 drew nothing. With Part 4's
+   step written, your sequence ran for about 5,900 cycles before Lab 04's steps began, and every
+   packet after it was still Lab 05's, so the extra cycles on their own don't change the packets.
+   We also counted the draws, by saving `random`'s state before `RouterLab06Vseq` and putting it
+   back after the sequence. The sequence had drawn 8 values, and with the state put back, every
+   routing table and random packet after it was Lab 05's again, as the `[PHASE]` and `[HOLES]`
+   lines showed.
 
    </details>
 
@@ -751,13 +754,13 @@ Questions:
    <summary>Answer</summary>
 
    It added stimulus made from the register description. The reset sequence read every register
-   it could check, and the bit bash wrote and read back every bit it could check, which caught B14
-   and B03 without a step written for either bug. It also added access by name
+   it could check and caught B14, and the bit bash wrote and read back every bit it could check
+   and caught B03, without a step written for either bug. It also added access by name
    (`wr_reg(self.regs.INT_EN, ...)`), and a mirror that the predictor compares with every read of
-   a field the router doesn't change on its own. It left the 246 bad addresses (B04), the volatile
-   registers, and what the registers do to the rest of the router, such as `irq` (B01 and B02), to
-   raw transfers and the scoreboard. In pyuvm it also left you the predictor and both sequences,
-   which SystemVerilog UVM's library would have given you.
+   a field the router doesn't change on its own. It left raw transfers and the scoreboard to cover
+   the 246 bad addresses (B04), the volatile registers, and what the registers do to the rest of
+   the router, such as `irq` (B01 and B02). In pyuvm it also left you the predictor and both
+   sequences, which SystemVerilog UVM's library would have given you.
 
    </details>
 

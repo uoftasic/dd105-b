@@ -9,6 +9,7 @@
 #   scripts/ci/in-image.sh scripts/ci/check-labs.sh ref
 #   scripts/ci/in-image.sh scripts/ci/check-labs.sh lab lab-01-one-alu-two-frameworks
 #   scripts/ci/in-image.sh scripts/ci/check-labs.sh lab lab-02-a-layered-testbench-without-pyuvm
+#   scripts/ci/in-image.sh scripts/ci/check-labs.sh lab lab-03-constraints-and-coverage
 #
 #   venv        `make venv`: the course venv (pyvsc, cocotb-coverage), made from
 #               scratch in the clone unless it is already there
@@ -145,5 +146,5 @@ case "${1:-}" in
   selftest) step_selftest ;;
   ref)      step_ref ;;
   lab)      step_lab "${2:-}" ;;
-  *)        sed -n '2,30p' "$0"; exit 2 ;;
+  *)        sed -n '2,31p' "$0"; exit 2 ;;
 esac

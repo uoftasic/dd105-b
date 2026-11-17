@@ -25,7 +25,7 @@ Keep each kind of file in the folder listed for it.
 | `labs/common/` | No | The router's RTL and bug catalogue, the shared cocotb + pyuvm build (`pyuvm.mk`), the course venv's `requirements.txt`, the base test (`py/dd105b_base.py`) and the graders, used by every lab |
 | `labs/ref/` | No | The router's reference pyuvm environment, which proves every planted bug can be caught |
 | `guide-examples/<slug>/` | No | The examples on guide page `<slug>`, each with a Makefile that includes `labs/common/pyuvm.mk` (none yet) |
-| `scripts/` | No | Course utilities and automation: `ci/` (the reference-solution checks), `figures/` (the scripts that draw `docs/assets/img/*.svg`) |
+| `scripts/` | No | Course utilities and automation: `ci/` (the reference-solution checks), `figures/` (the scripts that draw `docs/assets/img/*.svg`), `screenshots/` (the tool that draws the waveform figures, `docs/assets/img/lab-*.png`) |
 | `notebooks/` | No | Exploratory or assignment notebooks |
 | `data/`, `figures/` | No | Shared datasets and source figures |
 
@@ -33,7 +33,7 @@ Three files wire up the site. `docs/_quarto.yml` holds the site settings, sideba
 
 ## Course structure
 
-Every course follows the same shape, so a student always knows whether they should be reading or doing, and what comes next. The template's sample pages still show it (`docs/index.md`, `docs/guide/getting-started.md` and `docs/labs/lab-01-overview.md`) until DD105-B's own pages replace them.
+Every course follows the same shape, so a student always knows whether they should be reading or doing, and what comes next. Lab 01's writeup, `docs/labs/lab-01-one-alu-two-frameworks-overview.md`, shows it for a lab. The template's sample pages, `docs/index.md` and `docs/guide/getting-started.md`, show it for the home page and a guide page until DD105-B's own pages replace them.
 
 ### Home page
 
@@ -95,7 +95,7 @@ Inside the parts:
   </details>
   ```
 
-  Inside a numbered step, indent the block to line up with the step's text, as the sample lab does.
+  Inside a numbered step, indent the block to line up with the step's text, as Lab 01 does.
 - Copy every expected output from a real run, on the course image if the lab uses the EDA tools.
 - Put each question at the step where it comes up.
 - As a rough guide, split or trim a part with more than eight steps. Steps that don't help answer the part's question go in Going further.
@@ -118,7 +118,7 @@ Reference pages (`docs/reference/`) and `solutions/` READMEs are lookup-shaped: 
 
 ## Adding a lab
 
-Labs are the main unit of coursework. Name them `lab-NN-short-name` (for example `lab-02-a-layered-testbench-without-pyuvm`). The template's sample lab is just `lab-01`; DD105-B's labs have short names.
+Labs are the main unit of coursework. Name them `lab-NN-short-name` (for example `lab-02-a-layered-testbench-without-pyuvm`).
 
 1. Create `labs/<lab-id>/` with at least:
    - `README.md`: link to the writeup and how to run
@@ -153,8 +153,8 @@ Don't paste long HDL into site pages. Link to the files under `labs/` instead.
 
 Quarto resolves page links and images the same way: relative to the page they're written in.
 
-- From a page in `docs/guide/` or `docs/labs/`, another page is `../labs/lab-01-overview.md` or `../reference/router-spec.md`, the home page is `../index.md`, and an image is `../assets/img/foo.png`.
-- From `docs/index.md`, they're `reference/router-spec.md`, `labs/lab-01-overview.md` and `assets/img/foo.png`.
+- From a page in `docs/guide/` or `docs/labs/`, another page is `../labs/lab-01-one-alu-two-frameworks-overview.md` or `../reference/router-spec.md`, the home page is `../index.md`, and an image is `../assets/img/foo.png`.
+- From `docs/index.md`, they're `reference/router-spec.md`, `labs/lab-01-one-alu-two-frameworks-overview.md` and `assets/img/foo.png`.
 
 The link check in `.github/workflows/docs-link-check.yml` reads the Markdown with the same rules, and `scripts/check_site.py` checks every local link and anchor in the rendered site when `.github/workflows/site.yml` builds it.
 
@@ -197,4 +197,3 @@ The link check in `.github/workflows/docs-link-check.yml` reads the Markdown wit
 - The shared build, the venv and the graders: `labs/common/README.md`
 - The reference environment: `labs/ref/README.md`
 - The reference-solution checks: `.github/workflows/labs.yml` and `scripts/ci/`
-- The template's sample lab, until DD105-B's Lab 01 replaces it: `labs/lab-01/` and `docs/labs/lab-01-overview.md`

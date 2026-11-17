@@ -30,7 +30,7 @@ website:
       - text: "Guide"
         href: guide/getting-started.md
       - text: "Labs"
-        href: labs/lab-01-overview.md
+        href: labs/lab-01-one-alu-two-frameworks-overview.md
     right:
       - text: Course PDF
         icon: file-pdf
@@ -47,8 +47,8 @@ website:
         contents:
           - text: "1. Getting started"
             href: guide/getting-started.md
-          - text: "2. Lab 01: Starter script"
-            href: labs/lab-01-overview.md
+          - text: "2. Lab 01: One ALU, two frameworks"
+            href: labs/lab-01-one-alu-two-frameworks-overview.md
       - section: "Reference"
         contents:
           - text: "The packet router"

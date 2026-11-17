@@ -9,7 +9,7 @@ testbench.
 Run it in the course image, from this folder:
 
 ```bash
-make cocotb            # the cocotb test on the golden ALU (about 20 s the first time)
+make cocotb            # the cocotb test on the golden ALU (about 19 s the first time)
 make build             # the pyuvm testbench's simulator (about 2 s after make cocotb)
 make run               # AluRandTest on the golden ALU
 make check BUG=A03     # pass on the golden ALU, fail on A03

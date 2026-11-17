@@ -356,9 +356,9 @@ cocotb's support code), 1.6 s and 2.1 s, and every run listed in their sections 
 The runs were made in a container with the clone mounted at `/w`, so a path in a quoted line starts
 with `/w`. On the workbench it starts with `/foss/designs/modules/dd105-b`. *Getting started* and
 *Getting the tools outside the course image* quote such lines and say so, and *Python classes and
-cocotb concurrency* quotes one, in a traceback. The pages from *Assertions for interface rules* on
-quote none, and describe the lines that would have shown the path (Verilator's `Verilog $stop` line,
-for example) in the text instead.
+cocotb concurrency* quotes one, in a traceback. No other page quotes a line with the path. The pages
+from *Assertions for interface rules* on describe the lines that would have shown it (Verilator's
+`Verilog $stop` line, for example) in the text instead.
 
 ## Cleaning up
 

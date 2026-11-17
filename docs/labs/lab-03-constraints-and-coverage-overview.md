@@ -15,7 +15,7 @@ Package: [`labs/lab-03-constraints-and-coverage/`](https://github.com/uoftasic/d
   adds a packet that pyvsc randomizes, a sink that can stall, an APB read, a tracker that predicts
   what the router does with each packet, and a check on `DROP_CNT`. Part 1 walks through each of
   them. If your own monitor and scoreboard passed Lab 02's `make check-all`, you can copy them over
-  ours (the scoreboard's error messages on this page are ours, so yours may be worded differently).
+  ours (the scoreboard's error messages on this page come from ours, so yours may differ).
   Run the copy from the lab folder, which Part 1's first step takes you to:
 
   ```bash

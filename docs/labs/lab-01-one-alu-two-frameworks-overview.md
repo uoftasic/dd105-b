@@ -1,11 +1,12 @@
 # Lab 01: One ALU, two frameworks
 
 You'll test SimProc's ALU from DD104 with two testbenches, both on Verilator. The first is the
-cocotb test from DD104 Lab 03. The second is built from pyuvm, a Python library of UVM's classes
-that runs on cocotb. For each one you'll time the build and the run, see what it reports on three
-planted bugs and count its lines. DD105-A measured the same things for a SystemVerilog UVM
-testbench of this ALU, and you'll compare your numbers with those. Then you'll extend the pyuvm
-scoreboard until it catches A03, a zero-flag bug that the shipped scoreboard misses.
+cocotb test from DD104 Lab 03. The second is written with pyuvm, a Python library that implements
+UVM's classes and runs on cocotb. For each one you'll time the build and the run, see what it
+reports on three planted bugs and count its lines. DD105-A made the same measurements on a
+SystemVerilog UVM testbench for this ALU, and you'll compare your numbers with DD105-A's. Last,
+you'll extend the pyuvm scoreboard so that it catches A03. A03 is a bug in the zero flag, and the
+scoreboard as shipped misses it.
 
 Package: [`labs/lab-01-one-alu-two-frameworks/`](https://github.com/uoftasic/dd105-b/tree/main/labs/lab-01-one-alu-two-frameworks)
 
@@ -15,12 +16,15 @@ Package: [`labs/lab-01-one-alu-two-frameworks/`](https://github.com/uoftasic/dd1
   [Lab 03](https://uoftasic.com/dd104/labs/lab-03-three-blocks-before-the-processor-overview.html)
   in particular. You don't need its files, because this lab ships the ALU and a reference copy of
   the finished Lab 03 test, but you'll get more from the comparison if you wrote that test yourself.
-- Read [Getting started](../guide/getting-started.md).
-- Copy this table into your notes. You'll fill in the first two columns as you go. The third holds
-  DD105-A's numbers, measured in
+- Read [Getting started](../guide/getting-started.md),
+  [What a framework buys you](../guide/what-a-framework-buys-you.md) and
+  [From cocotb tests to pyuvm components](../guide/from-cocotb-tests-to-pyuvm-components.md).
+- Copy this table into your notes. You'll fill in the cocotb and pyuvm columns as you go. This
+  course doesn't build the SystemVerilog testbench, so the third column already holds DD105-A's
+  numbers, which were measured in
   [its Lab 01](https://uoftasic.com/dd105-a/labs/lab-01-one-alu-two-testbenches-overview.html)
-  with the course's 2 CPUs; this course doesn't build the SystemVerilog testbench. The questions
-  at the end ask you to compare the columns.
+  with the same 2 CPUs that we used for the times on this page. The questions at the end ask you
+  to compare the columns.
 
   | | cocotb | pyuvm | SystemVerilog UVM (DD105-A) |
   |---|---|---|---|
@@ -113,11 +117,11 @@ What does the cocotb test cost to build and run on Verilator, and what does it r
    | A02 | `NAND` computes NOR instead of NAND | `B02_nand_is_nor` |
    | A03 | `Z` looks only at `ALUout[3:0]` | `B03_zero_flag_low_nibble` |
 
-   With no `+BUG` you get the golden ALU, and with `+BUG=A03` you get A03, from the same
-   simulator.
+   One simulator holds all four ALUs. With no `+BUG` you get the golden ALU, and with `+BUG=A03`
+   you get A03.
 
 3. `cocotb/test_alu.py` is DD104 Lab 03's reference solution, with only its docstring changed.
-   DD104 ran it on Icarus, and this course runs everything on Verilator, this test included. If
+   DD104 ran it on Icarus, and here it runs on Verilator, like everything else in this course. If
    you'd rather run your own test, copy it in under a new name and add `TB=test_alu_mine` to every
    `make cocotb`, `make cocotb-all` and `make loc` command in this lab:
 
@@ -170,8 +174,8 @@ What does the cocotb test cost to build and run on Verilator, and what does it r
    ```
 
    The `ok: passed` line is the course's verdict on the run, from DD104's verdict script adapted
-   for this course. The line between the last two rules is the lab's makefile timing the build and
-   the run. The run is mostly `t02` driving all 393,216 vectors. Write both times in your table.
+   for this course. The line between the last two rules is the lab's makefile reporting how long
+   the build and the run took. The run is mostly `t02` driving all 393,216 vectors. Write both times in your table.
    Times are ballpark, but the counts in this lab are exact.
 
    The build took 7.3 s, which is probably longer than you guessed for a 95-line file. Why does it
@@ -180,11 +184,11 @@ What does the cocotb test cost to build and run on Verilator, and what does it r
    <details>
    <summary>Answer</summary>
 
-   Verilator turns the ALU into C++, and g++ compiles it into a simulator together with Verilator's
-   and cocotb's own support code. The ccache line counts seven compiled files. One of them,
-   `Vtop__ALL.o`, is the ALU. The other six, such as `verilated.o`, `verilated_vpi.o` and
-   `verilator.o` (`build.log` lists them all), are Verilator's and cocotb's support code. Part 3
-   shows how much of the 7.3 s they take.
+   Verilator turns the ALU into C++, and g++ compiles that C++ into a simulator, together with
+   Verilator's and cocotb's own support code. The ccache line counts seven compiled files. One of
+   them, `Vtop__ALL.o`, is the ALU. The other six are the support code: `verilated.o`,
+   `verilated_vpi.o` and `verilator.o` are three of them, and `build.log` lists them all. Part 3
+   shows how much of the 7.3 s those six take.
 
    </details>
 
@@ -235,8 +239,8 @@ What does the cocotb test cost to build and run on Verilator, and what does it r
    ```
 
    You derived the counts 65,024 and 65,280 by hand in DD104 Lab 03, Part 4, and accounted for
-   25,726 in Part 6, so the copied ALU and its switch behave on Verilator like DD104's three broken
-   ALUs. Write what the test reported on each bug in your table.
+   25,726 in Part 6, so the copied ALU and its switch behave on Verilator the way DD104's three
+   broken ALUs did on Icarus. Write what the test reported on each bug in your table.
 
 6. `t01` compares the value and both flags of six vectors, and it fails on A01 and A02 but passes
    on A03. Why does it miss A03?
@@ -274,28 +278,28 @@ What does the same job cost when it's built from UVM's pieces in pyuvm?
    ```
 
    This simulator is the ALU again, compiled into its own folder. The testbench and pyuvm itself
-   are Python, so neither is compiled. The ccache's counts add up across builds, so take away the
-   cocotb build's 0 hits and 7 misses to get this build's own. Why did it take 1.7 s when the
-   cocotb build of the same ALU took 7.3 s?
+   are Python, so neither is compiled. The ccache's counts add up across builds, so subtract the
+   cocotb build's 0 hits and 7 misses to get this build's own counts. Why did it take 1.7 s when
+   the cocotb build of the same ALU took 7.3 s?
 
    <details>
    <summary>Answer</summary>
 
    This build looked up seven files and found six of them in the ccache, where the cocotb build
-   had put them, so it compiled one file. With an empty ccache this build also took 7.3 s, both
-   times we ran it, so the six files from the ccache saved about 5.6 s.
+   had put them, so it compiled one file. With an empty ccache this build took 7.3 s too, in both
+   of the runs we timed, so the six files from the ccache saved about 5.6 s.
 
    </details>
 
-   DD105-A's SystemVerilog UVM testbench for this ALU took 102 s to build with the same 2 CPUs,
-   because Verilator compiled the whole UVM library along with the ALU and the testbench.
-   Verilator counted 24.157 MB of source in 386 modules, nearly all of it from the UVM library,
-   and g++ spent 98.5 s of the 102 s compiling the C++ that Verilator made from it. Write the build
-   time in your table.
+   DD105-A's SystemVerilog UVM testbench for this ALU took 102 s to build with the same 2 CPUs. In
+   that build, Verilator turned the whole UVM library into C++ along with the ALU and the
+   testbench. It counted 24.157 MB of source in 386 modules, nearly all of it from the UVM library,
+   and g++ spent 98.5 s of the 102 s compiling the C++ that Verilator made from it. Write your
+   pyuvm build's time in your table.
 
-2. Read `tb/alu_uvm.py`. Each piece is named after its counterpart in DD105-A's testbench, in
-   Python's CamelCase (`alu_driver` is `AluDriver`). Most pieces do a job that the cocotb test also
-   does:
+2. Read `tb/alu_uvm.py`. Each piece is a class named after its counterpart in DD105-A's
+   testbench, written in CamelCase as Python class names are (`alu_driver` becomes `AluDriver`).
+   Most pieces do a job that the cocotb test also does:
 
    | pyuvm piece | Its job | In `test_alu.py` |
    |---|---|---|
@@ -305,20 +309,20 @@ What does the same job cost when it's built from UVM's pieces in pyuvm?
    | `AluDriver` | puts each vector on the pins | the three `.value =` lines in `alu()` |
    | `AluMonitor` | reads the pins back into an `AluItem` | the `return` line of `alu()` |
    | `AluScoreboard` | `predict()` and the comparison | `spec()`, and the comparisons in `t01` and `t02` |
-   | `AluAgent`, `AluEnv` | create the pieces and connect them | nothing |
+   | `AluAgent`, `AluEnv` | create the pieces and connect them; `AluEnv` also checks that the scoreboard checked every vector the driver sent | nothing |
    | `AluRandTest`, `AluDirectedTest` | choose the stimulus | the `@cocotb.test()` functions |
 
    The ALU is combinational, so the cocotb test sets the inputs and waits 1 ns. A driver and a
    monitor are separate pieces, so they need to agree on when a vector is on the pins. DD105-A
-   added a clock and a `valid` signal to its interface for that. Here `AluIf` holds the period and a
-   `valid` flag in Python: the driver holds each vector on the pins for 10 ns and sets `valid`
-   while it does, and the monitor reads the pins 5 ns into every period.
+   added a clock and a `valid` signal to its interface for that. Here `AluIf` does the same job with
+   a period and a `valid` flag in Python. The driver holds each vector on the pins for 10 ns and
+   sets `valid` while it does, and the monitor reads the pins 5 ns into every period.
 
    The tests derive from `BaseTest`, in `labs/common/py/dd105b_base.py`. pyuvm reports through
-   Python's `logging`, and an error that a component logs with `self.logger.error()` fails nothing
-   on its own, so the test would still pass. `BaseTest` counts every error any component logs,
-   prints one line with the count at the end, and fails the test if the count isn't 0. The cocotb
-   test needs none of this, because a check that finds a mismatch raises `AssertionError` itself,
+   Python's `logging`, and an error that a component logs with `self.logger.error()` is printed
+   but doesn't fail the test. `BaseTest` counts every error that any component logs, prints one
+   line with the count at the end, and fails the test if the count isn't 0. The cocotb test
+   doesn't need it, because each of its checks raises `AssertionError` when it finds a mismatch,
    and that fails the test. So `cocotb/Makefile` sets `BASE_TEST := 0`, which tells the verdict not
    to look for `BaseTest`'s line.
 
@@ -347,8 +351,8 @@ What does the same job cost when it's built from UVM's pieces in pyuvm?
    cocotb cuts a long file path to fit its column, so `..wo-frameworks/tb/alu_uvm.py(251)` is line
    251 of `tb/alu_uvm.py`. The `[SB]` line is stamped `20000.00ns`, which is 20 µs, the time that
    2000 vectors take at one every 10 ns. "No bound assertions" means that no SystemVerilog
-   assertions are attached to this design; the router's are, from Lab 05 on. Write the run time in
-   your table.
+   assertions are bound into this design. From Lab 05 on, the router has assertions bound into it.
+   Write the run time in your table.
 
 4. Run the other test, without rebuilding:
 
@@ -361,9 +365,8 @@ What does the same job cost when it's built from UVM's pieces in pyuvm?
    picked when the simulator starts, so trying another test, seed or bug never rebuilds anything,
    and every lab in the course works this way.
 
-5. Before you count each testbench's lines, guess how the pyuvm testbench's code lines compare
-   with the cocotb test's, given that DD105-A's SystemVerilog testbench had three times as many.
-   Then count them:
+5. DD105-A's SystemVerilog testbench had three times as many code lines as the cocotb test. Before
+   you count each testbench's lines, guess how the pyuvm testbench compares. Then count them:
 
    ```bash
    make loc
@@ -381,20 +384,22 @@ What does the same job cost when it's built from UVM's pieces in pyuvm?
    ```
 
    `code` leaves out blank lines and comments, and counts Python docstrings as comments. The pyuvm
-   testbench has about 1.7 times the cocotb test's code lines, against 3 times for DD105-A's 282.
-   Using the table in step 2, where do pyuvm's extra lines go, and which of the SystemVerilog
-   testbench's lines does Python not need?
+   testbench has about 1.7 times as many code lines as the cocotb test (161 against 94), and
+   DD105-A's had 3 times as many (282). Using the table in step 2, where do pyuvm's extra lines go,
+   and which of the SystemVerilog testbench's lines does Python not need?
 
    <details>
    <summary>Answer</summary>
 
-   The extra lines go into pieces the cocotb test doesn't need: the agent and the environment only
-   create and connect the other pieces, `AluIf` carries the period and the flag, and the driver and
-   monitor do in two classes what `alu()` does in five lines. The SystemVerilog testbench also
-   spent lines on things Python doesn't need: a `` `uvm_component_utils `` or
-   `` `uvm_object_utils `` line and a constructor in every class (in `alu_uvm.py` only `AluIf`,
-   `AluItem` and `AluRandSeq` define `__init__`, each to set its own fields), declared types and
-   widths, an interface with two clocking blocks, and a top module.
+   The extra lines go into pieces that the cocotb test doesn't need. The agent only creates and
+   connects the other pieces, and the environment does the same plus one check, that the
+   scoreboard checked every vector the driver sent. `AluIf` carries the period and the `valid`
+   flag, and the driver and the monitor take two classes to do what `alu()` does in five lines.
+   The SystemVerilog testbench also spent lines on things that Python doesn't need: a
+   `` `uvm_component_utils `` or `` `uvm_object_utils `` line and a constructor in every class,
+   declared types and widths, an interface with two clocking blocks, and a top module. In
+   `alu_uvm.py`, only `AluIf`, `AluItem` and `AluRandSeq` define `__init__`, and each does it only
+   to set its own fields.
 
    </details>
 
@@ -413,7 +418,7 @@ What does the same job cost when it's built from UVM's pieces in pyuvm?
    high from 120 to 130 ns, where `SUB` with `A=B=b9` gives `00`.*
 
    Each vector holds the pins for 10 ns, starting at a multiple of 10 ns. The waves hold only the
-   ALU's six ports, because `AluIf`'s period and `valid` flag are Python.
+   ALU's six ports, because `AluIf`'s period and `valid` flag exist only in Python.
 
 Check: `2000 vectors checked: 0 value mismatches` and `ok`, and your table has a line count, a
 build time and a run time in the cocotb and pyuvm columns.
@@ -471,17 +476,16 @@ Which bugs does the pyuvm testbench catch, and why?
    DD105-B BaseTest: 291 errors logged, no bound assertions
    ```
 
-   followed by the `AssertionError` that `BaseTest` raises, which quotes the first error, and the
-   verdict, `caught: 291 errors`. That `AssertionError` is how the verdict knows a check fired.
-   pyuvm has no report server, so the log has no table of errors counted by kind, like the "Report
-   counts by id" that DD105-A's UVM printed; the per-operation count on the `[SB]` line is the
-   scoreboard's own.
+   followed by the `AssertionError` that `BaseTest` raises, which quotes the first error, and then
+   the verdict, `caught: 291 errors`. That `AssertionError` is how the verdict knows a check fired.
+   pyuvm has no report server, so the log has no table that counts errors by kind, like the
+   "Report counts by id" table that DD105-A's UVM printed. The per-operation count on the `[SB]`
+   line comes from the scoreboard's own counters.
 
 4. The cocotb test's `t02` drove all 65,536 `SUB` vectors and found 65,024 of them wrong. The
-   pyuvm test caught A01 on its tenth vector (`95.00ns` is 5 ns into the period that starts at
-   90 ns) out of 2000 random ones.
-   Why does a random sample find A01 and A02 so easily, when no number of random vectors would find
-   A03 with this scoreboard?
+   pyuvm test caught A01 on the tenth of its 2000 random vectors (`95.00ns` is 5 ns into the
+   period that starts at 90 ns). Why does a random sample find A01 and A02 so easily, when no
+   number of random vectors would find A03 with this scoreboard?
 
    <details>
    <summary>Answer</summary>
@@ -520,11 +524,12 @@ rebuild?
 2. Extend `AluScoreboard` in `tb/alu_uvm.py`, following the `TODO` in `write()`. `predict()`
    already works out `n` and `z`, and the monitor already fills in `t.N` and `t.Z`, so you only
    need to compare them. Count flag mismatches separately from value mismatches, with a counter and
-   a per-operation list like `n_bad_value` and `bad_value` (set them up in `build_phase`), log each
-   one with `self.logger.error()` and a message that starts with `[FLAGS]`, and add the flag count
-   to the line `report_phase` prints. pyuvm's messages have no IDs, so `[FLAGS]` is only text for
-   you to read, and the two counts on the `[SB]` line are the only place the run counts value and
-   flag mismatches separately. `BaseTest` counts them all together.
+   a per-operation list like `n_bad_value` and `bad_value`, and set both up in `build_phase`. Log
+   each flag mismatch with `self.logger.error()` and a message that starts with `[FLAGS]`, and add
+   the flag count to the line that `report_phase` prints. pyuvm's messages have no IDs, so
+   `[FLAGS]` is only text for you to read. `BaseTest` counts every error together, so the two
+   counts on the `[SB]` line are the only place where the run keeps value and flag mismatches
+   apart.
 
 3. You changed one file. Write down how long you expect the rebuild to take, then run it:
 
@@ -543,11 +548,11 @@ rebuild?
    <details>
    <summary>Answer</summary>
 
-   The simulator is built from `rtl/alu.sv` alone, and `tb/alu_uvm.py` is Python, which cocotb
-   imports each time the simulator starts. The command took 0.07 s when we timed it. In DD105-A,
-   the same edit to the SystemVerilog scoreboard cost a rebuild of 99 s (87 s in an earlier run).
-   DD105-A timed two one-line edits as well: adding one class member rebuilt in 93 s, and a change
-   inside a task's body in 26 s.
+   The simulator is built from `rtl/alu.sv` alone, and `tb/alu_uvm.py` is a Python file that
+   cocotb imports each time the simulator starts. The command took 0.07 s when we timed it. In
+   DD105-A, the same edit to the SystemVerilog scoreboard cost a rebuild of 99 s (87 s in an
+   earlier run). DD105-A also timed two one-line edits. Adding one member to a class rebuilt in
+   93 s, and a change inside a task's body rebuilt in 26 s.
 
    </details>
 
@@ -579,9 +584,10 @@ rebuild?
    make check-all
    ```
 
-   You should see `3 of 3 caught`. With the reference solution, which logs one `[FLAGS]` error
-   for each vector whose flags are wrong, the counts are 582, 421 and 125 errors for A01, A02 and
-   A03, so A01 and A02 went up from 291 and 278. Why is A01's exactly double, when A02's isn't?
+   You should see `3 of 3 caught`. The reference solution logs one `[FLAGS]` error for each vector
+   whose flags are wrong, and with it the counts are 582, 421 and 125 errors for A01, A02 and A03.
+   Before your change, A01 and A02 had 291 and 278. Why is A01's count exactly double, when A02's
+   isn't?
 
    <details>
    <summary>Answer</summary>
@@ -589,10 +595,10 @@ rebuild?
    A wrong value can bring wrong flags with it, and then the vector is logged twice, once as
    `[VALUE]` and once as `[FLAGS]`. Under A01 the ALU returns `B - A`, the negative of the right
    answer, and a byte and its negative differ in bit 7 unless the byte is `0x00` or `0x80`, which
-   are the cases A01 gets right. So every wrong `SUB` also has a wrong `N`: 291 and 291. Under A02,
-   bit 7 of `~(A | B)` and `~(A & B)` differ only when exactly one of `A[7]` and `B[7]` is 1, so
-   only some of the 278 wrong `NAND` values also have wrong flags: 143 of them, says the `[SB]`
-   line of `make run BUG=A02`.
+   are the cases A01 gets right. So every wrong `SUB` also has a wrong `N`, and A01's 291 `[VALUE]`
+   errors come with 291 `[FLAGS]` errors. Under A02, bit 7 of `~(A | B)` and `~(A & B)` differ
+   only when exactly one of `A[7]` and `B[7]` is 1, so only some of the 278 wrong `NAND` values
+   also have wrong flags. The `[SB]` line of `make run BUG=A02` counts 143 of them.
 
    </details>
 
@@ -607,22 +613,23 @@ rebuild?
 
    *A03. The vectors are the same as in Part 3's picture, because the seed is the same. `Z` also
    goes high from 150 to 160 ns, where `SHR` of `80` by 0 gives `80`, and from 170 to 180 ns,
-   where `SHL` gives `a0`.*
+   where `SHL` of `74` by 3 gives `a0`.*
 
-   The first `[FLAGS]` error is stamped `155.00ns`: the monitor read the `SHR A=80 B=80` vector
-   5 ns into the period that starts at 150 ns. In Part 3's picture `Z` is high only from 120 to
-   130 ns, where the result really is `00`.
+   The first `[FLAGS]` error is stamped `155.00ns`, because the monitor read the `SHR A=80 B=80`
+   vector 5 ns into the period that starts at 150 ns. In Part 3's picture, `Z` is high only from
+   120 to 130 ns, where the result really is `00`.
 
-7. `AluDirectedTest` sends the same six vectors as `t01`, and it now goes through your flag check,
-   because both tests share the scoreboard. Predict whether it catches A03, then run it:
+7. `AluDirectedTest` sends the same six vectors as `t01`, and because both tests share the
+   scoreboard, its vectors now go through your flag check too. Predict whether it catches A03,
+   then run it:
 
    ```bash
    make run TEST=AluDirectedTest BUG=A03
    ```
 
    You should see `[SB] 6 vectors checked: 0 value mismatches, 0 flag mismatches` and
-   `MISSED: 0 errors   0.27 s`. It misses A03 for the reason `t01` does, which you worked out at
-   the end of Part 2.
+   `MISSED: 0 errors   0.27 s`. It misses A03 for the same reason that `t01` does, which you worked
+   out at the end of Part 2.
 
 Check: `VERDICT: PASS` from `make check BUG=A03`, and `3 of 3 caught` from `make check-all`.
 
@@ -639,21 +646,23 @@ Questions:
    <details>
    <summary>Answer</summary>
 
-   In pyuvm it cost about 1.7 times the code (161 code lines against 94) and no build time beyond
-   the cocotb test's, because the only thing compiled is the ALU, and editing the testbench rebuilt
-   nothing. In DD105-A's SystemVerilog it cost three times the code, a first build of about 100 s,
-   and 26 to 99 s every time the testbench changed. Neither is faster per vector than the cocotb
-   test. cocotb's report puts `AluRandTest`'s 2000 vectors at 0.19 s of real time, about 0.1 ms
-   each, and `t02`'s 393,216 at 10.64 s, about 0.03 ms each. DD105-A's 2000 vectors in 1.17 s
-   come to at most 0.6 ms each, because the 1.17 s also covers starting the simulator.
+   In pyuvm it cost about 1.7 times the code (161 code lines against 94). Its build cost no more
+   than the cocotb test's, because the only thing compiled in either is the ALU (7.3 s from an
+   empty ccache), and editing the testbench rebuilt nothing. In DD105-A's SystemVerilog it
+   cost three times the code, a first build of about 100 s, and 26 to 99 s every time the
+   testbench changed. Neither is faster per vector than the cocotb test. The table that cocotb
+   prints at the end of each run puts `AluRandTest`'s 2000 vectors at 0.19 s of real time, about
+   0.1 ms each, and `t02`'s 393,216 at 10.64 s, about 0.03 ms each. DD105-A's 2000 vectors took
+   1.17 s, about 0.6 ms each. That time also covers starting the simulator, but DD105-A's directed
+   test ran its six vectors in 0.04 s, so starting takes at most 0.04 s of it.
 
    You saw what the structure gave you in Part 5. The flag check went into one class, and both
-   tests used it without being edited, because stimulus and checking are separate pieces; in
-   `test_alu.py`, `t01` and `t02` each do their own comparison. `AluDirectedTest` is one sequence
-   and one short test class that reuse the driver, monitor and scoreboard, and it's chosen when you
-   run, without a rebuild. On one combinational block that's a modest return. The router you'll
-   test from Lab 02 on has a register bus, an input stream and two output streams, and that's the
-   kind of design the structure is for.
+   tests used it without being edited, because the stimulus and the checking are separate pieces.
+   In `test_alu.py`, `t01` and `t02` each do their own comparison. `AluDirectedTest` is one
+   sequence and one short test class that reuse the driver, monitor and scoreboard, and it's
+   chosen when you run, without a rebuild. On one combinational block that's a modest return. The
+   structure is meant for designs like the router, which you'll test from Lab 02 on. It has a
+   register bus, an input stream and two output streams.
 
    </details>
 
@@ -664,10 +673,10 @@ Questions:
    <summary>Answer</summary>
 
    125 of 2000 is 6.25%, and 25,726 of 393,216 is 6.5%, so the random run estimates the fraction
-   of vectors A03 breaks, from whichever 2000 vectors its seed picked. Only the sweep gives the
-   exact count, which you can derive from the bug by hand, as you did in DD104 Lab 03, Part 6.
-   Both runs found no wrong values and some wrong flags, and that pair of counts is what tells you
-   the bug is in the flag logic rather than the arithmetic.
+   of vectors that A03 breaks, from whichever 2000 vectors its seed picked. Only the sweep gives
+   the exact count, which you can derive from the bug by hand, as you did in DD104 Lab 03, Part 6.
+   Both runs found no wrong values and some wrong flags, which tells you that the arithmetic is
+   right and the bug is in the flag logic.
 
    </details>
 
@@ -682,7 +691,8 @@ make check-all SEED=2
 ```
 
 With the reference solution, A03's count was 147 on seed 2, 143 on seed 3, 135 on seed 4 and 134
-on seed 5, against 125 on seed 1, and the starter's scoreboard missed A03 on all five.
+on seed 5, against 125 on seed 1. The starter's scoreboard missed A03 on all five seeds.
 
-Next on the [Course path](../index.md#course-path): the reading on Python classes, cocotb
-concurrency, and driving and sampling on the clock, then Lab 02: A layered testbench without pyuvm.
+Next on the [Course path](../index.md#course-path): the reading on Python classes and cocotb
+concurrency and on driving and sampling on the clock, then Lab 02: A layered testbench without
+pyuvm.

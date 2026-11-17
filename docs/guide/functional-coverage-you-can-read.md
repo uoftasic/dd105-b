@@ -7,19 +7,15 @@ In DD104's [Coverage is a question](https://uoftasic.com/dd104/guide/coverage-is
 functional coverage was a list of questions that you kept yourself (have I run `SUB` with two
 different operands? have I taken a backward branch?), and you could answer each of them with a `for`
 loop and a set. cocotb-coverage 2.0 keeps the same kind of list in Python. You name the values you
-care about, it counts how often the stimulus produces each one, and each run writes the counts to a
-file that `make cov` merges and reports. In
+care about, it counts how often the stimulus produces each one, and each run in the labs writes the
+counts to a file that `make cov` merges and reports. In
 [Lab 03, Part 2](../labs/lab-03-constraints-and-coverage-overview.md#part-2-coverage-you-can-read)
 you write coverpoints for the router's packets. `router_rand_test` passes there and catches neither
 of the two bugs planted in that lab's router, and your coverage shows you the holes in the test's
 stimulus where those bugs are.
 
-cocotb-coverage, like pyvsc, is in the course venv that Lab 03, Part 1 makes. It counts every bin
-right, but its percentage is the share of all bins that were hit, which isn't how the SystemVerilog
-standard works it out. A bin written as a range needs a relation function, or it's never hit and
-nothing warns you. A coverpoint has no ignore bins, and a check for illegal values counts as a bin.
-This page shows how to write coverpoints and crosses, where their counts go, and how to read them.
-The example,
+cocotb-coverage, like pyvsc, is in the course venv that Lab 03, Part 1 makes. The example for this
+page,
 [`guide-examples/functional-coverage-you-can-read/`](https://github.com/uoftasic/dd105-b/tree/main/guide-examples/functional-coverage-you-can-read),
 sends random vectors to SimProc's ALU and samples each one.
 
@@ -56,8 +52,8 @@ question about operands for every operation. The cross goes below the coverpoint
 because the decorators run from the top down at each call, and the cross reads which bin each of
 its coverpoints has just counted.
 
-Every name is a dotted path, and the parts before the last name a **group**. `alu` is the group of
-everything whose name starts with `alu.`, and its counts are the sums of theirs. The test calls
+Every name is a dotted path, and the part before the last dot names a **group**. `alu` is the group
+of everything whose name starts with `alu.`, and its counts are the sums of theirs. The test calls
 `sample(op, a, b)` once for every vector it sends.
 
 SimProc programs use equal operands on purpose, because `SUB rX, rX` is how you zero a register and
@@ -70,8 +66,8 @@ still gives the right answer, because `~(A & A)` and `~(A | A)` are both `~A`.
 cocotb-coverage puts a value in a bin when `value == bin`. That's fine for single values, but no
 number is equal to a tuple, so a bin written as a range such as `(1, 254)` needs a relation
 function, given as `rel=`, that says what "in the bin" means. `alu.a` has one, `in_range()`. The
-example also has a coverpoint written the way you'd first write it, with two single values and a
-tuple in the middle and no `rel=`:
+example also has a coverpoint with two single values and a range written as a tuple between them,
+and no `rel=`:
 
 ```python
 @CoverPoint("quirk.a_no_rel", xf=lambda op, a, b: a, bins=[0, (1, 254), 255],
@@ -122,18 +118,17 @@ uniformly random:
 ========================================================================
 ```
 
-The merge puts every group under one named `top`. `quirk` is the group of the example's two
-oddities, `a_no_rel` above and `op_legal` below, kept apart so that they don't change `alu`'s counts.
+The merge puts every group under one named `top`. `quirk` holds the example's other two items,
+`a_no_rel` above and `op_legal` below, in a group of their own so that they don't change `alu`'s
+counts.
 In `alu`, every operation and every kind of `A` came up, but only `ADD` and `SHL` had a vector with
 equal operands, so four of the twelve cross bins are empty. Only 2 of the 300 vectors had `A == B`,
 which is about what uniform random operands give, because `B` matches `A` in one vector in 256.
-`CovBiasedTest` makes `A == B` in one vector in eight, and that fills the cross:
+`CovBiasedTest` makes `A == B` in one vector in eight, and one run of it filled the cross:
 
 ![The cross alu.x_op_eq as a grid of counts after CovPlainTest, with four empty bins in the equal row, and after CovBiasedTest, with all twelve hit.](../assets/img/functional-coverage-cross.svg)
 
-*The 12 bins of `alu.x_op_eq` after one run of each test. With uniform operands, the `equal` row has
-a count of 1 for `add` and `shl` and 0 for the other four operations. With `A == B` in one vector in
-eight, every bin is hit.*
+*The `[COV] x_op_eq` lines of the two runs, as grids. A hatched bin is empty.*
 
 `make cov` names only the empty bins. The merged file, `build/coverage/merged.xml`, has every bin
 with its count, and Lab 03, Part 2 has you read the length bins' counts from it with `grep`.
@@ -144,8 +139,8 @@ cocotb-coverage's `82.61 %` for `alu` is the number of bins hit divided by the n
 23, with every bin of every coverpoint and cross under the group counted the same. The standard works
 it out another way, and gives a group the average of its coverpoints' and crosses' coverage. For
 `alu` that's the average of 100, 100, 100 and 66.67%, which is 91.67%. The two differ because the
-cross has 12 of the group's 23 bins, so it weighs more than half of cocotb-coverage's number. For the
-same reason, `top` comes to 81.48%, 22 of 27, because it counts `quirk`'s four bins too.
+cross has 12 of the group's 23 bins, so it weighs more than half of cocotb-coverage's number. `top`
+comes to 81.48%, 22 of 27, because it counts `quirk`'s four bins too.
 
 In Lab 03, Part 2 you work the same sums for the router's 41 bins, and get 46.34% by
 cocotb-coverage's formula and 61% by the standard's. Twelve of those bins can't be hit by any test in
@@ -157,15 +152,17 @@ never hit, as you did above for the four `equal` bins.
 
 A coverpoint has no ignore bins. A value that matches none of its bins isn't counted anywhere, so
 the way to ignore a value is to leave it out of the bins. SimProc's ALU has no operations 6 and 7,
-and `alu.op` simply has no bins for them. A cross can ignore combinations: `CoverCross` takes
+and `alu.op` has no bins for them. A cross can ignore combinations: `CoverCross` takes
 `ign_bins`, a list of label pairs such as `("full", "empty")`, and leaves those bins out of the cross
-and out of its count. `labs/ref`'s coverage ignores seven combinations of its cross that the router
-can't produce, and that cross then has 13 bins, all of them hit in its regression. Lab 03 leaves
+and out of its count. The course's reference testbench for the router,
+[`labs/ref`](https://github.com/uoftasic/dd105-b/tree/main/labs/ref), ignores seven combinations of
+one of its crosses that the router can't produce, and that cross then has 13 bins, all of them hit in
+its regression. Lab 03 leaves
 its impossible bins in, and has you sort them out by reading.
 
 A value that should never happen at all goes in a `CoverCheck`, which counts a pass for every sample
-and a failure for every sample its `f_fail` function picks out. The example's checks that the
-operation is one the ALU has:
+and a failure for every sample its `f_fail` function picks out. The example's check fails on an
+operation the ALU doesn't have:
 
 ```python
 @CoverCheck("quirk.op_legal", f_fail=lambda op, a, b: op > 5, f_pass=lambda op, a, b: True)
@@ -181,8 +178,8 @@ its `[COV]` lines are:
 ```
 
 and the check's counts, `{'PASS': 300, 'FAIL': 1}`. The run ended `ok`, because a `CoverCheck` raises
-no error. The check counted as one bin of its
-group, which is why a check belongs in a group of its own. Then `make cov` merged all three runs:
+no error. The check counted as one bin of its group, which is why a check belongs in a group of its
+own. Then `make cov` merged all three runs:
 
 ```text
     top.quirk                                    100.00 %   4 of 4 bins
@@ -218,7 +215,7 @@ the lab's planted bugs are in bins of the third.
    <summary>Answer</summary>
 
    Only the three written as numbers, 0, 8 and 9. No level is equal to a tuple, so the two range
-   bins stay empty, and nothing warns you. Write every bin as a range, `(0, 0)`, `(1, 7)`, `(8, 8)`,
+   bins stay empty, with no warning. Write every bin as a range, `(0, 0)`, `(1, 7)`, `(8, 8)`,
    `(9, 9)` and `(10, 16)`, and give the coverpoint a `rel=` that tests `low <= value <= high`.
 
    </details>
@@ -231,8 +228,8 @@ the lab's planted bugs are in bins of the third.
 
    Something under the group counts more than its size. In the example, a `CoverCheck` that failed
    in one run of three came out as `2 of 1` after the merge, and that extra bin made up for the empty
-   `other`. Read each coverpoint, cross and check, and a check by its `FAIL` count, not the group's
-   percentage.
+   `other`. Read each coverpoint, cross and check on its own, and read a check by its `FAIL` count
+   rather than by the group's percentage.
 
    </details>
 
@@ -251,8 +248,8 @@ the lab's planted bugs are in bins of the third.
 ## Further reading
 
 cocotb-coverage's own documentation is the authority on its API. ChipVerify's coverage pages explain
-the same ideas in SystemVerilog's covergroup syntax, and their percentages, where they give any,
-follow the standard's formula, which cocotb-coverage doesn't.
+the same ideas in SystemVerilog's covergroup syntax. Where they give a percentage, it's the
+standard's average, not cocotb-coverage's share of bins hit.
 
 - cocotb-coverage's [Tutorials](https://cocotb-coverage.readthedocs.io/en/latest/tutorials.html),
   for `rel=` and `ign_bins`, under "Translating SystemVerilog Constructs to cocotb-coverage".

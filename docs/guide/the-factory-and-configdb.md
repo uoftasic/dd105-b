@@ -4,13 +4,12 @@ This page answers: *how does a test change what the environment builds, and how 
 without editing the environment?*
 
 pyuvm gives a test two ways to do it, the factory and `ConfigDB`, and
-[Lab 04](../labs/lab-04-the-same-testbench-in-pyuvm-overview.md) has you use both. In Part 2 you
-make a second copy of the output agent, and `ConfigDB` tells each copy which output it's on. In
-Part 3 you write a stall test that changes a knob that the output drivers read, one output at a
-time. In Part 4 you write a test that sends packets to disabled routes by telling the factory to make
-a different packet class, and the sequence that makes the packets stays as it is. Part 5 then asks
-what the extra lines of the pyuvm testbench bought you, and these two mechanisms are most of the
-answer.
+[Lab 04](../labs/lab-04-the-same-testbench-in-pyuvm-overview.md) has you use both. Part 2 has you
+make a second copy of the output agent, and `ConfigDB` tells each copy which output it's on. The
+stall test you write in Part 3 changes a knob that the output drivers read, one output at a time.
+Part 4's test sends packets to disabled routes by telling the factory to make a different packet
+class, and the sequence that makes the packets stays as it is. Part 5 then asks
+what the extra lines of the pyuvm testbench bought you, and its answer comes back to both.
 
 The example in
 [`guide-examples/the-factory-and-configdb/`](https://github.com/uoftasic/dd105-b/tree/main/guide-examples/the-factory-and-configdb)
@@ -88,7 +87,7 @@ That's DD104's lesson about equal operands again. With `A == B`, `A - B` and `B 
 `~(A & B)` and `~(A | B)` are both `~A`, so A01 and A02 give the right answers. The coverage reported
 `[COV] alu: 13 of 20 bins hit`, because no vector had unequal operands.
 
-### What the factory doesn't reach
+### The constructor and the factory
 
 An override changes only the objects that the factory makes. `FacCtorTest` sets the same override and
 then makes one item each way:
@@ -98,17 +97,18 @@ then makes one item each way:
 [CTOR] AluItem('x') made AluItem
 ```
 
-That's sometimes what you want. Lab 04's `close_holes()` needs its packets exactly as `RouterPkt`
-defines them, so it makes them with the constructor, in `new_packet()` and `RouterPkt.make()`, which
-the factory never sees. When we made its two random packets with `create()` instead,
-`RouterInjectTest`'s override turned them into `NoroutePkt`s too, and `RouterInjectTest` ended `BROKEN: SolveFailure` on 2
-of seeds 1 to 20 (Lab 04, Part 4, step 3).
+Lab 04 relies on that. Its `close_holes()` needs its packets exactly as `RouterPkt` defines them, so
+it makes them with the constructor, in `new_packet()` and `RouterPkt.make()`, which the factory never
+sees. When we made its two random packets with `create()` instead, `RouterInjectTest`'s override
+turned them into `NoroutePkt`s too, and the test ended `BROKEN: SolveFailure` on 2 of seeds 1 to 20
+(Lab 04, Part 4, step 3).
 
 Components go through the factory too, when they're made with `create()`. On the monitors page,
 `MonAliasTest` swapped in a different monitor with an override of `AluMonitor`, and `MonConnectTest`
 a different environment. Both overrides took effect because `MonAgent` and the test make those
-components with `AluMonitor.create()` and `MonEnv.create()`. A component made with its constructor, as Lab 04's agents
-make their sequencers with `uvm_sequencer("sqr", self)`, can't be swapped that way.
+components with `AluMonitor.create()` and `MonEnv.create()`. A component made with its constructor,
+as Lab 04's agents make their sequencers with `uvm_sequencer("sqr", self)`, can't be swapped that
+way.
 
 pyuvm clears every override at the start of each test, so one test's overrides never reach the next.
 An override can also apply to a single component, named by its path in the tree, with
@@ -120,8 +120,8 @@ type overrides.
 pyuvm 4.0.1 reads no plusargs of its own, so it can't take an override from the command line the way
 SystemVerilog UVM's `+uvm_set_type_override` does. Lab 04's base test reads one of its own,
 `+OVERRIDE=<class>,<class>`, and calls `uvm_factory().set_type_override_by_name()` with the two names
-before it builds anything, and the example's base test does the same. So it works on `MonRandTest`,
-which knows nothing about `AluEqualItem`:
+before it builds anything, and the example's base test does the same. So the override works on
+`MonRandTest`, which knows nothing about `AluEqualItem`:
 
 ```bash
 make run TEST=MonRandTest BUG=A01 PLUSARGS=+OVERRIDE=AluItem,AluEqualItem
@@ -167,7 +167,7 @@ The example's scoreboard checks only `ALUout` unless `check_flags` is set, and t
 
 A path in a `set()` can hold wildcards. They're globs, as in a shell, and not regular expressions:
 `*` matches any run of characters, dots included, so `"env.*"` reaches every component below `env`.
-A `get()` names one component, and pyuvm refuses a wildcard in its path. Lab 01's pyuvm test put its
+A `get()` names one component, and pyuvm raises `UVMError` for a wildcard in its path. Lab 01's pyuvm test put its
 `AluIf` in `ConfigDB` with no component as the context and the path `"*"`, so every component can
 find it, and Lab 04's base test does the same with the router's handle, `DUT`.
 
@@ -226,7 +226,7 @@ stores each `set()` made during `build_phase` with a precedence of 1000 minus th
 component that made it. That rule lets an environment give its components defaults that any test can
 override.
 
-It has a limit, though. `FacGlobTest` is the same test with the test's `set()` for `"env.*"` instead:
+`FacGlobTest` is the same test with the test's `set()` for `"env.*"` instead:
 
 ```text
 [TEST] uvm_test_top set check_flags = True for "env.*"
@@ -312,8 +312,8 @@ whose comments say why `ConfigDB` uses globs. ChipVerify's pages are SystemVeril
 
 - [UVM Factory Override](https://www.chipverify.com/uvm/uvm-factory-override) covers type and
   instance overrides, and the difference in argument order between the factory's methods and the
-  component's. pyuvm has only the factory's, called on `uvm_factory()`. Its last example calls
-  methods on a variable named `factory` that it never declares there.
+  component's. pyuvm has only the factory's, called on `uvm_factory()`. The page's last example
+  calls methods on a variable named `factory` that it never declares there.
 - [UVM config database](https://www.chipverify.com/uvm/uvm-config-db), for the API, the wildcards
   and the precedence rules. Its `get()` returns 0 when it finds nothing; pyuvm's raises
   `UVMConfigItemNotFound` unless you give it a default. Its precedence rules leave out pyuvm's first

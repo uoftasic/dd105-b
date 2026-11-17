@@ -83,7 +83,7 @@ connects to that export, not to the component itself. `MonConnectTest` swaps in 
 writes `self.agt.mon.ap.connect(self.sb)`, and the run stopped in `connect_phase`:
 
 ```text
- BROKEN: UVMTLMConnectionError   1.92 s   log: build/runs/MonConnectTest-s1/run.log
+ BROKEN: UVMTLMConnectionError   1.83 s   log: build/runs/MonConnectTest-s1/run.log
    MonConnectTest: UVMTLMConnectionError: uvm_test_top.env.sb must be a subclass of uvm_export_base
 ```
 
@@ -91,7 +91,7 @@ Here are the report lines from one run of `MonRandTest`, which sends 200 vectors
 200 items and the scoreboard checked 200, the same number that the monitor wrote:
 
 ```text
-  2000.00ns INFO     ..-and-scoreboards/mon_env.py(183) [uvm_test_top]: [MON] the monitor wrote 200 items
+  2000.00ns INFO     ..-and-scoreboards/mon_env.py(184) [uvm_test_top]: [MON] the monitor wrote 200 items
   2000.00ns INFO     ..-and-scoreboards/mon_env.py(106) [uvm_test_top.env.sb]: [SB] 200 vectors checked: 0 wrong
   2000.00ns INFO     ..-and-scoreboards/mon_env.py(126) [uvm_test_top.env.cov]: [COV] alu: 20 of 20 bins hit
   2000.00ns INFO     ..-and-scoreboards/mon_env.py(141) [uvm_test_top.env.hist]: [HIST] kept 200 handles to 200 different objects

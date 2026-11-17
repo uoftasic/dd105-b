@@ -306,16 +306,16 @@ ours with the same seed.
 pyvsc is slow next to Python's own `random`. `CrSpeedTest` timed 1,000 calls of each kind:
 
 ```text
-[SPEED] per second: randomize() on one AluVec 536; a new AluVec each time 495; three random.randrange() calls 1036873
+[SPEED] per second: randomize() on one AluVec 531; a new AluVec each time 494; three random.randrange() calls 1037162
 ```
 
 That's about 1.9 ms a call, against about 1 µs for three `random.randrange()` calls. Importing pyvsc
 costs time too. `make import-time` timed `import vsc` in the venv's Python three times:
 
 ```text
- import vsc: 1.43 s
- import vsc: 0.99 s
+ import vsc: 1.41 s
  import vsc: 1.00 s
+ import vsc: 0.99 s
 ```
 
 Every run that uses pyvsc pays the import, once. So the labs give the solver only the fields that a constraint

@@ -72,7 +72,7 @@ under the class's name. Components are made with `ClassName.create(name, parent)
 constructor, so that a test can tell the factory to make something else; the
 [factory page](the-factory-and-configdb.md) explains how.
 
-## @pyuvm.test() and TEST=
+## \@pyuvm.test() and TEST=
 
 cocotb runs functions marked `@cocotb.test()`. `@pyuvm.test()` wraps a test class in such a
 function, named after the class, and when cocotb calls it, it asks pyuvm's `uvm_root` to make the
@@ -228,7 +228,7 @@ logged error prints a line and fails nothing. `SkPlainErrorTest` derives from py
 logs one error at 50 ns, and with `make run TEST=SkPlainErrorTest BASE_TEST=0` it printed:
 
 ```text
-    50.00ns ERROR    ..-pyuvm-skeleton/sk_tests.py(175) [uvm_test_top]: a check failed at 50 ns
+    50.00ns ERROR    ..-pyuvm-skeleton/sk_tests.py(183) [uvm_test_top]: a check failed at 50 ns
     50.00ns INFO     cocotb.regression                  sk_tests.SkPlainErrorTest passed
 ```
 
@@ -242,7 +242,7 @@ and in `final_phase` it prints one line with the count and raises `AssertionErro
 0. `SkErrorTest` logs the same error and derives from `BaseTest`:
 
 ```text
-    50.00ns ERROR    ..-pyuvm-skeleton/sk_tests.py(166) [uvm_test_top]: a check failed at 50 ns
+    50.00ns ERROR    ..-pyuvm-skeleton/sk_tests.py(174) [uvm_test_top]: a check failed at 50 ns
 DD105-B BaseTest: 1 error logged, no bound assertions
 ```
 

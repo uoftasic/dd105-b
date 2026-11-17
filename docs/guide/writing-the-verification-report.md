@@ -6,8 +6,8 @@ hand over, so that someone else can check your claim without redoing your work?*
 DD104's capstone ended with a [bug report](https://uoftasic.com/dd104/guide/writing-the-bug-report.html)
 about one bug, built around a test that reproduces it and the command that runs that test. This
 course's capstone ends with a **verification report**, which claims that a whole design follows
-each rule of its specification that a written plan lists. The report gives the evidence for that
-claim and says where the evidence stops. You'll write one for the router in Lab 07. In Part 4 you
+its specification in every situation that a written plan describes and that your environment
+checks. The report gives the evidence for that claim and says where the evidence stops. You'll write one for the router in Lab 07. In Part 4 you
 copy `labs/lab-07-capstone/REPORT-template.md` into your repository as `REPORT.md` and
 fill in its hunt table, and in [Part 8](../labs/lab-07-capstone-overview.md#part-8-the-report) you
 fill in the rest.

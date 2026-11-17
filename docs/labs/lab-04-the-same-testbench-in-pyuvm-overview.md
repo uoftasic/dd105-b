@@ -23,9 +23,9 @@ Package: [`labs/lab-04-the-same-testbench-in-pyuvm/`](https://github.com/uoftasi
   has the same kinds of pieces (sequences, drivers, monitors, agents, an environment, and tests
   that derive from `BaseTest`). It also leans on `ConfigDB` and `create()`, which that file used
   too.
-  [From one test to components](../guide/from-cocotb-tests-to-pyuvm-components.md#from-one-test-to-components),
-  a section of From cocotb tests to pyuvm components, shows how Lab 01's testbench uses both, and
-  The factory and ConfigDB has a section on each.
+  [From cocotb tests to pyuvm components](../guide/from-cocotb-tests-to-pyuvm-components.md#from-one-test-to-components)
+  shows how Lab 01's testbench uses both, and
+  [The factory and ConfigDB](../guide/the-factory-and-configdb.md) has a section on each.
 - Keep the [router specification](../reference/router-spec.md) open. Parts 3 and 4 use its
   [Routing](../reference/router-spec.md#routing) section.
 - Copy this table into your notes and fill it in as you go:

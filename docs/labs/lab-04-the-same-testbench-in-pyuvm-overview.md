@@ -2,10 +2,11 @@
 
 In this lab you'll finish our pyuvm port of the Lab 03 testbench. As shipped, it checks only
 output 0, as Lab 03's testbench did, and it misses this lab's two bugs, B06 and B13. You'll add an
-agent for output 1. You'll write a test that stalls one output at a time, and fix the scoreboard so
-that it can judge that test. Then you'll write `NoroutePkt`, a packet that goes to a disabled route
-one time in four, and a factory override that puts it in place of every packet the random sequence
-makes. Last, you'll count the lines in the port and in your Lab 03 testbench.
+agent for output 1 and make the scoreboard check that output's beats. You'll write a test that
+stalls one output at a time, and fix the scoreboard so that it can judge that test. Then you'll
+write `NoroutePkt`, a subclass of `RouterPkt` that sends one packet in four to a disabled route,
+and a factory override that puts it in place of every packet the random sequence makes. Last,
+you'll count the lines in the port and in your Lab 03 testbench.
 
 Package: [`labs/lab-04-the-same-testbench-in-pyuvm/`](https://github.com/uoftasic/dd105-b/tree/main/labs/lab-04-the-same-testbench-in-pyuvm)
 
@@ -57,9 +58,9 @@ Does the port do what the Lab 03 testbench did, and which of this lab's bugs doe
     /foss/designs/modules/dd105-b/labs/lab-04-the-same-testbench-in-pyuvm/build/sim_build/Vtop is up to date.
    ```
 
-   This is the same router as in Labs 02 and 03. Our counts include the builds of Labs 01 to 03,
-   which came to 17 hits and 11 misses, so this build's own were 6 hits and 1 miss, as in Lab 03.
-   The course venv you made in Lab 03 is still there, and this lab uses it.
+   This is the same router as in Labs 02 and 03. The ccache counts on that line include our builds
+   of Labs 01 to 03, which came to 17 hits and 11 misses, so this build's own were 6 hits and 1
+   miss, as in Lab 03. The course venv you made in Lab 03 is still there, and this lab uses it.
 
 2. Open the files in `tb/`. Every piece of the Lab 03 testbench is in one of these three files, and
    most of its classes are now pyuvm classes:
@@ -73,7 +74,8 @@ Does the port do what the Lab 03 testbench did, and which of this lab's bugs doe
    Your Lab 02 and Lab 03 testbenches watched only output 0, and so does the port. `RouterEnv`
    makes only one `OutAgent`, the scoreboard queues only output 0's beats, and the scoreboard's
    `level()` takes output 1's level as 0, as Lab 03's tracker did. With no agent on output 1,
-   nothing would drive `out1_ready`, so `RouterEnv` holds it at 1, as Lab 03's sink did. Find the
+   `out1_ready` would stay at the 0 that the base test sets it to before the reset, and output 1
+   would never be ready. So `RouterEnv` holds it at 1, as Lab 03's sink did. Find the
    `TODO (Part n)` comments. There are four in `router_env.py` and three in `test_router.py`.
 
 3. Run Lab 02's test, then the default test, then Lab 03's random test:
@@ -100,7 +102,7 @@ Does the port do what the Lab 03 testbench did, and which of this lab's bugs doe
    and `ok: 0 errors   3.61 s`. After the time and `INFO`, each line names the file and line of
    the logging call and then, in brackets, the component that logged it: `uvm_test_top` is the
    test, and `uvm_test_top.env.sb` is the scoreboard. The `[DROP]` line comes from Lab 03's
-   `DROP_CNT` check, which the scoreboard now does: it compares every read of `DROP_CNT` that the
+   `DROP_CNT` check, which the scoreboard now makes. It compares every read of `DROP_CNT` that the
    APB monitor reports with the drops it predicted.
 
    The default test is `RouterInjectTest`, which for now does what `RouterRandTest` does: Lab 03's
@@ -186,7 +188,8 @@ Does the port do what the Lab 03 testbench did, and which of this lab's bugs doe
    - `('out1', 'low')` and `('out1', 'at_8')`: the scoreboard takes output 1's level as 0;
    - `at_9`, `('noroute', 'empty')`, `('noroute', 'low')`, `('noroute', 'at_8')` and
      `('noroute', 'at_9')`: the only NOROUTE drops are `close_holes()`'s packets for DST 1, one in
-     each of the last two runs, and they met levels of 14 and 16.
+     each of the last two runs. They met levels of 14 and 16, and they were the only headers that
+     met a level above 8.
 
    Keep the second and third groups in mind for Part 3.
 
@@ -238,10 +241,10 @@ Does the port do what the Lab 03 testbench did, and which of this lab's bugs doe
    B13 changes a packet's fate only when one output holds more than 8 beats and the other 8 or
    fewer. In the random phases both outputs are always ready, so neither holds more than a beat or
    two (`RouterClassTest` reported a highest level of 2 in step 3). In `close_holes()` output 0
-   fills, but the packet for DST 0 arrives at exactly 8, which B13 admits too, because output 1 is
-   empty, and the last packet goes to a disabled route, which is a NOROUTE drop either way. No
-   packet for an enabled route met an output holding more than 8 beats, which is also why `full`
-   was never hit.
+   fills, but the packet for DST 0 arrives when output 0 holds exactly 8 beats. B13 admits that
+   packet too, because it judges from output 1, which is empty. The last packet goes to a disabled
+   route, which is a NOROUTE drop on either router. No packet for an enabled route met an output
+   holding more than 8 beats, which is also why `full` was never hit.
 
    </details>
 
@@ -299,9 +302,10 @@ What does it take to watch output 1, when an output agent is a class you can mak
    ```
 
    and `ok`. The 2006 beats that went unwatched in Part 1 are now checked. The number in
-   parentheses after each file name is a line in that file. We left each TODO comment in place when
-   we filled it in. If you deleted yours, your line numbers here and in Part 3 are a few lower, such
-   as 218 and 221 for these two lines.
+   parentheses after each file name is the line of the logging call, so it moves when you add or
+   delete lines above that call. We left each TODO comment in place when we filled it in. If you
+   deleted yours, your line numbers here and in Part 3 are a few lower, such as 218 and 221 for
+   these two lines.
 
    These are the same 805 packets as Part 1's run of this test, although the new agent's
    `OutReadyDriver` runs in every cycle. Read its `run_phase`: why did it change none of them?
@@ -349,10 +353,10 @@ What does B13 need from the stimulus, and does the scoreboard know enough to jud
    </details>
 
 2. Do the Part 3 TODO in `test_router.py`: in `RouterStallTest`, override `set_sinks(k)` so that in
-   phase `k` one output is ready in 5% of cycles and the other in 100%, output 0 stalling in
-   phases 1 and 3 and output 1 in phases 2 and 4. `RouterRandTest` calls `set_sinks(k)` at the
-   start of each phase, with `k` from 1 to 4. Set `self.ocfg[p].ready_pct`: the base test made
-   those `OutCfg` objects and kept them, and each `OutReadyDriver` reads its `ready_pct` again after
+   phase `k` one output is ready in 5% of cycles and the other in 100%. Output 0 stalls in phases
+   1 and 3, and output 1 in phases 2 and 4. `RouterRandTest` calls `set_sinks(k)` at the start of
+   each phase, with `k` from 1 to 4. Set `self.ocfg[p].ready_pct`. The base test made those
+   `OutCfg` objects and kept them, and each `OutReadyDriver` reads its `ready_pct` again after
    every rising edge, so a change takes effect at the next edge. `ready_pct` is Lab 03's
    `Sink.stall` grown into a percentage, where 0 is a stall and 100 is a sink that is always ready.
 
@@ -390,13 +394,13 @@ What does B13 need from the stimulus, and does the scoreboard know enough to jud
    <details>
    <summary>Answer</summary>
 
-   `level()` returns 0 for output 1, a shortcut that was safe while output 1 was always ready, as
-   it was in every test before this one. With output 1 ready in only 5% of cycles it fills past 8,
-   and the router drops its next packets as FULL, as the specification says, but the scoreboard
-   still expected them. The packet starting `0b` (DST 0, routed to output 1 by `1-10`) was
-   dropped in cycle 1396, when output 1 held 13 beats, so the next header to come out of output 1,
-   `9d` (DST 2, also routed to output 1), was compared with `0b`. Output 0's level was right all
-   along, which is why phase 1 passed.
+   `level()` returns 0 for output 1. That shortcut was safe while output 1 was always ready, which
+   it was in every test before this one. With output 1 ready in only 5% of cycles, output 1 fills
+   past 8 beats, and the router drops the next packets for it as FULL, as the specification says,
+   while the scoreboard still expects them to come out. The packet starting `0b` has DST 0, which
+   `1-10` routes to output 1, and the router dropped it in cycle 1396, when output 1 held 13 beats.
+   So the next header to come out of output 1, `9d` (DST 2, also routed to output 1), was compared
+   with `0b`. Output 0's level was right all along, which is why phase 1 passed.
 
    </details>
 
@@ -413,8 +417,8 @@ What does B13 need from the stimulus, and does the scoreboard know enough to jud
     55490.00ns INFO     ..h-in-pyuvm/tb/router_env.py(222) [uvm_test_top.env.sb]: [SB] beats checked: 935 on output 0, 1014 on output 1; 5 DROP_CNT reads checked
    ```
 
-   and `ok`. The four phases dropped 121, 116, 39 and 76 packets as FULL, 352 in all, where the
-   random test dropped none, and the scoreboard predicted each one.
+   and `ok`. The four phases dropped 121, 116, 39 and 76 packets as FULL, 352 in all, and the
+   scoreboard predicted each one. The random test dropped none.
 
 6. Ask for the verdict on B13:
 
@@ -433,7 +437,7 @@ What does B13 need from the stimulus, and does the scoreboard know enough to jud
    ```
 
    Phase 1 stalls output 0 and routes DST 2 and DST 3 to it (`-100`), and DST 1 to output 1. The
-   first error is on output 0 in cycle 125, where `cf` came out. Which of B13's two wrong decisions
+   first error is on output 0 in cycle 125, when `cf` came out. Which of B13's two wrong decisions
    from step 1 put a wrong beat on output 0?
 
    <details>
@@ -441,19 +445,20 @@ What does B13 need from the stimulus, and does the scoreboard know enough to jud
 
    B13 admits a packet for output 0 while output 0 holds more than 8 beats, because it judges
    output 0's room from output 1, which is nearly empty. In the waves of this run
-   (`make waves TEST=RouterStallTest BUG=B13`), the first was the packet with header `83` (DST 2),
-   which arrived in cycle 40, from 390 to 400 ns. Output 0 held 11 beats then and output 1 none;
-   the router's own counts, `level0` and `level1`, read `0b` and `00` in Surfer's hex. The golden
-   router dropped the packet as FULL. B13 admitted it and the packets after it, and in cycle 59,
-   from 580 to 590 ns, `level0` read `14`, which is 20 beats, for a buffer that holds 16. The
-   buffer writes each beat at the next place in a ring, so the beats beyond 16 wrote over beats
+   (`make waves TEST=RouterStallTest BUG=B13`), the first such packet was the one with header `83`
+   (DST 2), which arrived in cycle 40, from 390 to 400 ns. Output 0 held 11 beats then and output 1
+   none; the router's own counts, `level0` and `level1`, read `0b` and `00` in Surfer's hex. The
+   golden router dropped the packet as FULL. B13 admitted it, and more packets for output 0 after
+   it, and in cycle 59, from 580 to 590 ns, `level0` read `14`, which is 20 beats. The buffer holds
+   16, and it writes each beat at the next place in a ring, so the beats beyond 16 wrote over beats
    that were still waiting. Output 0 was ready in only 5% of cycles, so the first wrong beat took
    until cycle 125 to come out.
 
-   B13 made the other wrong decision too, from cycle 75 on: it dropped packets for output 1 as
-   FULL because output 0 was above 8, and the first was `47` (DST 1). Those packets never came
-   out, and the scoreboard reported it in cycle 185, when `5a` came out of output 1 where it
-   expected `47`. That was 60 cycles after the first error on output 0.
+   B13 also made the other wrong decision, from cycle 75 on. It dropped packets for output 1 as
+   FULL because output 0 held more than 8 beats, and the first of them was `47` (DST 1). Those
+   packets never came out of output 1, and the scoreboard's first error on output 1 came in cycle
+   185, when `5a` came out where it expected `47`. That was 60 cycles after the first error on
+   output 0.
 
    </details>
 
@@ -481,8 +486,9 @@ makes them or the driver that sends them?
    `self.to_disabled = vsc.uint8_t(0)`, which `pre_randomize()` sets from Python's `random`.
    pyvsc calls `pre_randomize()` before it solves, so `c_dst` reads `to_disabled` as a fixed
    value, the way it reads `route_en`. Draw it only when some route is disabled
-   (`int(self.route_en) != 0xF`). Every routing table that `random_routes()` writes has one, but
-   `RouterClassTest`'s `0110` doesn't, and with no disabled route `c_dst` couldn't be met.
+   (`int(self.route_en) != 0xF`). Every routing table that `random_routes()` writes has a disabled
+   route, but `RouterClassTest`'s `0110` doesn't, and if `to_disabled` were 1 with no route
+   disabled, `c_dst` couldn't be met.
 
    pyvsc also solves a `dist` beside another constraint (line 3 of Lab 03's experiments), so a
    random `to_disabled` with a `dist` works as well. We tried it, and it caught both bugs on seeds
@@ -494,12 +500,12 @@ makes them or the driver that sends them?
    different packets.
 
    The override reaches every packet the factory makes, wherever it's made. `close_holes()` picks
-   the DST of its two random packets itself, so it makes both as plain `RouterPkt`s, in
-   `new_packet()` with the constructor, `RouterPkt("pkt")`, which the override can't reach.
+   the DST of its two random packets itself, so they have to stay plain `RouterPkt`s. It makes both
+   in `new_packet()` with the constructor, `RouterPkt("pkt")`, which the override can't reach.
    When we made them with `create()` instead, `RouterInjectTest` ended `BROKEN: SolveFailure` on 2
    of seeds 1 to 20. The packet for DST 0 was then a `NoroutePkt`, and whenever `pre_randomize()`
-   set its `to_disabled`, no DST could meet both its `c_dst` and `hdr_dst == 0`, since `ROUTE0` is
-   the one enabled route.
+   set its `to_disabled` to 1, no DST could meet both its `c_dst` and `hdr_dst == 0`, since
+   `ROUTE0` is the one enabled route.
 
 4. Write down what you expect the golden run's first `[SB]` line to say about NOROUTE drops. Then
    run the default test:
@@ -517,9 +523,12 @@ makes them or the driver that sends them?
 
    and `ok: 0 errors   5.29 s`. You didn't have to change the scoreboard for this. It was written
    from the specification's Routing table, so it already predicts a NOROUTE drop for a packet to a
-   disabled route; until now, no test had sent one while its output had room. Your counts match
-   ours only if your `pre_randomize()` makes the same draws from `random` as ours, so if they
-   differ, compare your draw with the reference solution's once step 5 says `2 of 2 caught.`
+   disabled route. Until now, no test had sent such a packet while its output had room. Your
+   counts match ours only if your `pre_randomize()` makes the same draws from `random` as ours, so
+   if they differ, compare your draw with the reference solution's once step 5 says
+   `2 of 2 caught.` The line numbers in this output come from the files in `solutions/`, which have
+   the TODO comments removed. If you kept yours, as we did for the runs in Parts 2 and 3, your line
+   numbers are higher, such as 219 and 222.
 
 5. Ask for the lab's verdict:
 
@@ -578,18 +587,18 @@ makes them or the driver that sends them?
    ![A packet for a disabled route on the golden router, in Surfer](../assets/img/lab-04-golden-noroute.png)
 
    *The golden router. The header `04` (DST 0) is accepted at the edge at 530 ns, while
-   `route_en_q` is `e` (routes 1, 2 and 3 enabled, route 0 disabled). `status_q`, whose bit 0 is
-   `STATUS.NOROUTE`, and `cnt_noroute_q` change at that edge, and `out0_valid` stays low.*
+   `route_en_q` is `e` (routes 1, 2 and 3 enabled, route 0 disabled). `status_q` and
+   `cnt_noroute_q` change at that edge (bit 0 of `status_q` is `STATUS.NOROUTE`), and `out0_valid`
+   stays low.*
 
    ![The same packet with B06 on, in Surfer](../assets/img/lab-04-b06-noroute-forwarded.png)
 
    *B06. The router counts the same NOROUTE drop, and then puts `04` and `a5` on output 0 in the
-   cycles that end at 550 and 560 ns. The first is two cycles after the header's cycle, which is
-   when rule O8 says a forwarded beat first appears on an output.*
+   cycles that end at 550 and 560 ns. The header comes out two cycles after the cycle in which it
+   went in, which is when rule O8 says a forwarded beat first appears on an output.*
 
-   Both pictures have the same input and the same register values, because the seed is the same
-   and this is the first packet for a disabled route in the run, so B06 has changed nothing
-   before it.
+   Both pictures have the same input and the same register values. The seed is the same, and this
+   is the first packet for a disabled route in the run, so B06 has changed nothing before it.
 
 8. Run every test on five seeds and read the coverage:
 
@@ -612,10 +621,10 @@ makes them or the driver that sends them?
    ```
 
    The seven empty bins are the ones no test can hit, so this is as far as the percentage goes.
-   The stall test's FULL drops hit the three bins of Part 1's second group. The two bins of the
-   third group are hit because `level()` now gives output 1's real level. The five bins of the
-   fourth group are hit now that `RouterInjectTest` sends packets to disabled routes while one
-   output is stalled.
+   The stall test's FULL drops hit the three bins of Part 1's second group, and the drops at a
+   level of 9 hit the fourth group's `at_9` as well. The two bins of the third group are hit
+   because `level()` now gives output 1's real level. The fourth group's four NOROUTE bins are hit
+   now that `RouterInjectTest` sends packets to disabled routes while one output is stalled.
 
 Check: `2 of 2 caught.` from `make check-all`, and the bin `full` hit.
 
@@ -641,10 +650,10 @@ Where did the lines go, compared with your Lab 03 testbench, and what did they b
      total                  1078     630
    ```
 
-   As shipped it was 1062 lines and 616 code lines, so the reference solution's edits added 14
-   code lines. Code lines leave out blank lines, comments and docstrings. With our Lab 03 solution
-   in Lab 03's `tb/`, the `FILES:` part totals 1033 lines and 595 code lines. Write your two totals,
-   for this lab's testbench and for your Lab 03 testbench, in your notes.
+   Code lines leave out blank lines, comments and docstrings. As shipped, the pyuvm testbench was
+   1062 lines and 616 code lines, so the reference solution's edits added 14 code lines. With our
+   Lab 03 solution in Lab 03's `tb/`, the `FILES:` part totals 1033 lines and 595 code lines.
+   Write your two totals, for this lab's testbench and for your Lab 03 testbench, in your notes.
 
 2. For each piece of your Lab 03 testbench, find the pyuvm piece that does its job, and write down
    whether its code moved across nearly unchanged or changed shape. Then list the pyuvm pieces
@@ -671,9 +680,9 @@ Where did the lines go, compared with your Lab 03 testbench, and what did they b
    | nothing | the agent classes, `OutCfg` and `ConfigDB`, the `Fwd` inputs | new |
 
    The code that touches the router (the drives, the sampling, the prediction) does the same work
-   in both testbenches. pyuvm changed how the pieces find each other and pass data between them:
-   through `ConfigDB` and the factory instead of the environment's constructor, and through
-   sequencers and analysis ports instead of queues.
+   in both testbenches. In the port, the pieces find each other through `ConfigDB` and the factory
+   instead of through the environment's constructor, and they pass data through sequencers and
+   analysis ports instead of queues.
 
    </details>
 
@@ -682,17 +691,17 @@ Where did the lines go, compared with your Lab 03 testbench, and what did they b
    <details>
    <summary>Answer</summary>
 
-   Watching output 1 took two lines in `RouterEnv` and one in the scoreboard, which Lab 03 had
-   written for output 0 alone. Two lines were enough in `RouterEnv` because the output agent's
-   driver and monitor get from `ConfigDB` everything that differs between the two outputs.
+   Watching output 1 took two lines in `RouterEnv` and one in the scoreboard, where the code from
+   Lab 03 had queued only output 0's beats. Two lines were enough in `RouterEnv` because the output
+   agent's driver and monitor get from `ConfigDB` everything that differs between the two outputs.
    Stalling one output took a short method in a new test, which you pick at run time, and it works
    because the test holds the `OutCfg` objects that the drivers read. The factory override changed
    every packet that the sequence made, in every phase, without an edit to the sequence or the
    driver, and you could apply it from a test class or from the command line. Lab 03's testbench
    could have done each of these, but each would have meant editing classes that already worked.
-   In DD105-A each of these edits also cost a rebuild of 30 to 105 s, and the command-line
-   override saved one. Here none of them rebuilt anything, and the port has 35 more code lines
-   than our Lab 03 solution (630 against 595).
+   In DD105-A, whose testbench is SystemVerilog, each of these edits also cost a rebuild of 30 to
+   105 s, and applying the override from the command line saved one. Here none of them rebuilt
+   anything, and the port has 35 more code lines than our Lab 03 solution (630 against 595).
 
    </details>
 

@@ -160,7 +160,10 @@ with it?
    on), whether the router changes it on its own (volatile), and its reset value.
    `RouterRegs` configures each register at its address and adds it to the map. pyuvm keys the
    map by the address as Python's `hex()` writes it, `"0x8"`, so the addresses are given as
-   `hex(addr)`. The specification's Register map gives each field's policy and volatility.
+   `hex(addr)`. The specification's Register map gives each field's policy and volatility, and
+   [Configuring a field](../reference/pyuvm-register-api.md#configuring-a-field), on the pyuvm
+   register API page, gives the meaning of each argument and shows what pyuvm does with a field
+   that's configured wrongly.
 
    The graders build the model on its own, outside the simulator, before every verdict. Run that
    build yourself:

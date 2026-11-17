@@ -2,10 +2,10 @@
 
 You'll test SimProc's ALU from DD104 with two testbenches, both on Verilator. The first is the
 cocotb test from DD104 Lab 03. The second is built from pyuvm, a Python library of UVM's classes
-that runs on cocotb. For each one you'll count its lines, time its build and its run, and see what
-it reports on three planted bugs, and you'll compare those numbers with DD105-A's for a
-SystemVerilog UVM testbench of the same ALU. Then you'll extend the pyuvm scoreboard until it
-catches the flags bug that the shipped one misses.
+that runs on cocotb. For each one you'll time the build and the run, see what it reports on three
+planted bugs and count its lines. DD105-A measured the same things for a SystemVerilog UVM
+testbench of this ALU, and you'll compare your numbers with those. Then you'll extend the pyuvm
+scoreboard until it catches A03, a zero-flag bug that the shipped scoreboard misses.
 
 Package: [`labs/lab-01-one-alu-two-frameworks/`](https://github.com/uoftasic/dd105-b/tree/main/labs/lab-01-one-alu-two-frameworks)
 
@@ -16,9 +16,9 @@ Package: [`labs/lab-01-one-alu-two-frameworks/`](https://github.com/uoftasic/dd1
   in particular. You don't need its files, because this lab ships the ALU and a reference copy of
   the finished Lab 03 test, but you'll get more from the comparison if you wrote that test yourself.
 - Read [Getting started](../guide/getting-started.md).
-- Copy this table into your notes. You'll fill in the first two columns as you go. The third is
-  DD105-A's, measured in
-  [DD105-A's Lab 01](https://uoftasic.com/dd105-a/labs/lab-01-one-alu-two-testbenches-overview.html)
+- Copy this table into your notes. You'll fill in the first two columns as you go. The third holds
+  DD105-A's numbers, measured in
+  [its Lab 01](https://uoftasic.com/dd105-a/labs/lab-01-one-alu-two-testbenches-overview.html)
   with the course's 2 CPUs; this course doesn't build the SystemVerilog testbench. The questions
   at the end ask you to compare the columns.
 
@@ -36,8 +36,8 @@ Time: about 1 h 15 min.
 
 ## Part 1: Load the course
 
-Can you reach DD105-B's files, on the tool versions this lab's outputs were recorded with? If you
-haven't set up the workbench yet, do
+Can you reach DD105-B's files, and are your tools the versions that this lab's outputs were
+recorded with? If you haven't set up the workbench yet, do
 [IC101 Lab 03](https://uoftasic.com/ic101/labs/lab-03-launch-the-workbench-overview.html) first.
 
 1. From your `workspace` clone, start the desktop (`./scripts/start_vnc.sh`, or
@@ -58,7 +58,7 @@ haven't set up the workbench yet, do
    cwd: /foss/designs/modules/dd105-b
    ```
 
-3. Check the tool versions, because this lab's outputs were recorded with these ones:
+3. Check the tool versions:
 
    ```bash
    verilator --version
@@ -128,8 +128,8 @@ What does the cocotb test cost to build and run on Verilator, and what does it r
    The outputs below come from the reference. Your messages may be worded differently, but the
    counts should match.
 
-4. The ALU module is 34 lines of SystemVerilog. Write down how long you expect Verilator to take to
-   build it, then build it and run the test on the golden ALU:
+4. `rtl/alu.sv` is 95 lines, and 53 of them are code. Write down how long you expect Verilator to
+   take to build it, then build it and run the test on the golden ALU:
 
    ```bash
    make cocotb
@@ -174,8 +174,8 @@ What does the cocotb test cost to build and run on Verilator, and what does it r
    the run. The run is mostly `t02` driving all 393,216 vectors. Write both times in your table.
    Times are ballpark, but the counts in this lab are exact.
 
-   The build took 7.3 s, which is probably longer than you guessed for 34 lines. Why does it take
-   that long?
+   The build took 7.3 s, which is probably longer than you guessed for a 95-line file. Why does it
+   take that long?
 
    <details>
    <summary>Answer</summary>
@@ -263,7 +263,7 @@ What does the same job cost when it's built from UVM's pieces in pyuvm?
    make build
    ```
 
-   You should see:
+   After a `BUILD` banner like Part 2's, it ends with:
 
    ```text
    ========================================================================
@@ -274,22 +274,24 @@ What does the same job cost when it's built from UVM's pieces in pyuvm?
    ```
 
    This simulator is the ALU again, compiled into its own folder. The testbench and pyuvm itself
-   are Python, so neither is compiled. The ccache's counts add up across builds, so this build
-   looked up seven files and found six. Why did it take 1.7 s when the cocotb build of the same ALU
-   took 7.3 s?
+   are Python, so neither is compiled. The ccache's counts add up across builds, so take away the
+   cocotb build's 0 hits and 7 misses to get this build's own. Why did it take 1.7 s when the
+   cocotb build of the same ALU took 7.3 s?
 
    <details>
    <summary>Answer</summary>
 
-   Six of its seven files were already in the ccache from the cocotb build, so it compiled one
-   file. With an empty ccache this build also took 7.3 s, both times we ran it, so the six files
-   from the ccache saved about 5.6 s.
+   This build looked up seven files and found six of them in the ccache, where the cocotb build
+   had put them, so it compiled one file. With an empty ccache this build also took 7.3 s, both
+   times we ran it, so the six files from the ccache saved about 5.6 s.
 
    </details>
 
    DD105-A's SystemVerilog UVM testbench for this ALU took 102 s to build with the same 2 CPUs,
-   because Verilator compiled the whole UVM library with it, 24.157 MB of source in 386 modules,
-   and g++ spent 98.5 s of the 102 s on the C++ that came out. Write the build time in your table.
+   because Verilator compiled the whole UVM library along with the ALU and the testbench.
+   Verilator counted 24.157 MB of source in 386 modules, nearly all of it from the UVM library,
+   and g++ spent 98.5 s of the 102 s compiling the C++ that Verilator made from it. Write the build
+   time in your table.
 
 2. Read `tb/alu_uvm.py`. Each piece is named after its counterpart in DD105-A's testbench, in
    Python's CamelCase (`alu_driver` is `AluDriver`). Most pieces do a job that the cocotb test also
@@ -302,7 +304,7 @@ What does the same job cost when it's built from UVM's pieces in pyuvm?
    | `AluRandSeq`, `AluDirectedSeq` | make the vectors | the loops in `t02`, the list in `t01` |
    | `AluDriver` | puts each vector on the pins | the three `.value =` lines in `alu()` |
    | `AluMonitor` | reads the pins back into an `AluItem` | the `return` line of `alu()` |
-   | `AluScoreboard` | `predict()` and the comparison | `spec()` and `if got != want` |
+   | `AluScoreboard` | `predict()` and the comparison | `spec()`, and the comparisons in `t01` and `t02` |
    | `AluAgent`, `AluEnv` | create the pieces and connect them | nothing |
    | `AluRandTest`, `AluDirectedTest` | choose the stimulus | the `@cocotb.test()` functions |
 
@@ -316,9 +318,9 @@ What does the same job cost when it's built from UVM's pieces in pyuvm?
    Python's `logging`, and an error that a component logs with `self.logger.error()` fails nothing
    on its own, so the test would still pass. `BaseTest` counts every error any component logs,
    prints one line with the count at the end, and fails the test if the count isn't 0. The cocotb
-   test needs none of this, because each of its checks is an `assert` that fails the test where it
-   stands. So `cocotb/Makefile` sets `BASE_TEST := 0`, which tells the verdict not to look for
-   `BaseTest`'s line.
+   test needs none of this, because a check that finds a mismatch raises `AssertionError` itself,
+   and that fails the test. So `cocotb/Makefile` sets `BASE_TEST := 0`, which tells the verdict not
+   to look for `BaseTest`'s line.
 
 3. Run the random test, which sends 2000 random vectors:
 
@@ -343,9 +345,10 @@ What does the same job cost when it's built from UVM's pieces in pyuvm?
    ```
 
    cocotb cuts a long file path to fit its column, so `..wo-frameworks/tb/alu_uvm.py(251)` is line
-   251 of `tb/alu_uvm.py`. The `[SB]` line is stamped `20000.00ns`, 20 µs: 2000 vectors, one every
-   10 ns. "No bound assertions" means that no SystemVerilog assertions are attached to this design;
-   the router's are, from Lab 05 on. Write the run time in your table.
+   251 of `tb/alu_uvm.py`. The `[SB]` line is stamped `20000.00ns`, which is 20 µs, the time that
+   2000 vectors take at one every 10 ns. "No bound assertions" means that no SystemVerilog
+   assertions are attached to this design; the router's are, from Lab 05 on. Write the run time in
+   your table.
 
 4. Run the other test, without rebuilding:
 
@@ -387,11 +390,11 @@ What does the same job cost when it's built from UVM's pieces in pyuvm?
 
    The extra lines go into pieces the cocotb test doesn't need: the agent and the environment only
    create and connect the other pieces, `AluIf` carries the period and the flag, and the driver and
-   monitor do in two classes what `alu()` does in four lines. The SystemVerilog testbench also
-   spent lines on things Python doesn't have: a `` `uvm_component_utils `` or
-   `` `uvm_object_utils `` line and a constructor in every class (no component in `alu_uvm.py`
-   defines `__init__`), declared types and widths, an interface with two clocking blocks, and a top
-   module.
+   monitor do in two classes what `alu()` does in five lines. The SystemVerilog testbench also
+   spent lines on things Python doesn't need: a `` `uvm_component_utils `` or
+   `` `uvm_object_utils `` line and a constructor in every class (in `alu_uvm.py` only `AluIf`,
+   `AluItem` and `AluRandSeq` define `__init__`, each to set its own fields), declared types and
+   widths, an interface with two clocking blocks, and a top module.
 
    </details>
 
@@ -474,8 +477,9 @@ Which bugs does the pyuvm testbench catch, and why?
    counts by id" that DD105-A's UVM printed; the per-operation count on the `[SB]` line is the
    scoreboard's own.
 
-4. The cocotb test drove all 65,536 `SUB` vectors to find A01, and the pyuvm test caught it on its
-   tenth vector (`95.00ns` is 5 ns into the period that starts at 90 ns) out of 2000 random ones.
+4. The cocotb test's `t02` drove all 65,536 `SUB` vectors and found 65,024 of them wrong. The
+   pyuvm test caught A01 on its tenth vector (`95.00ns` is 5 ns into the period that starts at
+   90 ns) out of 2000 random ones.
    Why does a random sample find A01 and A02 so easily, when no number of random vectors would find
    A03 with this scoreboard?
 
@@ -519,8 +523,8 @@ rebuild?
    a per-operation list like `n_bad_value` and `bad_value` (set them up in `build_phase`), log each
    one with `self.logger.error()` and a message that starts with `[FLAGS]`, and add the flag count
    to the line `report_phase` prints. pyuvm's messages have no IDs, so `[FLAGS]` is only text for
-   you to read, and the two counts on the `[SB]` line are the only place the run keeps value and
-   flag mismatches apart. `BaseTest` counts them all together.
+   you to read, and the two counts on the `[SB]` line are the only place the run counts value and
+   flag mismatches separately. `BaseTest` counts them all together.
 
 3. You changed one file. Write down how long you expect the rebuild to take, then run it:
 
@@ -542,8 +546,8 @@ rebuild?
    The simulator is built from `rtl/alu.sv` alone, and `tb/alu_uvm.py` is Python, which cocotb
    imports each time the simulator starts. The command took 0.07 s when we timed it. In DD105-A,
    the same edit to the SystemVerilog scoreboard cost a rebuild of 99 s (87 s in an earlier run).
-   DD105-A timed two smaller edits as well: adding one class member rebuilt in 93 s, and a change
-   inside a function body in 26 s.
+   DD105-A timed two one-line edits as well: adding one class member rebuilt in 93 s, and a change
+   inside a task's body in 26 s.
 
    </details>
 
@@ -629,7 +633,7 @@ You're done when `make check BUG=A03` prints `VERDICT: PASS` with the scoreboard
 
 Questions:
 
-1. Using your table, what did the UVM structure cost you in this lab, in pyuvm and in DD105-A's
+1. Using your table, what did the UVM structure cost in this lab, in pyuvm and in DD105-A's
    SystemVerilog, and what did it give you that the cocotb test didn't?
 
    <details>
@@ -641,7 +645,7 @@ Questions:
    and 26 to 99 s every time the testbench changed. Neither is faster per vector than the cocotb
    test. cocotb's report puts `AluRandTest`'s 2000 vectors at 0.19 s of real time, about 0.1 ms
    each, and `t02`'s 393,216 at 10.64 s, about 0.03 ms each. DD105-A's 2000 vectors in 1.17 s
-   come to about 0.6 ms each.
+   come to at most 0.6 ms each, because the 1.17 s also covers starting the simulator.
 
    You saw what the structure gave you in Part 5. The flag check went into one class, and both
    tests used it without being edited, because stimulus and checking are separate pieces; in
@@ -680,5 +684,5 @@ make check-all SEED=2
 With the reference solution, A03's count was 147 on seed 2, 143 on seed 3, 135 on seed 4 and 134
 on seed 5, against 125 on seed 1, and the starter's scoreboard missed A03 on all five.
 
-Next on the [Course path](../index.md#course-path): the reading on Python classes and cocotb
-concurrency, then Lab 02: A layered testbench without pyuvm.
+Next on the [Course path](../index.md#course-path): the reading on Python classes, cocotb
+concurrency, and driving and sampling on the clock, then Lab 02: A layered testbench without pyuvm.

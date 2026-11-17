@@ -126,9 +126,10 @@ class RandPacket(Packet):
     # post_randomize().
 
     def post_randomize(self):
-        """pyvsc calls this after every randomize(). As shipped, nothing says
-        how often each kind should come out, and length is picked here, after
-        the solver has picked kind."""
+        """pyvsc calls this after every randomize(). As shipped, no constraint
+        mentions kind, so nothing says how often each kind should come out,
+        and randomize() draws kind without the solver. Then length is picked
+        here, from the kind that came out."""
         if self.kind == LenKind.LEN_ONE:
             self.length = 1
         elif self.kind == LenKind.LEN_MID:

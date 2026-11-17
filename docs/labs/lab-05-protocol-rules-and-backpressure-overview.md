@@ -5,8 +5,9 @@ binds them into the router, and the base test counts their failures. Then you'll
 driver that answers each output beat with an item from a sequence, and write a virtual sequence that
 changes the routing table, the traffic and the backpressure together. You start from our Lab 04
 testbench, which already catches two of this lab's three planted bugs, B10 and B12. Your assertions
-show the rule each one breaks and the cycle in which it breaks it. The third bug, B11, shows only on
-packets of more than 8 beats, which no Lab 04 test sends, and your virtual sequence sends them.
+fail on both of them as well, and each failure names a rule that the router broke. On B10 the first
+one comes 8 cycles before the scoreboard's first error. The third bug, B11, shows only on packets of
+more than 8 beats, which no Lab 04 test sends, and your virtual sequence sends them.
 
 Package: [`labs/lab-05-protocol-rules-and-backpressure/`](https://github.com/uoftasic/dd105-b/tree/main/labs/lab-05-protocol-rules-and-backpressure)
 
@@ -18,9 +19,9 @@ Package: [`labs/lab-05-protocol-rules-and-backpressure/`](https://github.com/uof
   (I1, I2, O1, O2, O6, O7 and O8) are the ones defined there.
 
 The package is Lab 04's testbench with our solution to Lab 04 in it: the agent for output 1, the
-scoreboard lines for output 1, the real `level()`, `RouterStallTest`, `NoroutePkt` and the factory
-override. If your own Lab 04 printed `2 of 2 caught.`, your code did the same job, but use ours
-anyway, because this lab adds to the same three files. What we added for you:
+scoreboard's queue of output 1's beats, the real `level()`, `RouterStallTest`, `NoroutePkt` and
+the factory override. If your own Lab 04 printed `2 of 2 caught.`, your code did the same job, but
+use ours anyway, because this lab adds to the same three files. What we added for you:
 
 | File | What Lab 05 adds |
 |---|---|
@@ -49,7 +50,7 @@ the cycle in which the router went wrong?
    make build
    ```
 
-   Its first lines say `BUILD  router with 2 bound file(s)`, which are `tb/router_sva.sv` and
+   Near the top it prints `BUILD  router with 2 bound file(s)`, which are `tb/router_sva.sv` and
    `tb/router_sva_bind.sv`, and it ends with:
 
    ```text
@@ -79,7 +80,7 @@ the cycle in which the router went wrong?
    DD105-B BaseTest: 0 errors logged, 0 assertion failures (u_sva.n_fail)
    ```
 
-   In Lab 04 the last line ended `no bound assertions`. Now `BaseTest` reads the bound
+   In Lab 04 the `BaseTest` line ended `no bound assertions`. Now `BaseTest` reads the bound
    assertions' failure count, `cocotb.top.u_sva.n_fail`, at the end of every test, and fails the
    test if it isn't 0. These aren't Lab 04's packets, because cocotb seeds each test from its name,
    as you saw in Lab 04, Part 1, step 3. The run's first `[PHASE]` line shows the routes `--01`,
@@ -129,7 +130,7 @@ the cycle in which the router went wrong?
     53890.00ns INFO     ..ckpressure/tb/router_env.py(232) [uvm_test_top.env.sb]: [SB] beats checked: 860 on output 0, 818 on output 1; 5 DROP_CNT reads checked
    ```
 
-   They are the lines `RouterInjectTest` printed at the end of Lab 04, Part 4, number for number.
+   They are the lines `RouterInjectTest` printed in Lab 04, Part 4, step 4, number for number.
    (The line numbers after `router_env.py` differ, because the file has grown.) This lab's base
    test starts a new sequence on each sink, and each sink has a new driver. Why didn't they change
    any of Lab 04's packets?
@@ -267,9 +268,9 @@ Which rule did B10 break, and in which cycle?
    `DD105-B BaseTest: 0 errors logged, 0 assertion failures (u_sva.n_fail)`. A failure here means
    one of your assertions is wrong, because the golden router keeps all three rules.
 
-5. Run B10 with the simulator's own error limit. The course's makefile gives every run of a lab
-   with assertions `+verilator+error+limit+100000`, and `ERROR_LIMIT=1` makes that
-   `+verilator+error+limit+1`, which is Verilator's default:
+5. Run B10 with the simulator's own error limit, which is 1. The course's makefile gives every run
+   of a lab with assertions `+verilator+error+limit+100000`, and `ERROR_LIMIT=1` makes that
+   `+verilator+error+limit+1`:
 
    ```bash
    make run BUG=B10 ERROR_LIMIT=1
@@ -294,15 +295,13 @@ Which rule did B10 break, and in which cycle?
 
    The line number is the line of the `$error` call in your `a_O2`, so yours may differ, here and
    later. The time, 260000, is in picoseconds, so the failure was at 260 ns. The clock's period is
-   10 ns and its rising edges are at 10, 20, 30 ns and so on, so cycle $n$ runs from $10(n-1)$ to
-   $10n$ ns, its falling edge, the one the monitors count, is at $10n - 5$ ns, and the edge at $10n$
-   ns ends it. This failure was sampled at the edge that ends cycle 26. Compare it with your
-   prediction from Part 1.
+   10 ns, so cycle $n$ is the period that ends at the rising edge at $10n$ ns, and its falling
+   edge, where the monitors read the pins and count the cycle, is at $10n - 5$ ns. This failure was
+   sampled at the edge that ends cycle 26. Compare it with your prediction from Part 1.
 
-   Verilator's default error limit is 1, so the first failing assertion ends the run with exit
-   status 1, and nothing after it is checked. That's why the makefile raises the limit. With the
-   limit raised, every failure prints, each assertion's counter keeps counting, and `BaseTest`
-   reports their sum at the end of the test.
+   With a limit of 1, the first failing assertion ends the run with exit status 1, and nothing
+   after it is checked. The makefile raises the limit so that every failure prints, each
+   assertion's counter keeps counting, and `BaseTest` reports their sum at the end of the test.
 
 6. Run B10 again with the makefile's limit, and find the first check of each kind that fired:
 
@@ -639,9 +638,8 @@ place?
    ```
 
    The first 806 packets are the ones from Part 1, and our sequence sent the other 317. Our
-   `make cov` of the two runs ended with `router.wait` at `14 of 14 bins` and `top` at
-   `87.50 %   49 of 56 bins`; the seven empty bins are the seven of `x_fate_level` that no test
-   can hit.
+   `make cov` of the two runs showed `top` at `87.50 %   49 of 56 bins` and `router.wait` at
+   `14 of 14 bins`; the seven empty bins are the seven of `x_fate_level` that no test can hit.
 
 7. Run the grader:
 
@@ -671,7 +669,7 @@ place?
    ```
 
    `grep -m1 "%Error" build/grade/B11/run.log` and `grep -m1 ERROR build/grade/B11/run.log` show
-   them, and the run's last line was
+   them, and `BaseTest` ended the test with
    `DD105-B BaseTest: 20 errors logged, 18 assertion failures (u_sva.n_fail)`. What did O6 add that
    the scoreboard's error didn't already give you?
 

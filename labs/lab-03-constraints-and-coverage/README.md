@@ -88,6 +88,6 @@ Lab 02's `+DSTS` and `+LEN` are gone: the packet's constraints choose the DST an
 
 The tests are plain cocotb, with no pyuvm and no `BaseTest`, so the Makefile sets
 `BASE_TEST := 0`. The packets need pyvsc and the coverage needs cocotb-coverage, so it also sets
-`NEEDS_VENV := 1`, and the simulator runs with the venv's Python. The simulator is built from the router's RTL alone (`build/rtl/router.f`, written by
-`../common/inject.py` with every planted bug behind `+BUG`), so one build serves every run of this
-lab.
+`NEEDS_VENV := 1`, and the simulator runs with the venv's Python. The simulator is built from the
+router's RTL alone (`build/rtl/router.f`, written by `../common/inject.py` with every planted bug
+behind `+BUG`), so one build serves every run of this lab.

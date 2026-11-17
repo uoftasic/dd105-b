@@ -3,25 +3,28 @@
 This page answers: *the scoreboard says a beat came out wrong. How do you get a check that names
 the rule the design broke, and the cycle it broke it in?*
 
-You'll need the answer as soon as you start Lab 05. Your Lab 04 testbench already catches two of
-that lab's three planted bugs, B10 and B12, but on B10 the first error it logs is
-`output 0: got e5 last in cycle 34, expected 80`. The scoreboard sees a beat only when a sink takes
-it, so that line is about the first wrong beat that output 0's sink took. While a beat waits on a
-stalled output, the scoreboard has no way to notice it going wrong.
+You'll need the answer as soon as you start Lab 05. That lab starts from our Lab 04 testbench,
+which already catches two of Lab 05's three planted bugs, B10 and B12. On B10, the first error it
+logs is `output 0: got e5 last in cycle 34, expected 80`. The scoreboard sees a beat only when a
+sink takes it, so that line is about the first wrong beat that output 0's sink took. If a beat is
+changed or lost while it waits on a stalled output, the scoreboard can't tell until the sink next
+takes a beat.
 [Part 1](../labs/lab-05-protocol-rules-and-backpressure-overview.md#part-1-the-lab-04-testbench-against-this-labs-bugs)
-of the lab has you work out how many cycles before that line the router broke its rule.
+of the lab has you work out the cycle in which the router broke its rule, and how many cycles before
+that line it was.
 
-A check that watches the pins themselves fires in the cycle in which the rule is broken, and its
-message can say which rule it was. A check of that kind is a SystemVerilog **concurrent
-assertion**. Assertions are the only SystemVerilog you write in this course. The testbench stays in
-Python, and the assertions go in a module of their own, which the build puts inside the design. In
+A SystemVerilog **concurrent assertion** is a check that watches the design's pins. It fires in the
+cycle in which a rule is broken, and its message can say which rule it was. Assertions are the only
+SystemVerilog you write in this course. The testbench stays in Python, and the assertions go in a
+module of their own, which a `bind` statement puts inside the design. In
 [Lab 05, Part 2](../labs/lab-05-protocol-rules-and-backpressure-overview.md#part-2-assertions-for-the-output-rules)
 you'll write three of them for the router's outputs, in a checker that the lab's package already
 binds into the router.
 
-So that this page doesn't write those three for you, its examples use a smaller design of our own,
-a one-beat valid/ready stage. The stage takes a beat on its input and holds it on its output until
-the sink takes it. Its source, its checker and the pyuvm test that drives it are in
+The examples on this page use a smaller design of our own, a one-beat valid/ready stage, so that
+they don't write those three assertions for you. The stage takes a beat on its input and holds it
+on its output until the sink takes it. Its source, its checker and the pyuvm test that drives it
+are in
 [`guide-examples/assertions-for-interface-rules/`](https://github.com/uoftasic/dd105-b/tree/main/guide-examples/assertions-for-interface-rules),
 and every output quoted below comes from a run of it in the course image.
 
@@ -41,9 +44,9 @@ four cycles, which breaks S1. With `bubble`, it holds `in_ready` at 0 for a cycl
 leaves, which breaks S3 whenever the stage is empty in that cycle.
 
 The test, `StageTest`, runs for 200 cycles. In each cycle where it has no beat waiting on the
-input, it puts a new one there with probability 70%, and it sets `out_ready` to 1 in half the
-cycles, at random. It checks nothing itself. The checker does the checking, and at the end of the
-test `BaseTest` reads how many assertion failures the checker counted.
+input, it puts a new one there with probability 70%, and in every cycle it sets `out_ready` to 1
+with probability 50%. The test checks nothing itself. The checker does all the checking, and at the
+end of the test `BaseTest` reads how many assertion failures the checker counted.
 
 ## A rule as a property
 
@@ -62,13 +65,13 @@ of the cycle, and nothing changes between that falling edge and the next rising 
 cycle the property sees the same values that your monitor reads, which is also what the
 specification means by the value of a signal "in a cycle".
 
-The expression left of `|=>`, `out_valid && !out_ready`, is the **antecedent**. It picks the
-cycles that the rule talks about, here the cycles in which a beat is on offer and isn't taken.
-`|=>` means "then, in the next cycle". The expression after it is the **consequent**, which must
-hold in that next cycle. In a cycle where the antecedent is false, the property checks nothing and
-passes. The action block after `else` runs only on a failure. Ours adds one to the assertion's
-own counter, `n_S1`, and calls `$error` with the rule's name, so the message tells you which rule
-broke without your having to look up a line number.
+The expression to the left of `|=>` is the **antecedent**, here `out_valid && !out_ready`. It picks
+the cycles that the rule talks about, which for S1 are the cycles in which a beat is on offer and
+isn't taken. `|=>` means "then, in the next cycle". The expression after it is the **consequent**,
+which must hold in that next cycle. In a cycle where the antecedent is false, the property checks
+nothing and passes. The action block after `else` runs only on a failure. Ours adds one to the
+assertion's own counter, `n_S1`, and calls `$error` with the rule's name, so the message tells you
+which rule broke without your having to look up a line number.
 
 S2 has the same antecedent and a different consequent, `$stable(out_data)`, which is 1 when
 `out_data` has the same value as it had in the previous cycle. S3 is about a single cycle, so it
@@ -92,9 +95,9 @@ checked without `disable iff`, and you'll write some of them in Lab 07.
 
 ## Binding the checker into the design
 
-The assertions are in a module of their own, `stage_sva`, whose inputs are the stage's pins, with
-one counter for each assertion and their sum, `n_fail`. A `bind` statement at the end of the same
-file, `stage_sva.sv`, puts a copy of that module inside the stage:
+The assertions are in a module of their own, `stage_sva`. Its inputs are the stage's pins. It keeps
+one counter for each assertion, and `n_fail` is the sum of the three. A `bind` statement at the end
+of the same file, `stage_sva.sv`, puts a copy of that module inside the stage:
 
 ```systemverilog
 bind stage stage_sva u_sva (
@@ -108,17 +111,19 @@ bind stage stage_sva u_sva (
 each connection are signals inside `stage`, so the checker sees the design's own ports, and the
 stage's RTL doesn't change. The example's Makefile lists the file in `SVA_SRCS`, and
 `labs/common/pyuvm.mk` compiles it with the design. cocotb's build passes Verilator
-`--public-flat-rw`, which makes every signal reachable from Python, the bound module's counters
-included, so the test reads the failure count through the design as `cocotb.top.u_sva.n_fail`.
-Lab 05 binds its checker into the router the same way, from a file of its own,
-`tb/router_sva_bind.sv`, and Part 2 asks you why the testbench attaches its checker with `bind`.
+`--public-flat-rw`, which makes every signal reachable from Python, including the bound module's
+counters, so `BaseTest` reads the failure count through the design as `cocotb.top.u_sva.n_fail`.
+Lab 05 binds its checker into the router the same way, with the `bind` statement in a file of its
+own, `tb/router_sva_bind.sv`. Part 2 of that lab asks you why the testbench attaches its checker
+with `bind`.
 
 ## Failure messages on Verilator
 
 The checker is plain SystemVerilog, so the simulator reports its failures itself, and the messages
 don't look like the lines your pyuvm components log. Here is the `drop` bug with Verilator's own
 error limit, which is 1. The course's makefile raises the limit for every run of a folder with
-`SVA_SRCS`, and `ERROR_LIMIT=1` puts it back, so the command is `make run BUG=drop ERROR_LIMIT=1`:
+`SVA_SRCS`, and `ERROR_LIMIT=1` sets it back to 1, so the command is
+`make run BUG=drop ERROR_LIMIT=1`:
 
 ```text
 [720000] %Error: stage_sva.sv:41: Assertion failed in stage.u_sva.a_S1: S1: out_valid fell without a handshake
@@ -131,22 +136,22 @@ at $10n$ ns, so the failure was found at the edge that ends cycle 72. A `|=>` fa
 is reported in the cycle of the consequent, so the beat was still waiting in cycle 71, and
 `out_valid` was 0 in cycle 72. The waveform of the same run shows both cycles:
 
-![The stage with the drop bug, 640 to 750 ns, in Surfer](../assets/img/assertions-drop-s1.png){fig-alt="A Surfer window with five signals from 640 to 750 ns: clk, out_valid, out_ready, out_data and n_S1. out_data shows 21 from 650 ns, 22 from 670 ns and 23 from 720 ns. out_ready is 1 from 660 to 670 ns, 0 from 670 to 710 ns, then 1 again. out_valid is 1 from 650 to 710 ns, 0 from 710 to 720 ns, and 1 from 720 ns. n_S1 goes from 00000000 to 00000001 at 720 ns."}
+![The stage with the drop bug, 640 to 750 ns, in Surfer](../assets/img/assertions-drop-s1.png){fig-alt="A Surfer window with five signals from 640 to 750 ns: clk, out_valid, out_ready, out_data and n_S1. out_data shows 21 from 650 ns, 22 from 670 ns and 23 from 720 ns. out_ready is 1 from 660 to 670 ns, 0 from 670 to 710 ns, 1 from 710 to 730 ns, 0 from 730 to 740 ns, and 1 from 740 ns. out_valid is 1 from 650 to 710 ns, 0 from 710 to 720 ns, 1 from 720 to 730 ns, and 0 from 730 ns. n_S1 goes from 00000000 to 00000001 at 720 ns."}
 
-*The sink takes `21` at the edge at 670 ns, and `22` goes onto the output in the same edge. `22`
+*The sink takes `21` at the edge at 670 ns, and `22` goes onto the output at the same edge. `22`
 waits in cycles 68 to 71, from 670 to 710 ns, with `out_ready` at 0. At 710 ns, the start of cycle
 72, `out_valid` falls although the sink never took `22`, and at the edge at 720 ns, which ends
 cycle 72, the assertion fails and `n_S1` counts it. (`23` went in during cycle 72, so the output is
-busy again from 720 ns.)*
+busy again from 720 ns until the sink takes `23` at the edge at 730 ns.)*
 
 The message names the assertion by its full path, `stage.u_sva.a_S1`, so it also tells you which
 instance of the checker fired. In Lab 05 the path tells you the output as well, because the
 router's checker has one instance of `router_sva_out` for each output, `u_out0` and `u_out1`.
 
-The run stopped at that failure, at 720 ns of its 2,020, and the simulator's exit status was 1.
-cocotb marked `StageTest` failed, and `BaseTest`'s line at the end of the test never printed,
-because the test never got there. The course's grader reads the log as well as cocotb's results,
-and it called the run caught, with a note:
+The run stopped at that failure, at 720 ns of the 2,020 ns that a full run takes, and the
+simulator's exit status was 1. cocotb marked `StageTest` failed, and `BaseTest`'s line at the end of
+the test never printed, because the test never got there. The course's grader reads the log as well
+as cocotb's results, and it called the run caught, with a note:
 
 ```text
  caught: 1 assertion   0.26 s   log: build/runs/StageTest-s1-drop/run.log
@@ -154,9 +159,9 @@ and it called the run caught, with a note:
    note: Verilator stopped the run at its error limit, so the rest of the test didn't run. Runs through make raise it (+verilator+error+limit+N).
 ```
 
-The run-time option `+verilator+error+limit+<value>` raises the limit. `pyuvm.mk` passes
-`+verilator+error+limit+100000` to every run of a folder with `SVA_SRCS`, which is a number no run
-will reach, so `make run BUG=drop` prints every failure of the same bug:
+The makefile sets the limit with the run-time option `+verilator+error+limit+<value>`. Without
+`ERROR_LIMIT=1`, `pyuvm.mk` passes `+verilator+error+limit+100000`. No run comes near that many
+failures, so `make run BUG=drop` prints every failure of the bug:
 
 ```text
 [720000] %Error: stage_sva.sv:41: Assertion failed in stage.u_sva.a_S1: S1: out_valid fell without a handshake
@@ -168,10 +173,10 @@ DD105-B BaseTest: 0 errors logged, 5 assertion failures (u_sva.n_fail)
 ```
 
 After the first failure Verilator also prints, once, an `-Info` line saying that the `$stop` was
-ignored because of `+verilator+error+limit`. This time the test ran to its end, `BaseTest` read
+ignored because of `+verilator+error+limit`. This time the test ran to its end. `BaseTest` read
 `n_fail` in its `final_phase`, printed the line above and raised `AssertionError`, and the grader
-said `caught: 0 errors, 5 assertions`. Zero errors means that no pyuvm component logged one; the
-five are the checker's.
+said `caught: 0 errors, 5 assertions`. In that line, `0 errors` means that no pyuvm component
+logged an error, and `5 assertions` means the checker's five failures.
 
 ## Reading the count in the test
 
@@ -189,9 +194,9 @@ DD105-B BaseTest: 0 errors logged, no bound assertions
 and cocotb's summary said `PASS` for the test, as `results.xml` did. The course's grader also
 searches the log for failed assertions, so it still said `caught: 0 errors`, with the note
 `5 assertion failure(s) are in the log and the test passed: it doesn't read u_sva.n_fail, as BaseTest does.`
-A grader that read only cocotb's results, or you reading cocotb's summary, would have taken the run
-for a pass, so a testbench that relies on assertions has to turn their count into a failing test
-itself. Every pyuvm test in the labs derives from `BaseTest`, which reads
+A grader that read only cocotb's results would have taken the run for a pass, and so would you if
+you read only cocotb's summary. A testbench that relies on assertions therefore has to turn their
+count into a failing test itself. Every pyuvm test in the labs derives from `BaseTest`, which reads
 `cocotb.top.u_sva.n_fail` at the end of every test of a design that has a checker bound into it,
 and fails the test if the count isn't 0.
 
@@ -208,16 +213,16 @@ and the grader's verdict on it was `MISSED`. The bug is still in the stage, but 
 beat that has waited four cycles, and with the sink always ready no beat waited at all. The
 antecedent of S1 was false in every cycle, so the assertion passed in every cycle without checking
 anything. A passing assertion tells you only that its rule held in the cycles where its antecedent
-was true, and not whether there were any such cycles. Lab 05's B11 hides from your O6 assertion
-for a related reason. O6's antecedent holds on the last beat of every 8-beat packet, but B11 acts
-only on a packet longer than 8 beats, so O6 can fail only on the 8th beat of a packet that has a
-9th. None of Lab 04's tests sends such a packet, and your virtual sequence in Part 4 is the first
-stimulus that does.
+was true, and not whether there were any such cycles. Your O6 assertion in Lab 05 misses B11 at
+first, for a related reason. O6's antecedent holds on the last beat of every 8-beat packet, but
+B11 acts only on a packet longer than 8 beats, so O6 can fail only on the 8th beat of a packet that
+has a 9th. None of Lab 04's tests sends such a packet, and your virtual sequence in Part 4 is the
+first stimulus that does.
 
-The checker therefore also counts the cycles in which the antecedent of S1 and S2 holds. That is
-`n_tried`, a counter in an `always` block beside the assertions, and on the golden stage, with the
-sink ready half the time, it counted 83 cycles. The checker asks the same question a second way,
-with a cover property whose statement adds one to `n_covered`:
+The checker therefore has another counter, `n_tried`, for the cycles in which the antecedent of S1
+and S2 holds. An `always` block beside the assertions adds one to it in each of those cycles, and on
+the golden stage, with the sink ready half the time, it counted 83. The checker also counts the same
+cycles a second way, with a cover property whose pass statement adds one to `n_covered`:
 
 ```systemverilog
 c_S1: cover property (@(posedge clk) disable iff (!rst_n) out_valid && !out_ready)
@@ -227,12 +232,12 @@ c_S1: cover property (@(posedge clk) disable iff (!rst_n) out_valid && !out_read
 With the course's build flags that statement never ran, and `n_covered` was 0 in every run on
 this page, the golden one included. It does run in a build with Verilator's user coverage switched
 on. We built the stage once with `make build VFLAGS=--coverage-user` and ran it with the same
-`VFLAGS`, and then `n_covered` counted the same 83 cycles as `n_tried`, and the run wrote
+`VFLAGS`. In that run `n_covered` counted the same 83 cycles as `n_tried`, and the run wrote
 Verilator's own coverage file, `coverage.dat`. The labs build without that switch, and `make cov`
 reads cocotb-coverage's files, not `coverage.dat`, so in this course the evidence that a rule was
 exercised comes from a counter that you write yourself, like `n_tried`, or from a cocotb-coverage
-bin. Lab 05's `router.wait` is one of those: for each packet an output delivers, it records the
-longest that any of its beats waited.
+bin. Lab 05's coverage group `router.wait` has bins of that kind. For each packet that an output
+delivers, it records the longest that any of the packet's beats waited.
 
 ## Which rules suit an assertion
 
@@ -248,14 +253,16 @@ rules section lists the rules that need more than a short property:
   counter, `beats`, which counts the beats of the current packet that have already been taken.
   It's written for you in `router_sva_out`.
 - I4, O3 and O7 say what a signal does *not* depend on, which no single trace can show. A model
-  that predicts the outputs checks them, and an assertion can catch only their consequences.
+  that predicts the outputs checks them. An assertion can't check them directly, and it catches a
+  design that breaks one of them only if the design breaks another rule as well.
 - I3 is a rule for your own source's stimulus, so it belongs in the driver or the sequence, not in
   an assertion.
 
 The scoreboard knows what every beat should be, so it catches far more kinds of bug than the
-assertions do, but its message says only that a beat was wrong. An assertion names the rule and
-the cycle, which tells you where and when to look, so a testbench needs both kinds of check. In
-Lab 05 you'll see both fire on the same bugs, often many cycles apart.
+assertions do, but its message says only which beat came out wrong when a sink took it. An
+assertion names the rule that was broken and the cycle in which it was broken, which tells you where
+and when to look. A testbench needs both kinds of check, and in Lab 05 you'll see both fire on the
+same bugs, several cycles apart.
 
 ## Check yourself
 
@@ -279,12 +286,12 @@ Lab 05 you'll see both fire on the same bugs, often many cycles apart.
    <details>
    <summary>Answer</summary>
 
-   The read of the checker's count. The `%Error` lines show that a checker is bound and its
-   assertions fail, but "no bound assertions" means `BaseTest` didn't find
-   `cocotb.top.u_sva.n_fail`: the checker is bound under another instance name than `u_sva`, its
-   sum of the counters isn't called `n_fail`, or the test has changed `SVA_FAILS`, as `+UNCOUNTED`
-   does in the example. A failed assertion raises nothing in Python, so without that read the test
-   passes.
+   The test isn't reading the checker's count. The `%Error` lines show that a checker is bound and
+   its assertions fail, but "no bound assertions" means that `BaseTest` didn't find
+   `cocotb.top.u_sva.n_fail`. Either the checker is bound under an instance name other than
+   `u_sva`, or its sum of the counters isn't called `n_fail`, or the test has changed `SVA_FAILS`,
+   as `+UNCOUNTED` does in the example. A failed assertion raises nothing in Python, so without that
+   read the test passes.
 
    </details>
 

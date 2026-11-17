@@ -1,13 +1,14 @@
 # Lab 07: Capstone
 
 In this lab you take the Lab 06 testbench to sign-off. You write a verification plan from the
-specification, run every test on ten seeds and read the merged coverage, and hunt three mystery
-bugs, each dealt from all fifteen in the catalogue. The package you start from misses one of the
-fifteen. You catch it by writing the assertions for the rules about reset and a sequence that resets
-the router while packets are in flight, so that `make check-all` prints `15 of 15 caught.` Then you
-write a sequence that takes both drop counters to 255, which fills the last two coverage bins that a
-test can reach, and you finish with a verification report. The plan, the report, your testbench and
-its results go into a GitHub repository of your own.
+specification, then run every test on ten seeds and read the merged coverage. You also hunt three
+mystery bugs, each dealt from all fifteen bugs in the catalogue. As shipped, the package's graded
+test catches fourteen of the fifteen. You catch the one it misses by writing the assertions for the
+rules about reset and a sequence that resets the router while packets are in flight, so that
+`make check-all` prints `15 of 15 caught.` Then you write a sequence that takes both drop counters
+to 255, which fills the last two coverage bins that a test can reach, and you finish with a
+verification report. The plan, the report, your testbench and its results go into a GitHub
+repository of your own.
 
 Package: [`labs/lab-07-capstone/`](https://github.com/uoftasic/dd105-b/tree/main/labs/lab-07-capstone)
 
@@ -22,26 +23,26 @@ Package: [`labs/lab-07-capstone/`](https://github.com/uoftasic/dd105-b/tree/main
   and it hasn't expired, use it. Otherwise make one the way that part describes. This lab needs
   only the Contents permission, read and write, because your repository has no workflows.
 
-The package is the Lab 06 testbench with our solution to Lab 06 in it: the seven registers' fields,
-the adapter, the reset and bit-bash sequences, the predictor and its connections, the `irq` check
-and `RouterLab06Vseq`'s steps. If your own Lab 06 printed `5 of 5 caught.`, your code did the same
-job, but use ours anyway, because this lab adds to the files you edited. Until now the router has
-been reset only at time 0, and nothing in the testbench could reset it again. What we added for
-you:
+The package is the Lab 06 testbench with our solution to Lab 06 in it. That solution has the seven
+registers' fields, the adapter, the reset and bit-bash sequences, the predictor and its
+connections, the `irq` check and `RouterLab06Vseq`'s steps. If your own Lab 06 printed
+`5 of 5 caught.`, your code did the same job, but use ours anyway, because this lab adds to the
+files you edited. Until now the router has been reset only at time 0, and nothing in the testbench
+could reset it again. The table lists what we added to each file for this lab.
 
 | File | What Lab 07 adds |
 |---|---|
-| `tb/router_agents.py` | a reset the testbench can drive: `ResetDriver` and `ResetSeq`, in a sys agent beside Lab 06's sys monitor, and `ResetState`, through which the reset driver warns the other drivers a cycle before a reset; a source driver that abandons its packet at a reset (rule I3), and an APB driver that keeps `psel` at 0 during one and starts an interrupted transfer again (rule A4) |
-| `tb/router_env.py` | in the scoreboard, `reset_model()`, which at a reset throws away every beat it expected and puts its own models and the register model's mirror back to their reset values; four corners that the scoreboard counts (a reset with beats still to come out, a reset with a packet half accepted, and a drop of each kind with its counter already at 255), and the coverage group `router.corner`, with a bin for each |
-| `tb/router_sva.sv`, `tb/router_sva_bind.sv` | the APB port and `irq` in the bound module, and a counter for each rule about reset; the assertions are yours (Part 5) |
-| `tb/router_vseq.py` | `reset()` in the base sequence; `RouterResetVseq` and `RouterSaturateVseq`, whose bodies are yours (Parts 5 and 6); `RouterLab07Vseq`, four phases of random traffic whose resets are yours (Part 5) |
+| `tb/router_agents.py` | `ResetDriver` and `ResetSeq`, which let the testbench reset the router, in a sys agent beside Lab 06's sys monitor; `ResetState`, through which the reset driver warns the other drivers a cycle before each reset; a source driver that abandons its packet when a reset comes (rule I3); and an APB driver that keeps `psel` at 0 during a reset and starts the interrupted transfer again after it (rule A4) |
+| `tb/router_env.py` | `reset_model()` in the scoreboard, which at a reset throws away every beat the scoreboard expected and puts the scoreboard's models and the register model's mirror back to their reset values; four corners that the scoreboard counts (a reset with beats still to come out, a reset with a packet half accepted, and a drop of each kind with its counter already at 255); and the coverage group `router.corner`, with a bin for each corner |
+| `tb/router_sva.sv`, `tb/router_sva_bind.sv` | the APB port and `irq` as inputs of the bound module, and a failure counter for each rule about reset; you write the assertions (Part 5) |
+| `tb/router_vseq.py` | `reset()` in the base sequence; `RouterResetVseq` and `RouterSaturateVseq`, whose bodies you write (Parts 5 and 6); `RouterLab07Vseq`, four phases of random traffic, in which you write the resets (Part 5) |
 | `tb/test_router.py` | `RouterTest` runs `RouterLab07Vseq` last; three new tests, `RouterLab07Test`, `RouterResetTest` and `RouterSaturateTest` |
-| `Makefile` | `RouterLab07Test` in `TESTS`, and `BUG_LIST`: all fifteen bugs, B15 first, because `make check` grades the first |
+| `Makefile` | `RouterLab07Test` in `TESTS`; `BUG_LIST` with all fifteen bugs, B15 first, because `make check` grades the first bug in the list |
 | `PLAN-template.md`, `REPORT-template.md` | the plan and the report you fill in |
 
-Time: about 3 h 30 min. About 30 minutes of that is waiting for the machine, as we measured it in
-the course image with 2 CPUs: the two regressions took 8 min 27 s and 9 min 21 s, each of the three
-runs of `make check-all` took 114 to 118 s, and a run of `RouterTest` takes about 12 s. The
+Time: about 3 h 30 min, of which about 30 minutes is waiting for the machine. We measured the runs
+in the course image with 2 CPUs. The two regressions took 8 min 27 s and 9 min 21 s, each of the
+three runs of `make check-all` took 114 to 118 s, and a run of `RouterTest` takes about 12 s. The
 assertions are SystemVerilog, so `make build` rebuilds the simulator after you write them, which
 took us 2.5 s. The sequences are Python and the two tests you add are names in the Makefile's
 `TESTS`, so neither needs a rebuild. You'll spend most of the rest writing the plan, eight
@@ -68,14 +69,15 @@ assertions, two sequences and the report.
     /foss/designs/modules/dd105-b/labs/lab-07-capstone/build/sim_build/Vtop is up to date.
    ```
 
-   Our counts include the builds of Labs 01 to 06, which came to 41 hits and 15 misses, so this
-   build's own were 6 hits and 1 miss.
+   The ccache counts on that line include our builds of Labs 01 to 06, which came to 41 hits and
+   15 misses, so this build's own were 6 hits and 1 miss.
 
 2. On GitHub, create a new repository under your own account named `dd105-capstone`, with a
    README so that it starts with one commit. It can be private, because nobody needs to read it
    yet.
 
-3. Clone it beside the course, and tell git who you are in it:
+3. Clone it into a `projects` folder beside the course, and tell git who you are, and to remember
+   your token, in that repository:
 
    ```bash
    mkdir -p /foss/designs/projects && cd /foss/designs/projects
@@ -89,8 +91,8 @@ assertions, two sequences and the report.
 
    Use your GitHub no-reply address, and leave out `--global`. A global setting goes in the
    container's home folder, which is thrown away when the workbench restarts. Without `--global`
-   the settings go in `.git/config`, which is inside your repository, on your own disk, so they
-   stay. In IC102-A Lab 01,
+   the settings go in the repository's `.git/config`, and `/foss/designs` is on your own disk, so
+   they're still there after a restart. In IC102-A Lab 01,
    [Part 2](https://uoftasic.com/ic102-a/labs/lab-01-your-repo-from-the-template-overview.html#part-2-your-github-settings)
    says where to find your no-reply address, and
    [Part 3](https://uoftasic.com/ic102-a/labs/lab-01-your-repo-from-the-template-overview.html#part-3-make-the-repository)
@@ -126,11 +128,13 @@ assertions, two sequences and the report.
    enables, while both sinks change their modes. It doesn't yet run the reset and saturation
    sequences that you write in Parts 5 and 6. It goes last because every random value in the
    testbench comes from Python's `random`, one after another, so a sequence that ran earlier would
-   change every packet after it, as the payload of the 9-beat packet you sent in Lab 06, Part 5
-   changed the packets of Labs 04 and 05 that ran after it. We ran `RouterTest` with
-   `RouterLab07Vseq` left out, on seeds 1 to 5, and it printed Lab 06's lines number for number
-   (on seed 1, `1135 packets in: 311 to output 0, 288 to output 1, 177 NOROUTE, 359 FULL`, and
-   `irq checked in 13918 cycles`), so nothing we added changes a run that has no reset in it.
+   change every packet after it. In Lab 06, Part 5, the payload of your 9-beat packet changed the
+   packets of Labs 04 and 05 in just that way, because they ran after it. We ran `RouterTest` with
+   `RouterLab07Vseq` left out, on seeds 1 to 5, and it printed Lab 06's lines number for number,
+   with the new `[SB] resets` line as well. On seed 1 those lines include
+   `1135 packets in: 311 to output 0, 288 to output 1, 177 NOROUTE, 359 FULL` and
+   `irq checked in 13918 cycles`. So nothing else that we added changes what runs before
+   `RouterLab07Vseq`.
 
    </details>
 
@@ -153,12 +157,12 @@ happen?
    (RT1, DR2, RS2 and so on) to the rules that the specification states in prose. Three rows, O1,
    RT1 and A7, are filled in as examples.
 
-2. Fill in the table under "How the environment checks". There are three checkers: the scoreboard
-   (`write_in`, `write_out`, `write_apb` and `write_sys` in `RouterScoreboard`, in
-   `tb/router_env.py`), the predictor (`RouterRegPredictor` in `tb/router_ral.py`, which you wrote
-   and connected in Lab 06), and the assertions in `tb/router_sva.sv`. The reset and bit-bash
-   sequences also compare what they read, but only while they run. The docstring or comment at the
-   top of each file says what it covers.
+2. Fill in the table under "How the environment checks". The environment has three checkers. The
+   scoreboard is `RouterScoreboard` in `tb/router_env.py`, and its checks are in `write_in`,
+   `write_out`, `write_apb` and `write_sys`. The predictor is `RouterRegPredictor` in
+   `tb/router_ral.py`, which you wrote and connected in Lab 06. The third is the assertions in
+   `tb/router_sva.sv`. The reset and bit-bash sequences also compare what they read, but only
+   while they run. The docstring or comment at the top of each file says what it covers.
 
 3. Run `grep -n TODO tb/*.py tb/*.sv Makefile` first, because the parts that this lab leaves for
    you are marked `TODO`. Then, for every row, fill in "Checked by" and "Made to happen by", and
@@ -179,21 +183,21 @@ happen?
    <details>
    <summary>Answer</summary>
 
-   At time 0 the router holds nothing, so RS2 and RS3 (a reset with beats in a buffer, and a
-   reset in the middle of an input packet), the second half of O4 and the source's rule I3 all
-   need a reset with traffic in flight. I7, O4, the first half of A4 and RS1 have no assertion
-   yet, because theirs are the `TODO (Part 5)` comments in `tb/router_sva.sv`. Of RS1's four
-   values, only `irq` is checked, by the scoreboard. DR2, the rule that each counter stops at 255,
-   needs 255 drops with no clear or reset between them, but `RouterInjectTest` and
+   Four rows need a reset with traffic in flight, because at time 0 the router holds nothing. They
+   are RS2 (a reset with beats in a buffer), RS3 (a reset in the middle of an input packet), O4,
+   and the source's rule I3. I7, O4, the first half of A4 and RS1 have no assertion yet; theirs go
+   where the `TODO (Part 5)` comments are, in `tb/router_sva.sv`. The scoreboard checks `irq`
+   during a reset, but nothing checks RS1's other three values. DR2, the rule that each counter
+   stops at 255, needs 255 drops with no clear or reset between them, but `RouterInjectTest` and
    `RouterLab07Vseq` both clear `DROP_CNT` at the end of each of their phases.
 
    Nothing in the environment compares `in_ready` with what the specification says it should be
    (I4, I5, I6, RT5); the source driver reports only an `in_ready` that stays 0 for 1000 cycles
-   with a beat on offer. Nothing checks the cycle a beat appears (O8), that the outputs come from flip-flops
-   (O3), what `CTRL.EN` does (EN1), the APB master's rules (A1 to A3), `pready` (A5, A6) or
-   `LEVEL` (RG4) either, and nothing in this lab adds a check for any of them, so those rows stay
-   "nothing". Put them in the plan's Open items, because Part 8's report has to say what the
-   environment doesn't show.
+   with a beat on offer. Nor does anything check when a beat appears (O8), whether the outputs
+   come from flip-flops (O3), what `CTRL.EN` does (EN1), whether the APB master keeps its rules
+   (A1 to A3), when `pready` is 0 (A5, A6) or what `LEVEL` reads (RG4). Nothing in this lab adds a
+   check for any of these rows, so they stay "nothing". Put them in the plan's Open items, because
+   Part 8's report has to say what the environment doesn't show.
 
    </details>
 
@@ -244,15 +248,16 @@ Does a regression that passes on every seed tell you the environment is finished
    <details>
    <summary>Answer</summary>
 
-   Only the four in `router.corner`. The seven in `router.pkt.x_fate_level` are ones the
-   specification rules out, as they have been since Lab 03, because a packet is FULL only at a
-   level of 9 or more, and written to an output only at 8 or less. `noroute_saturated` and
-   `full_saturated` are drops whose counter is already 255 (row DR2), and `reset_with_beats` and
-   `reset_mid_packet` are a reset with beats in a buffer and a reset with a packet half accepted
-   (RS2 and RS3). You found the same rows in Part 2 by reading the environment, and the
-   regression's bins point at them too. So a regression that passes on every seed doesn't tell you
-   the environment is finished. 100 passes mean that no check fired in 100 runs, and the four
-   empty bins are situations that the stimulus never made, so no check ever saw them.
+   Only the four in `router.corner`. The specification rules out the seven in
+   `router.pkt.x_fate_level`, as you found in Lab 03, because a packet is a FULL drop only at a
+   level of 9 or more, and is written to an output only at a level of 8 or less.
+   `noroute_saturated` and `full_saturated` are drops whose counter is already 255 (row DR2), and
+   `reset_with_beats` and `reset_mid_packet` are a reset with beats in a buffer and a reset with a
+   packet half accepted (RS2 and RS3). You found the same rows in Part 2 by reading the
+   environment, and the regression's bins point at them too. 100 passes mean that no check fired
+   in 100 runs. The four empty bins are situations that the stimulus never made, so no check ever
+   saw them, and a regression that passes on every seed doesn't tell you that the environment is
+   finished.
 
    </details>
 
@@ -286,9 +291,9 @@ Can you tell which rule a design breaks from your environment's log alone?
    ```
 
    `make new` seals one of the fifteen bugs in `.hunt` without telling you which. `make hunt` runs
-   the graded test with that bug switched on, which takes about 12 s, or less for a bug that piles
-   up 50 errors early, because the scoreboard stops a run at its 50th. On one of our deals, the
-   hunt printed:
+   the graded test with that bug switched on, which takes about 12 s. A bug that piles up 50
+   errors early takes less, because the scoreboard stops a run at its 50th error. On one of our
+   deals, the hunt printed:
 
    ```text
      caught  the mystery bug                          1 error, 0 assertions          11.3s
@@ -302,19 +307,19 @@ Can you tell which rule a design breaks from your environment's log alone?
    ```
 
    Before you ask for a verdict, fill in the first three columns of its hunt table. They hold the
-   deal's number, the first check that fired, copied from the hunt, and your diagnosis, which is
-   the rule the router broke and the file in `labs/common/rtl/` that you'd look in. The
+   deal's number, the first check that fired (copied from the hunt), and your diagnosis, which
+   names the rule that the router broke and the file in `labs/common/rtl/` that you'd look in. The
    specification's [Building the router](../reference/router-spec.md#building-the-router) section
-   says what each file holds, and in the log from `make hunt VERBOSE=1` the `[VSEQ]` lines say
-   which sequence was running when the first error came. What would you write for the hunt above?
+   says what each file holds. In the log from `make hunt VERBOSE=1`, the `[VSEQ]` lines say which
+   sequence was running when the first error came. What would you write for the hunt above?
 
    <details>
    <summary>Answer</summary>
 
    The rule is IRQ1, that `irq` is the OR of `STATUS & INT_EN`. In cycle 5906 `STATUS.NOROUTE` is
-   set and its enable is 0, and the router raises `irq` anyway, so it isn't masking with `INT_EN`.
-   The interrupt is in `router_regs.sv`, with the registers. The hunt's line cuts the message
-   short, and the full log from `make hunt VERBOSE=1` has all of it,
+   set and its enable is 0, and the router raises `irq` anyway, so it isn't masking `STATUS` with
+   `INT_EN`. The interrupt is in `router_regs.sv`, with the registers. The hunt's line cuts the
+   message short. The full log from `make hunt VERBOSE=1` has all of it:
    `irq is 1 from cycle 5906, but STATUS = 001 and INT_EN = 000 make it 0`. In that log the error
    comes between `starting RouterLab06Vseq` and `RouterLab06Vseq is done`, so it came from the step
    you wrote in Lab 06, Part 5, which drops a packet while `INT_EN` is still 0.
@@ -378,19 +383,20 @@ busy?
    <details>
    <summary>Answer</summary>
 
-   It would have reported errors on a router that is right. We tried it: with the call to
-   `reset_model()` taken out, the reference solution's `RouterResetTest` failed the golden router
-   with 56 errors. The register model's mirror still held the values from before the E8 reset, so
-   the predictor failed the first reads after it (`[RAL] CTRL read 0x0 in cycle 57; the mirror
+   It would have reported errors on a router that is right. We took the call to `reset_model()`
+   out of `write_sys()` and ran the reference solution's `RouterResetTest`, and it failed the
+   golden router with 56 errors. The register model's mirror still held the values from before
+   the E8 reset, so the predictor failed the first reads after it (`[RAL] CTRL read 0x0 in cycle 57; the mirror
    holds 0x1`). The beats the scoreboard expected were still queued, so the first beats out of
    output 0 after the reset were compared with beats from before it (`output 0: got 02 in cycle
-   120, expected 00`). Its routing table, its levels and its drop counts would still hold the values
-   from before the reset as well, so it would decide the next packets' fates wrongly.
+   120, expected 00`). The scoreboard's routing table, levels and drop counts would also still
+   hold their values from before the reset, so it would decide the fates of later packets wrongly.
    `reset_model()` throws all of that away in the first reset cycle.
 
-   Lab 06's drivers needed changing too. We tried them in place of this lab's: after the E8 reset
-   the source driver went on offering the third beat of the packet the reset had cut, `CTRL.EN` was
-   0 again so nothing took it, and 1000 cycles later the driver gave up with
+   Lab 06's drivers needed changing too. We ran the same test again, with `reset_model()` back in,
+   using Lab 06's source and APB drivers in place of this lab's. After the E8 reset the source
+   driver went on offering the third beat of the packet that the reset had cut. `CTRL.EN` was 0
+   again, so nothing took the beat, and 1000 cycles later the driver gave up with
    `in_ready stayed 0 for 1000 cycles with beat 2 of dst 0, 8 beats: 01 15 74 d5 6f da 03 ae on offer; dropping the rest of it`.
    In a later reset the APB driver kept `psel` at 1, which `a_A4` reported as
    `A4: psel is 1 during reset`.
@@ -418,20 +424,20 @@ busy?
    eight check the router's own rules, which the golden router keeps, and `a_A4` checks a rule of
    the APB master's, which our APB driver keeps. If one of yours does fail, its `%Error` line
    names it, and the mistake is in that assertion. So far the only reset they have seen is the one
-   at time 0, two cycles long, when the router holds nothing.
+   at time 0, which lasts two cycles and comes when the router holds nothing.
 
 4. Write `RouterResetVseq.body()` in `tb/router_vseq.py`. Its `TODO` lists the situations to reach.
    The first is the specification's example E8, in which output 0 is stalled with a packet in its
    buffer and the next packet is half accepted when `rst_n` falls. Run the reset beside the
    traffic with `par()`, the way `RouterLab05Vseq` runs its route writes beside its random
-   packets, and after each reset let the sinks take beats, call `setup()` and send more. `reset()`
-   warns the other drivers at the next rising edge and pulls `rst_n` low at the one after, so a
-   reset starts two cycles after you call it.
+   packets. After each reset, let the sinks take beats, call `setup()` and send more packets.
+   `reset()` warns the other drivers at the next rising edge and pulls `rst_n` low at the one
+   after, so a reset starts two cycles after you call it.
 
-5. In `RouterLab07Vseq`, write the line that runs your sequence (the `TODO (Parts 5 and 6)`;
-   Part 6 adds the other line), and the two `TODO (Part 5)`s in the random phases, which set
-   `do_reset` and add the thread that resets the router. Then add `RouterResetTest` to `TESTS` in
-   the Makefile.
+5. In `RouterLab07Vseq`, at the `TODO (Parts 5 and 6)`, write the line that runs your sequence
+   (Part 6 adds the line for the other one). Then write the two `TODO (Part 5)`s in the random
+   phases, which set `do_reset` and add the thread that resets the router, and add
+   `RouterResetTest` to `TESTS` in the Makefile.
 
 6. Write down what you expect the `corners hit:` part of the `[SB] resets` line to say for your
    test. Then run it:
@@ -457,11 +463,11 @@ busy?
    and the run ends with
    `[SB] resets: 4 after the one at time 0, 14 expected beats lost; corners hit: reset_with_beats=3 reset_mid_packet=1 noroute_saturated=0 full_saturated=0`
    and `ok`, in 2.29 s. If your log has no `[APB] ... abandoned` line, your reset fell between two
-   transfers, and nothing in your test has made rule A4 happen yet. A read and a write take 7
-   cycles together in our sequence, the APB driver's idle cycle before each one included. After
-   `cycles(8)`, `reset(1)` warned the APB driver as the second read's setup cycle ended, and `rst_n`
-   fell after the read's first access cycle. Move your reset a cycle at a time until it lands in a
-   transfer.
+   transfers, and nothing in your test has made rule A4 happen yet. In our sequence a read and a
+   write take 7 cycles together, counting the idle cycle that the APB driver leaves before each
+   one. After `cycles(8)`, `reset(1)` warned the APB driver as the second read's setup cycle
+   ended, and `rst_n` fell after the read's first access cycle. Move your reset a cycle at a time
+   until it lands in a transfer.
 
 Check: `RouterResetTest` passes on the golden router, with `reset_with_beats` and
 `reset_mid_packet` above 0, and an `[APB] ... abandoned` line in its log.
@@ -474,9 +480,9 @@ Does each drop counter stop at 255, and how will you know that the regression go
    [Sizes](../reference/router-spec.md#sizes) section says that a stream of 1-beat packets for a
    disabled route makes one drop per cycle, so it takes a counter to 255 in 255 cycles. Read
    `DROP_CNT` on the way past 255, but only between bursts. The scoreboard compares a read with the
-   drops it has counted when the read completes, and a read returns the counter as it was a cycle
-   earlier, so while drops are still coming in the two can differ, and the check would report an
-   error that isn't the router's. Then clear the counters with a write and read them again.
+   drops it has counted by the time the read completes, but a read returns the counter as it was a
+   cycle earlier. While drops are still coming in, the two can differ, and the check would report
+   an error that isn't the router's. Then clear the counters with a write and read them again.
 
 2. Add the line that runs it to `RouterLab07Vseq`, add `RouterSaturateTest` to `TESTS`, and run the
    test:
@@ -509,9 +515,9 @@ Does each drop counter stop at 255, and how will you know that the regression go
 
    No. None of the fifteen bugs changes what a counter does at 255. We ran `make check-all` with
    Part 5's work in and none of Part 6's, and it printed `15 of 15 caught.` on seed 1, with B15 at
-   `50 errors, 14 assertions`. The new sequence reads `DROP_CNT` past 255, and the scoreboard,
-   which you already had, compares every `DROP_CNT` read with its own counts, which stop at 255,
-   so it would catch a counter that wraps. Until now nothing gave row DR2 of your plan any
+   `50 errors, 14 assertions`. The scoreboard you already had compares every `DROP_CNT` read with
+   its own counts, which stop at 255, so once the new sequence reads `DROP_CNT` past 255, the
+   scoreboard would catch a counter that wraps. Until now nothing gave row DR2 of your plan any
    evidence either way.
 
    </details>
@@ -588,7 +594,7 @@ add?
    With B15 on, a reset doesn't clear an output's register, so a beat that was waiting on a
    stalled output when `rst_n` fell is still there afterwards. Until Part 5 the only reset came at
    time 0, with both buffers empty, so there was never a beat for B15 to keep. After your last
-   run, `build/grade/B15/run.log` holds seed 3, and in our seed 3 run the first failure came in
+   run, `build/grade/B15/run.log` holds seed 3's log. In our seed 3 run the first failure came in
    the E8 step of the reset sequence:
 
    ```text
@@ -616,11 +622,11 @@ add?
 
    In the package as shipped, the first check was the predictor's, in cycle 10, on the reset
    sequence's read of `CTRL` in `RouterLab06Vseq`: `[RAL] CTRL read 0x1 in cycle 10; the mirror
-   holds 0x0`, followed by `RegResetSeq`'s own error. Now the first is your assertion `a_I7`, at
-   the rising edge at 10000 ps, which ends cycle 1, during the reset at time 0:
+   holds 0x0`, followed by `RegResetSeq`'s own error. Now the first is your assertion `a_I7`. It
+   fires during the reset at time 0, at the rising edge at 10000 ps that ends cycle 1:
    `[10000] %Error: router_sva.sv:148: Assertion failed in router.u_sva.a_I7: I7: in_ready is 1 during reset`.
-   With `CTRL.EN` at 1 the router is ready even while `rst_n` is 0. The predictor catches B14 nine
-   cycles later and says which register is wrong; `a_I7` catches it at once and names the rule the
+   With `CTRL.EN` at 1 the router is ready even while `rst_n` is 0. The predictor's error comes
+   nine cycles later and tells you which register is wrong, while `a_I7`'s names the rule that the
    router breaks.
 
    </details>
@@ -669,9 +675,9 @@ wrote.
 Can someone else check your claim without redoing your work?
 
 1. Fill in `REPORT.md` section by section. Paste each number as the tool printed it, from
-   `results/` and from your notes. Section 7, "What this doesn't show", is the only place where a
-   reader who has to rely on your claim can find out where your evidence stops, so don't leave it
-   short. Your plan's Open items from Part 2 go there.
+   `results/` and from your notes. Section 7, "What this doesn't show", is where a reader who has
+   to rely on your claim finds out where your evidence stops, so don't leave it short. Your plan's
+   Open items from Part 2 go there.
 
 2. Copy your testbench and its outputs into the repository, and push:
 
@@ -708,9 +714,9 @@ Questions:
 
    Either can be defended. `a_O4_rst` fired in the reset cycle itself and names the rule it
    checks. It needs no model, so it fires whether or not the sink ever takes the stale beat. In our
-   seed 3 log the scoreboard fired four cycles later, and only because the sink took the beat, but
-   its message says what the bug does to whoever uses the router, which is to deliver a beat from
-   before the reset as if it were new.
+   seed 3 log the scoreboard fired four cycles later, and only because the sink took the beat. Its
+   message, though, says what the bug does to whoever uses the router, which is to deliver a beat
+   from before the reset as if it were new.
 
    </details>
 
@@ -720,10 +726,10 @@ Questions:
    <details>
    <summary>Answer</summary>
 
-   That the router worked. At the time the plan had no assertion for I7, O4, the first half of A4
-   or RS1, nothing that made RS2, RS3 or DR2 happen, and a list of rows with no checker at all;
-   the coverage had four empty bins that a test could hit; and, as Part 7 showed, the graded test
-   passed on one of the fifteen planted bugs.
+   That the router worked. At the time, your plan named no assertion for I7, O4, the first half of
+   A4 or RS1 and nothing that made RS2, RS3 or DR2 happen, and it had a list of rows with no
+   checker at all. The coverage had four empty bins that a test could hit, and, as Part 7 showed,
+   the graded test passed on one of the fifteen planted bugs.
 
    </details>
 
@@ -732,11 +738,11 @@ process that will review capstone repositories, but it doesn't exist yet.
 
 ## Going further (optional)
 
-- Close one of the reference plan's open items (`solutions/PLAN.md`). Assertions for I5 and I6,
-  with `CTRL.EN` as written over APB kept beside them, would give the `in_ready` rows a checker,
-  and a check of `LEVEL` reads against the levels the scoreboard already counts would close RG4.
-  Run `make check-all` afterwards. If your new check fires on the golden router, the mistake is in
-  the check.
+- Close one of the reference plan's open items (`solutions/PLAN.md`). Assertions for I5 and I6
+  would give the `in_ready` rows a checker, if you keep a copy of `CTRL.EN` beside them, updated
+  from the APB writes. A check of `LEVEL` reads against the levels that the scoreboard already
+  counts would close RG4. Run `make check-all` afterwards. If your new check fires on the golden
+  router, the mistake is in the check.
 - Run more seeds, with `make regress NSEEDS=50`. In Part 6's regression the twelve tests took about
   56 s a seed, so 50 seeds take about 47 minutes.
 - Deal more mystery bugs, until you've had one from every tier.

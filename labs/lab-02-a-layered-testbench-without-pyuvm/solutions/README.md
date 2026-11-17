@@ -7,7 +7,7 @@ Open this after `make check-all` prints `2 of 2 caught.` with your own monitor a
 | `monitor.py` | `tb/monitor.py` with `run()` written |
 | `scoreboard.py` | `tb/scoreboard.py` with `run()`, `predict()`, `check()` and the checks in `report()` written, and two helper coroutines for `run()` |
 
-Apart from the first line of each docstring, the solution differs from the shipped files only in
+Apart from the opening of each docstring, the solution differs from the shipped files only in
 the bodies that the `TODO`s mark and in the scoreboard's two helper coroutines. Compare them with:
 
 ```bash

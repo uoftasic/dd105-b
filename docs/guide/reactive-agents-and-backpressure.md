@@ -4,13 +4,14 @@ This page answers: *the design decides when each beat appears on its output. How
 answer each one, and how do you choose how long each beat waits?*
 
 Your Lab 04 sink flipped a coin in every cycle to set `out_ready`, which was 1 with probability
-`ready_pct` percent whether or not a beat was on offer. That is backpressure, but `ready_pct` was
-the only thing about it you could set. In
+`ready_pct` percent whether or not a beat was on offer. That gave the router backpressure, but the
+only thing you could set was `ready_pct`, and with it you can't make a particular beat wait a
+number of cycles that you choose. In
 [Lab 05, Part 1](../labs/lab-05-protocol-rules-and-backpressure-overview.md#part-1-the-lab-04-testbench-against-this-labs-bugs),
 the coverage group `router.wait` takes each packet that an output delivers and records the
 longest that any of its beats waited for `out_ready`. Its bins are `none` for 0 cycles,
-`short_wait` for 1 to 3, `long_wait` for 4 to 20 and `stalled` for more than 20, crossed with the
-two outputs, and with Lab 04's sinks `make cov` reports:
+`short_wait` for 1 to 3, `long_wait` for 4 to 20 and `stalled` for more than 20, and the group
+crosses them with the two outputs. With Lab 04's sinks, `make cov` reports:
 
 ```text
       top.router.wait                               92.86 %   13 of 14 bins
@@ -22,10 +23,10 @@ two outputs, and with Lab 04's sinks `make cov` reports:
 
 No packet on output 1 had a longest wait of 1 to 3 cycles. In
 [Part 3](../labs/lab-05-protocol-rules-and-backpressure-overview.md#part-3-a-sink-that-answers-each-beat)
-you'll finish a sink driver that answers each beat separately, with an item from a sequence. This
-page shows how an agent like that is put together in pyuvm, using a small design of our own in
-[`guide-examples/reactive-agents-and-backpressure/`](https://github.com/uoftasic/dd105-b/tree/main/guide-examples/reactive-agents-and-backpressure),
-and measures how long the beats wait with each kind of sink.
+you'll finish a sink driver that answers each beat separately, with an item from a sequence. On
+this page we build an agent like that in pyuvm for a small design of our own, and measure how long
+the beats wait with each kind of sink. The files are in
+[`guide-examples/reactive-agents-and-backpressure/`](https://github.com/uoftasic/dd105-b/tree/main/guide-examples/reactive-agents-and-backpressure).
 
 ## Who starts a transfer
 
@@ -80,18 +81,19 @@ async def body(self):
 
 (`vsc_item_class()` makes the pyvsc version of the item that one of the measurements below uses,
 and `timed()` calls `randomize()` and adds up how long it took.) The test starts this sequence with
-`cocotb.start_soon(seq.start(self.snk.sqr))`, so the sequence runs beside the test's `run_phase`
-and nothing ever waits for it to return. A pyuvm sequence raises no objection of its own. The test
+`cocotb.start_soon(seq.start(self.snk.sqr))`, so the sequence runs beside the test's `run_phase`,
+and the test never waits for it to return. A pyuvm sequence raises no objection of its own. The test
 raises one, and it drops it once the monitor has counted 2,000 beats, so the test's objection
 alone decides when the run ends. Lab 05's base test starts a `SinkSeq` on each output the same
 way, before it resets the router.
 
 pyuvm hands the item over in two steps. `start_item()` puts the item in the sequencer's queue and
-waits there until the driver's `get_next_item()` takes it. Only then does the sequence go on, set
-the item's fields and call `finish_item()`, which tells `get_next_item()` that the item is ready
-and then waits until the driver calls `item_done()`. So the sequence is never more than one item
-ahead of the beats, and it decides each item's values when the driver asks for the item, not
-before. No simulation time passes in that exchange. In the run with per-beat delays from
+waits there until the driver's `get_next_item()` takes it. When `start_item()` returns, the
+sequence sets the item's fields and calls `finish_item()`, which tells `get_next_item()` that the
+item is ready and then waits until the driver calls `item_done()`. So the sequence is never more
+than one item ahead of the driver, and it decides each item's values only when the driver asks for
+that item. If the sequence is already waiting in `start_item()`, no simulation time passes between
+the driver's call to `get_next_item()` and its return. In the run with per-beat delays from
 `random.randint`, the driver's `[DRV]` line at the end said:
 
 ```text
@@ -104,8 +106,9 @@ called it.
 
 ## A driver that can't wait
 
-The driver's loop has two halves, one for each half of the clock cycle. Here it is with the
-countdown of the item's delay left out, since you'll write the router's in Part 3:
+The driver's loop has two halves, one for each half of the clock cycle. Here it is without the
+countdown of the item's delay or the expression for the next cycle's `ready`, because in Part 3
+you'll write both of them for the router's sink driver:
 
 ```python
 while True:
@@ -127,18 +130,20 @@ while True:
     rdy = ...                                   # ready in the next cycle
 ```
 
-It drives `ready` just after the rising edge, and it looks at `valid` at the falling edge, the
-course's timing rule from Lab 02. At the falling edge it knows whether a beat moves at the next
-rising edge. If one does, that beat has had its answer, so the driver calls `item_done()` and asks
-for the item for the next beat.
+It drives `ready` just after the rising edge and looks at `valid` at the falling edge in the middle
+of the cycle. That's the timing rule that the course has followed since Lab 02. At the falling
+edge the driver can see `valid`, and it knows the `ready` it drove for this cycle, so it can tell
+whether a beat moves at the next rising edge. If one does, that beat has had its answer, so the
+driver calls `item_done()` and asks for the item for the next beat.
 
-A pyuvm driver has `get_next_item()`, which waits until its sequence hands over an item, and no
-call that returns at once when the sequence has nothing ready. The sink's driver can't afford to
-wait, because it has to drive `ready` at the next edge whatever happens. It gets away with
-`get_next_item()` because the sequence never ends and is always waiting in `start_item()` with
-the next item, so the call comes back in the same time step, as the `[DRV]` line showed. When no
-sequence is running on the sink, the call doesn't come back at all. With `+NOSEQ` the test starts
-none, and in beat mode it printed, after the 3,000 cycles it was given:
+A pyuvm driver gets its items with `get_next_item()`, which waits until its sequence hands one
+over. pyuvm has no call that returns at once when the sequence has nothing ready. The sink's
+driver can't afford to wait, because it has to drive `ready` at the next edge whatever happens.
+It gets away with `get_next_item()` because the sequence never ends and is always waiting in
+`start_item()` with the next item, so the call comes back in the same time step, as the `[DRV]`
+line showed. When no sequence is running on the sink, the call doesn't come back at all. With
+`+NOSEQ` the test starts no sequence on the sink. We ran it that way in beat mode for 3,000 cycles
+(`+MAX_CYCLES=3000`), and at the end it printed:
 
 ```text
 [WAIT] per beat, delays 0 to 12 from random.randint: 0 beats taken in 3001 cycles
@@ -147,8 +152,8 @@ none, and in beat mode it printed, after the 3,000 cycles it was given:
 
 The driver drove `ready` to 0 at the first rising edge, called `get_next_item()` at the first
 falling edge, and never got past it, so `ready` stayed 0 and the first beat waited for the whole
-run. Lab 05's `SinkDriver` has the same shape, and Part 3 asks you why it needs a sequence that
-never ends.
+run. Lab 05's `SinkDriver` calls `get_next_item()` in the same place, at the falling edge, and
+Part 3 asks you why it needs a sequence that never ends.
 
 ## Measured waits for each sink
 
@@ -178,13 +183,13 @@ cycles or more, and only 289 waited 1 to 3. At 50%, no beat waited more than 10 
 The test you inherit from Lab 04 runs each sink at 100% or 5% in its four phases, and stalls
 output 0 completely while `close_holes()` runs. At 100% a beat never waits. At 5% a packet of
 more than one beat nearly always has a beat that waits 4 cycles or more, so a packet whose longest
-wait is 1 to 3 cycles is rare, and output 1 delivered none.
+wait is 1 to 3 cycles is rare, and in the run at the top of this page output 1 delivered none.
 
 A per-beat sink makes each beat wait for the delay in its item, so the spread of the waits is the
-spread of the delays that the sequence produced. With delays of 0 to 12, between 1,371 and 1,477
-beats waited 4 to 20 cycles, and none waited more than 20. Lab 05's `OutCfg.mode` offers both kinds
-of sink. `SNK_PCT` is Lab 04's coin flip, and in `SNK_FAST`, `SNK_SLOW` and `SNK_RANDOM` the
-driver answers each beat with an item.
+spread of the delays that the sequence produced. With delays of 0 to 12, 1,371 of the beats with
+`random.randint` and 1,477 with pyvsc waited 4 to 20 cycles, and none waited more than 20.
+Lab 05's `OutCfg.mode` offers both kinds of sink. `SNK_PCT` is Lab 04's coin flip, and in
+`SNK_FAST`, `SNK_SLOW` and `SNK_RANDOM` the driver answers each beat with an item.
 
 ## Check the distribution you got
 
@@ -200,9 +205,12 @@ how often each one comes out, so count what the stimulus actually produced.
 The solver is also slow for a job that runs once per beat. The 2,000 calls to pyvsc's
 `randomize()` took 2.02 s, which is 988 a second, and the run as a whole took 6.36 s against
 1.04 s with `random.randint`. The router's sinks make one item for every beat that leaves the
-router, so Lab 05's `ReadyItem` draws from Python's `random` instead. Its `randomize()` first
-picks the range a delay comes from (0 for half the items, 1 to 3 for three in ten, 4 to 12 for the
-rest) and then the value inside it, and `router.wait` is where you check the result.
+router, so Lab 05's `ReadyItem` draws from Python's `random` instead. Its `randomize()` makes half
+the items `pre_ready`, which means `ready` is already 1 when the beat appears. It picks each
+item's delay in two steps, first the range (0 for half the items, 1 to 3 for three in ten, 4 to 12
+for the rest) and then a value inside it. A `ReadyItem`'s delay counts from the beat's first cycle
+on offer, so a beat whose item isn't `pre_ready` waits one cycle more than the delay, 1 to 13
+cycles in all. In Lab 05, Part 3 you see the waits that these items give in `router.wait`.
 
 ## The sink's configuration object
 
@@ -247,14 +255,14 @@ in. [Virtual sequences](virtual-sequences.md) explains how a sequence gets hold 
 
    From the next edge on it drives `ready` = 1, because a delay of 0 leaves nothing to wait for.
    When the beat appears, `ready` is already 1, so the handshake happens in the beat's first cycle
-   and the beat waits 0 cycles. A coin-flip sink can promise that for a particular beat only when
-   its `ready_pct` is 100.
+   and the beat waits 0 cycles. With a coin-flip sink, a particular beat is sure to wait 0 cycles
+   only when `ready_pct` is 100.
 
    </details>
 
 ## Further reading
 
-ChipVerify's pages are SystemVerilog UVM. The ideas carry over, but pyuvm's driver has
+ChipVerify's pages are about SystemVerilog UVM. The ideas carry over, but pyuvm's driver has
 `get_next_item()` and no `try_next_item()`, and a pyuvm sequence raises no objection.
 
 - [UVM Reactive Sequence](https://www.chipverify.com/uvm/uvm-reactive-sequence): the responder

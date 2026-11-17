@@ -11,6 +11,7 @@
 #   scripts/ci/in-image.sh scripts/ci/check-labs.sh lab lab-02-a-layered-testbench-without-pyuvm
 #   scripts/ci/in-image.sh scripts/ci/check-labs.sh lab lab-03-constraints-and-coverage
 #   scripts/ci/in-image.sh scripts/ci/check-labs.sh lab lab-04-the-same-testbench-in-pyuvm
+#   scripts/ci/in-image.sh scripts/ci/check-labs.sh lab lab-05-protocol-rules-and-backpressure
 #
 #   venv        `make venv`: the course venv (pyvsc, cocotb-coverage), made from
 #               scratch in the clone unless it is already there
@@ -147,5 +148,5 @@ case "${1:-}" in
   selftest) step_selftest ;;
   ref)      step_ref ;;
   lab)      step_lab "${2:-}" ;;
-  *)        sed -n '2,32p' "$0"; exit 2 ;;
+  *)        sed -n '2,33p' "$0"; exit 2 ;;
 esac

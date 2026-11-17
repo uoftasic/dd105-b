@@ -104,10 +104,11 @@ The `I`, `O` and `A` ids are the specification's own; the others are this plan's
 
 ## Open items
 
-1. Nothing checks `in_ready` (I4, I5, I6, RT5), and nothing checks the cycle a beat appears or
-   that the outputs come from flip-flops (O3, O8). Assertions for I5 and I6, with the `CTRL.EN`
-   written over APB kept beside them, and a scoreboard check of each beat's first cycle against
-   O8's formula would close them.
+1. Nothing checks `in_ready` against the specification (I4, I5, I6, RT5); the source driver
+   reports it only when it stays 0 for 1000 cycles. Nothing checks the cycle a beat appears or
+   that the outputs come from flip-flops (O3, O8) either. Assertions for I5 and I6, with the
+   `CTRL.EN` written over APB kept beside them, and a scoreboard check of each beat's first cycle
+   against O8's formula would close them.
 2. The scoreboard doesn't model `CTRL.EN` (RT4 for `CTRL`, EN1), and no sequence clears it while
    packets go in (example E7).
 3. Nothing checks the APB rules A1 to A3, A5 and A6, or `pslverr` and `prdata` outside the

@@ -13,8 +13,8 @@ for functional coverage, on Verilator 5.050. The only SystemVerilog a student wr
 assertions in Lab 05.
 
 This repository is being built. The shared build, the graders, the reference environment, CI and
-Labs 01 to 06 are in place. Lab 07 and the guide pages aren't yet, and the site's home page
-and Getting started page are still the template's samples.
+Labs 01 to 07 are in place. The guide pages aren't yet, and the site's home page and Getting
+started page are still the template's samples.
 
 ## Quick start
 
@@ -46,14 +46,15 @@ scripts/ci/in-image.sh make -C labs/ref check-all   # the reference environment 
 | `labs/lab-04-the-same-testbench-in-pyuvm/` | Lab 04: our Lab 03 solution ported to pyuvm; the student adds an agent for output 1, a stall test and a factory override that sends packets to disabled routes, which reach B06 and B13 |
 | `labs/lab-05-protocol-rules-and-backpressure/` | Lab 05: our Lab 04 solution with assertions bound into the router, a sink that can answer each beat and a virtual sequence; the student writes three of the assertions, the sink driver's answer to a beat and the sequence, which reaches B11 |
 | `labs/lab-06-the-register-block/` | Lab 06: our Lab 05 solution with a register model on pyuvm's `uvm_reg` classes and scoreboard checks on `STATUS`, `PSLVERR` and `irq`; the student writes four registers' fields, the adapter, the predictor, the reset and bit-bash sequences, the `irq` check and the sequence that reaches B01 to B04 and B14 |
+| `labs/lab-07-capstone/` | Lab 07: our Lab 06 solution with a reset driver, a scoreboard that follows a reset with traffic in flight and four corners in the coverage; the student writes a verification plan and report from the templates there, the assertions for the rules about reset, and the reset and saturation sequences, which reach B15 |
 
 `labs/common/bugs.py` is the answer key to the planted bugs, so a student should not open it until
 the labs are done.
 
 `.github/workflows/labs.yml` checks the reference solutions in the course image: it makes the
 course venv, then `labs/common/selftest` must pass, and `labs/ref` must catch all fifteen bugs and
-pass the golden router on seeds 1 to 5. Each lab gets a step that requires the starter's
-`make check` to fail and the solution's to pass; Labs 01 to 06 have one so far. It runs on changes to
+pass the golden router on seeds 1 to 5. Each lab has a step that requires the starter's
+`make check` to fail and the solution's to pass. It runs on changes to
 `labs/`, its scripts in
 `scripts/ci/` and itself, every Monday, and by hand. Each step is one command you can run locally,
 for example `scripts/ci/in-image.sh scripts/ci/check-labs.sh ref`.
@@ -97,7 +98,8 @@ from [uoftasic/dd105-a](https://github.com/uoftasic/dd105-a) at commit
 DD105-A da489f2" and "Copy the router's directed reference test from DD105-A da489f2", hold them
 byte for byte, and the commits after those hold every change DD105-B made to them.
 The copy of `scripts/screenshots/`, from the same DD105-A commit, is in a later commit of its own,
-"Copy scripts/screenshots from DD105-A da489f2".
+"Copy scripts/screenshots from DD105-A da489f2". Lab 07's assertions and templates, from the same
+commit, are in another, "Copy Lab 07's assertions and templates from DD105-A da489f2".
 
 | Here | From DD105-A | What it is |
 |---|---|---|
@@ -109,14 +111,18 @@ The copy of `scripts/screenshots/`, from the same DD105-A commit, is in a later 
 | `docs/assets/img/router-block.svg`, `scripts/figures/router_block.py`, `scripts/figures/circuit_style.py`, `scripts/figures/requirements.txt` | the same paths | the router's block diagram and the script that draws it |
 | `labs/lab-05-protocol-rules-and-backpressure/tb/router_sva.sv`, `tb/router_sva_bind.sv`, `solutions/router_sva.sv` | the same paths | Lab 05's assertions (the starter with its TODOs, and the solution) and the `bind` that puts them into the router |
 | `labs/ref/tb/router_sva.sv`, `labs/ref/tb/router_sva_bind.sv` | the same paths | the reference environment's full set of assertions (valid/ready, APB and reset rules) and their `bind` |
+| `labs/lab-07-capstone/tb/router_sva.sv`, `tb/router_sva_bind.sv`, `solutions/tb/router_sva.sv` | the same paths | Lab 07's assertions (the starter, with the reset rules as TODOs, and the solution) and their `bind`, which adds the APB port and `irq` |
+| `labs/lab-07-capstone/PLAN-template.md`, `REPORT-template.md` | the same paths | the capstone's verification plan and report templates |
 | `labs/lab-01-one-alu-two-frameworks/rtl/alu.sv`, `labs/lab-01-one-alu-two-frameworks/bugs.json` | `labs/lab-01-one-alu-two-testbenches/rtl/alu.sv`, `bugs.json` | SimProc's ALU with DD104's three ALU bugs, A01 to A03, behind `+BUG` |
 | `scripts/screenshots/` | `scripts/screenshots/` | the tool that draws the labs' waveform figures in a headless Surfer or GTKWave |
 
-DD105-B's changes to these files are comments, links and one sentence on each spec page: the
-assertion files, the ALU and `inject.py` describe DD105-B (Python reads the counters, Verilator
-only), the spec pages link to this repository, and each spec page says that this course's Python
-testbenches change the router's inputs right after a rising edge, where DD105-A's pages say 1 ns
-after. The router's RTL needed no change: its assertions already sit in their own
+DD105-B's changes to these files are comments, links and one sentence on each spec page, apart
+from Lab 07's two templates: the assertion files, the ALU and `inject.py` describe DD105-B (Python
+reads the counters, Verilator only), the spec pages link to this repository, and each spec page
+says that this course's Python testbenches change the router's inputs right after a rising edge,
+where DD105-A's pages say 1 ns after. The templates name this course's checkers, sequences and
+coverage groups, and the report template's note on coverage numbers describes cocotb-coverage
+instead of Verilator. The router's RTL needed no change: its assertions already sit in their own
 file and are attached with `bind`, every assertion already counts its failures beside its `$error`
 (`n_<rule>`, summed in `n_fail`, which DD105-B's base test reads through cocotb), and `+BUG` is
 already a plusarg read once in an initial block. `labs/common/smoke/check_examples.py` (DD105-B's)

@@ -15,7 +15,7 @@ container that you start from the `workspace` clone you set up in
 course's [repository](https://github.com/uoftasic/dd105-b), and everything the labs run is in that
 repository's `labs/` folder.
 [Lab 01, Part 1](labs/lab-01-one-alu-two-frameworks-overview.md#part-1-load-the-course) walks you
-through it.
+through `mod add dd105-b`.
 
 ## Who this course is for
 
@@ -61,7 +61,7 @@ printed, but the lab writeups are the only pages that ask you to run anything.
 | 11 | Read | [Register models in pyuvm](guide/register-models-in-pyuvm.md) · [Regressions and seeds](guide/regressions-and-seeds.md) | 50 min |
 | 12 | Do | [Lab 06: The register block](labs/lab-06-the-register-block-overview.md). Write the fields of seven registers, the adapter, the predictor, and the reset and bit-bash sequences for the router's pyuvm register model, then test the 246 addresses outside the register map and check `irq` in every cycle, so that the testbench catches B01 to B04 and B14. | 2 h 15 min |
 | 13 | Read | [Verification plans and sign-off](guide/verification-plans-and-sign-off.md) · [Writing the verification report](guide/writing-the-verification-report.md) | 35 min |
-| 14 | Do | [Lab 07: Capstone](labs/lab-07-capstone-overview.md). Hunt three mystery bugs, write the assertions for the rules about reset and a sequence that resets the router with packets in flight, which together catch B15, and keep your verification plan, your report, your testbench and its results in a GitHub repository of your own. | 3 h 30 min |
+| 14 | Do | [Lab 07: Capstone](labs/lab-07-capstone-overview.md). Hunt three mystery bugs, catch B15 by writing the assertions for the rules about reset and a sequence that resets the router with packets in flight, and keep your verification plan, your report, your testbench and its results in a GitHub repository of your own. | 3 h 30 min |
 
 Keep these reference pages open in a tab while you work. They're for looking things up rather
 than for reading from start to finish:

@@ -100,8 +100,8 @@ too, and in Part 8 you copy that folder into your repository beside the report.
 
 The template's "Environment" line asks for the commit of your repository that the report
 describes, because a seed repeats a run only on the same code. (Regressions and seeds shows that
-one more random draw anywhere in a test changes the random choices made after it, in every
-coroutine that draws after it, and that renaming a test changes its stimulus too.) The last step
+one more random draw anywhere in a test changes every random choice made after it, in any
+coroutine, and that renaming a test changes its stimulus too.) The last step
 of Part 8 is to open the repository on GitHub and check that a reader who has only that page could
 find the command behind every number in your report.
 

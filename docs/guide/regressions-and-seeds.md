@@ -42,9 +42,9 @@ the folder after it in the same way. When we ran `make run TEST=CountTest SEED=r
 into `build/runs/CountTest-s1008902463`, so you can run that seed again by giving its number to
 `SEED=`.
 
-The seed isn't the only thing cocotb seeds from. cocotb 2.0.1 adds a hash of the test's full name,
-`test_seeds.RandomTest` here, to `COCOTB_RANDOM_SEED`, and seeds `random` with the sum (in its
-`regression.py`). The example's `RandomTwinTest` is `RandomTest`'s body under another name, and on
+cocotb doesn't seed `random` with `COCOTB_RANDOM_SEED` alone. Before each test, cocotb 2.0.1 adds
+a hash of the test's full name, `test_seeds.RandomTest` here, to `COCOTB_RANDOM_SEED`, and seeds
+`random` with the sum (in its `regression.py`). The example's `RandomTwinTest` is `RandomTest`'s body under another name, and on
 seed 1 it printed `d1d52011 163cde48 c7c1bb93 2d7507ca` for coroutine A. That is why
 `RouterInjectTest` and `RouterRandTest` send different packets on the same seed, as you saw in
 Lab 04, and it means that renaming a test, or moving it to another module, gives it different

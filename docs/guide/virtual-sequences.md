@@ -27,8 +27,10 @@ good stand-in for them.
 
 An ordinary sequence runs on its agent's sequencer, which passes its items to the driver. A
 virtual sequence has no driver to feed, so in pyuvm it runs on no sequencer at all. What it needs
-is a way to reach every agent it steers, and pyuvm has no `p_sequencer` handle for that, so the
-sequence is given the environment when it's made, and keeps it:
+is a way to reach every agent it steers. (In SystemVerilog UVM a virtual sequence usually runs on
+a sequencer of its own that holds those handles, and reaches it through a handle called
+`p_sequencer`.) pyuvm has no `p_sequencer`, so the sequence is given the environment when it's
+made, and keeps it:
 
 ```python
 class BaseVseq(uvm_sequence):
@@ -138,8 +140,8 @@ own limit of 2,000 cycles ended the run:
 With `par()` the two branches run at the same time, and the step ended at 200 ns, when the last
 beat had gone in.
 
-`par()` awaits each task, and that matters when a branch goes wrong. Awaiting a cocotb task raises
-again any exception the task raised, so a branch that fails fails the sequence and the test.
+`par()` awaits each task, and that matters when a branch goes wrong. Awaiting a cocotb task
+re-raises any exception the task raised, so a branch that fails fails the sequence and the test.
 `labs/ref`'s probe of cocotb 2.0.1 found that a test which instead waits on a task's `complete`
 trigger and never looks at the task again passes, with the exception lost. So if you wait on
 `complete`, as our test does to give up after 2,000 cycles, call the task's `result()` afterwards,

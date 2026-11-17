@@ -112,15 +112,24 @@ more first; `RandomTwinTest` is the same test under another name. Needs the venv
 | `make run TEST=RandomTwinTest SEED=1` | the same body under another name |
 | `make run TEST=CountTest SEED=random` | a run folder named after the seed it picked |
 
-*Writing the verification report* quotes the same runs in its worked report.
+*Writing the verification report* quotes the same runs in its worked report. The page's section on
+corners no seed reaches quotes the run of Lab 07's starter regression listed under *Verification
+plans and sign-off* below, and that run's per-test times.
 
 ## Verification plans and sign-off
 
 This page has no example of its own. It quotes runs of Lab 07's starter package in
 `labs/lab-07-capstone`, made from a clean build: `make regress` (`100 ok  (100 runs)`, `81.67 %`,
 8 min 10 s), `make check-all` (the B15 row and `14 of 15 caught.`) and a hunt dealt B15
-(`make new BUGPICK=B15` then `make hunt`, which came back `quiet`). Its `120 ok  (120 runs)` and
-`88.33 %   53 of 60 bins` are Lab 07's, from Part 6 of its writeup.
+(`make new BUGPICK=B15` then `make hunt`, which came back `quiet`).
+
+## Lab outputs the pages quote
+
+Besides their own examples, the pages quote a few lines from the lab writeups, each from the run
+the writeup records: *Assertions for interface rules* quotes Lab 05's first error on B10 (Part 1,
+step 6), *Reactive agents and backpressure* the `router.wait` lines of Lab 05's `make cov`
+(Part 1, step 3), and *Verification plans and sign-off* Lab 07's `120 ok  (120 runs)` and
+`88.33 %   53 of 60 bins` (Part 6, step 3).
 
 ## Paths in the outputs
 

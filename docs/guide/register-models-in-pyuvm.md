@@ -3,9 +3,9 @@
 This page answers: *what does a register model know about a design's registers, what does pyuvm's
 register layer do for you, and what do you have to write yourself?*
 
-Up to the end of Lab 05, your testbench reached the router's registers with raw APB transfers:
-`route()` and `ctrl()` in the virtual sequence write the routing table and `CTRL`, and `rd(DROP_CNT)`
-reads the two drop counters. The scoreboard checked reads of one register, `DROP_CNT`, and nothing
+Up to the end of Lab 05, your testbench reached the router's registers with raw APB transfers. In
+the virtual sequence, `route()` and `ctrl()` write the routing table and `CTRL`, and
+`rd(DROP_CNT)` reads the two drop counters. The scoreboard checked reads of one register, `DROP_CNT`, and nothing
 in the testbench read any of the other nine. So the testbench had no way to notice a register that
 reset to the wrong value, or one that read back with its fields swapped.
 [Lab 06](../labs/lab-06-the-register-block-overview.md) plants one bug of each of those kinds among
@@ -92,8 +92,8 @@ class RegBlk(uvm_reg_block):
 In pyuvm a register's address is a string, given to the register's `configure()`, which also calls
 `build()`. The map's `add_reg()` takes an offset, also a string, and files the register under its
 address plus that offset, written the way Python's `hex()` writes it. When you read or write the
-register, the map looks it up by the string the register was configured with. So `"0x4"` works,
-and `"0x04"` doesn't: a register we configured at `"0x00"` raised `KeyError: '0x00'` on its first
+register, the map looks it up by the string the register was configured with. So `"0x4"` works
+and `"0x04"` doesn't. A register we configured at `"0x00"` raised `KeyError: '0x00'` on its first
 write, before any transfer reached the bus. That is why `add()` gives every address as
 `hex(addr)`. In a lab that has a register model, `make regcheck` builds the model outside the
 simulator and stops on overlapping fields or an address written any other way, and the graders run
@@ -110,8 +110,8 @@ you can see. For `regblk` it printed:
 ```
 
 For every field, the model keeps a **mirror**, which is what the model believes the design holds
-right now. `get_mirrored_value()` puts the fields' mirrors together into a register value, and the
-rest of this page is mostly about what makes the mirror change.
+right now, and a register's `get_mirrored_value()` puts its fields' mirrors together into one
+value.
 
 ## From a register operation to a transfer
 
@@ -174,7 +174,7 @@ auto-predict switched on, with no predictor object to call, and the test ended t
 called it BROKEN. So this testbench needs the predictor, and in Lab 06, Part 3 you write one for the
 router and connect it to the APB monitor, which the scoreboard already listens to.
 
-## What each kind of prediction does
+## Kinds of prediction
 
 `predict()` takes the value and a kind, which says what to do with it. `UVM_PREDICT_WRITE` means
 the value was written, so each field takes what its access policy gives it. `UVM_PREDICT_READ`
@@ -246,22 +246,25 @@ the first write went through and the second raised an exception before it reache
 ```
 
 (The run of spaces is in pyuvm's message itself.) SystemVerilog UVM makes the second operation wait
-for the first instead. `UVMFatalError` isn't a check, so in a test it ends the run as BROKEN. Lab
-06's helpers in `RouterBaseVseq` (`wr_reg()`, `rd_reg()`, `check_reg()` and `rd_all_regs()`) take a
+for the first instead. `UVMFatalError` isn't a check, so the course's grader calls a run that
+raises it BROKEN. Lab 06's helpers in `RouterBaseVseq` (`wr_reg()`, `rd_reg()`, `check_reg()` and `rd_all_regs()`) take a
 cocotb `Lock` for each register before they use it, so that two parts of a virtual sequence that
 reach the same register take turns.
 
-## What you write yourself
+## Pieces pyuvm doesn't have
 
 These are the parts of SystemVerilog UVM's register layer that pyuvm 4.0.1 doesn't have, as the
 example's `RegQuirksTest` found them:
 
 - `uvm_reg` has no `mirror`, `update`, `needs_update`, `peek`, `poke`, `set` or `get_reset`.
-  (A field has `get_reset()`.)
+  (A field has `get_reset()`.) In SystemVerilog UVM, `mirror()` reads a register and can compare
+  the value with the mirror, `set()` and `update()` write a register only when the value you want
+  differs from the mirror, and `peek()` and `poke()` are the back door.
 - A back-door access, which reads or writes a register through the signal that holds it rather than
   over the bus, raised `UVMNotImplemented: map -- BACKDOOR not implemented`.
 - Of `uvm_reg_hw_reset_seq`, `uvm_reg_bit_bash_seq`, `uvm_reg_access_seq` and
-  `uvm_reg_predictor`, pyuvm has only `uvm_reg_predictor`, and its own methods are none.
+  `uvm_reg_predictor`, pyuvm has only `uvm_reg_predictor`, and that class has no methods of its
+  own.
 
 So in Lab 06 you write three pieces that a SystemVerilog UVM student gets from the library. The
 predictor is the first. The second is a **reset sequence**, which puts the mirror at the reset

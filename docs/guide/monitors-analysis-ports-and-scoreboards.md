@@ -13,9 +13,7 @@ directly.
 In [Lab 04](../labs/lab-04-the-same-testbench-in-pyuvm-overview.md) the router testbench is
 rewritten in pyuvm, and it uses **analysis ports**, as Lab 01's did. Each of its monitors writes
 every beat, or every APB transfer, to its analysis port as soon as it sees it, and the scoreboard
-has no coroutine at all. It's a component with three write methods, and the monitors call them. This
-page shows how that works on the ALU, what Lab 04's scoreboard does when a beat arrives, and what
-goes wrong when a monitor reuses one object for every write.
+has no coroutine at all. It's a component with three write methods, and the monitors call them.
 
 The example for this page,
 [`guide-examples/monitors-analysis-ports-and-scoreboards/`](https://github.com/uoftasic/dd105-b/tree/main/guide-examples/monitors-analysis-ports-and-scoreboards),
@@ -100,8 +98,8 @@ Here are the report lines from one run of `MonRandTest`, which sends 200 vectors
 ### A scoreboard with several inputs
 
 A subscriber has one export, and it calls the one method named `write()`. A scoreboard that listens
-to several monitors needs a separate method for each input, and SystemVerilog UVM declares a new kind
-of export for each with the macro `` `uvm_analysis_imp_decl ``. pyuvm 4.0.1 has no such macro. Lab
+to several monitors needs a separate method for each input, and SystemVerilog UVM declares a new imp
+class for each with the macro `` `uvm_analysis_imp_decl ``. pyuvm 4.0.1 has no such macro. Lab
 04 gives its scoreboard a small subscriber for each input instead, a `Fwd`, which passes everything
 written to it on to a method of the scoreboard:
 
@@ -226,7 +224,7 @@ handle and never change the object.
 ## Coverage as a subscriber
 
 A coverage collector is the simplest kind of subscriber, because its `write()` only samples. The
-example's calls `sample(t)`, a function decorated with cocotb-coverage's coverpoints for the
+example's collector calls `sample(t)`, a function decorated with cocotb-coverage's coverpoints for the
 operation, for equal operands, and their cross, and in `report_phase` it writes `coverage.xml` into
 the run's folder, where `make cov` finds it.
 [Functional coverage you can read](functional-coverage-you-can-read.md) explains the coverpoints.

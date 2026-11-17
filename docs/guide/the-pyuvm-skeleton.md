@@ -8,10 +8,7 @@ driver, monitor and scoreboard, and you added the flag check to its scoreboard. 
 plain cocotb. Each test was a function marked `@cocotb.test()`, and an `Env` class made the pieces
 in its constructor, handed them queues, and started each one's coroutine. In
 [Lab 04](../labs/lab-04-the-same-testbench-in-pyuvm-overview.md) the router testbench becomes pyuvm
-classes, and Part 5 of that lab counts what this costs in lines against your Lab 03 testbench. Much
-of what it counts is the structure that this page describes. The drivers, the monitors and the
-scoreboard become components in a tree, pyuvm builds the tree and connects it in a fixed order of
-phases, and objections decide when the run ends.
+classes, and Part 5 of that lab counts what this costs in lines against your Lab 03 testbench.
 
 The example for this page,
 [`guide-examples/the-pyuvm-skeleton/`](https://github.com/uoftasic/dd105-b/tree/main/guide-examples/the-pyuvm-skeleton),
@@ -29,8 +26,8 @@ ways.)
 A **`uvm_object`** is data: a packet, an APB transfer, a beat that a monitor saw. You make one
 whenever you need it, pass it around and drop it, and many of them come and go in a run. Lab 04's
 `RouterPkt`, `StreamBeat` and `ApbItem` derive from `uvm_sequence_item`, which is a `uvm_object`.
-Its `OutCfg`, the knobs of one output agent, is a plain Python class, because nothing needs it to be
-more.
+Its `OutCfg`, the knobs of one output agent, is a plain Python class, since nothing makes it through
+the factory or sends it through a port.
 
 A **`uvm_component`** is one of the testbench's fixed parts, such as a driver, a monitor, a
 scoreboard or the test. It's made once, at the start, and lasts for the whole run. Every component
@@ -54,8 +51,8 @@ watches them, and, if the agent sends items, a sequencer that hands the driver i
 
 In pyuvm, ports and exports are components too, so they're in the tree with everything else. The
 example's `mon` makes an analysis port called `ap`, and the tree printed below has it under `mon`.
-That matters to the course's `BaseTest`, which walks the whole tree, ports included, when it sets up
-its count of errors.
+The course's `BaseTest` walks this whole tree, ports included, when it adds its error counter to
+every component's logger.
 
 pyuvm has a class for each job: `uvm_test`, `uvm_env`, `uvm_agent`, `uvm_driver`, `uvm_monitor`,
 `uvm_sequencer`, `uvm_scoreboard` and `uvm_subscriber`. Most of them add little or nothing to
@@ -205,9 +202,8 @@ A new test can pass this way without testing anything. If it starts its sequence
 forgets to raise an objection, the run ends before the first item reaches the driver, and the
 warning is the only sign. Lab 04's `RouterLabTest` raises its objection at the start of `run_phase`,
 resets the router, runs the test's `body()` and drops the objection when `body()` returns, or sooner
-if the watchdog below fires or the scoreboard logs its 50th error. The tests
-built on it override `body()` and leave `run_phase` alone, so none of them has to raise an objection
-itself.
+if the watchdog below fires or the scoreboard logs its 50th error. The tests built on it override
+`body()` and leave `run_phase` alone, so none of them has to raise an objection itself.
 
 A test that holds its objection forever never ends on its own either. `RouterLabTest` runs a
 watchdog beside `body()`, and if the test is still running after `+MAX_CYCLES` clock cycles (200,000
@@ -236,7 +232,8 @@ and the verdict `ok: passed`. The line has the shape of every message that the l
 the time, the level, the file and line that logged it, the component's full name in brackets, and
 the text. cocotb cuts a long file path to fit its column, which is why the path starts with `..`.
 
-The course's `BaseTest`, which every pyuvm test in the labs derives from, fixes that. In
+The course's `BaseTest`, which every pyuvm test in the labs derives from, makes a logged error fail
+the test. In
 `end_of_elaboration_phase` it adds a counting handler to the logger of every component in the tree,
 and in `final_phase` it prints one line with the count and raises `AssertionError` if the count isn't
 0. `SkErrorTest` logs the same error and derives from `BaseTest`:
@@ -309,9 +306,9 @@ counted, so put your checks in `check_phase` or `report_phase`.
   [`s09_phasing.py` at 4.0.1](https://github.com/pyuvm/pyuvm/blob/4.0.1/pyuvm/s09_phasing.py), and
   each phase class says whether it runs from the top down or the bottom up.
 - ChipVerify's [UVM Phases](https://www.chipverify.com/uvm/uvm-phases) and
-  [UVM Objection](https://www.chipverify.com/uvm/uvm-objection) describe SystemVerilog UVM. Its
-  order of phases, with every phase but build and final from the bottom up, and its twelve run-time
-  phases are SystemVerilog UVM's, not pyuvm 4.0.1's. Its objections take the component as an
+  [UVM Objection](https://www.chipverify.com/uvm/uvm-objection) describe SystemVerilog UVM. Their
+  order of phases, with every phase but build and final from the bottom up, and their twelve run-time
+  phases are SystemVerilog UVM's, not pyuvm 4.0.1's. Their objections take the component as an
   argument, `phase.raise_objection(this)`, where pyuvm's are the component's own methods, and pyuvm
   has no drain time.
 - ChipVerify's [UVM Component](https://www.chipverify.com/uvm/uvm-component) and

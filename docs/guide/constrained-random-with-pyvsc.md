@@ -12,10 +12,8 @@ what the stimulus looks like out of the generator's code and into one class, whe
 change them. It also means that what comes out depends on how the solver chooses among the values
 your rules allow, and pyvsc doesn't always choose evenly.
 
-pyvsc 1.1.0 isn't in the course image. It lives in the course venv, which you make with `make venv`
-in Lab 03, Part 1, and it brings its own solver, Boolector, with it. This page explains what
-`randomize()` does, how pyvsc picks the values, the constraints the labs use, and how seeds work.
-The examples are in
+pyvsc 1.1.0 isn't in the course image. Lab 03, Part 1 has you make the course venv with `make venv`,
+and that installs pyvsc along with its solver, Boolector. The examples on this page are in
 [`guide-examples/constrained-random-with-pyvsc/`](https://github.com/uoftasic/dd105-b/tree/main/guide-examples/constrained-random-with-pyvsc).
 They're small classes built on SimProc's ALU operations, each randomized inside a pyuvm test that
 builds and runs with the course's `pyuvm.mk`, like every lab. You'll run the same kind of
@@ -26,7 +24,7 @@ experiment on the router's packet in
 
 A pyvsc class is an ordinary Python class with the `@vsc.randobj` decorator. Its random fields are
 pyvsc types, such as `vsc.rand_bit_t(8)` for an 8-bit value and `vsc.rand_enum_t(...)` for an enum,
-and each method marked `@vsc.constraint` holds rules that the fields must follow. Here is an ALU
+and each method marked `@vsc.constraint` lists rules that the fields must follow. Here is an ALU
 vector:
 
 ```python
@@ -92,8 +90,8 @@ SystemVerilog's `randomize()` returns 0 when that happens, but pyvsc raises an e
 object held a combination that no call asked for. With `c_shift` switched off, the same call
 succeeds.
 
-That's why the labs' code never carries on past a failed `randomize()`. An exception that the test
-doesn't catch ends the run, and the course's graders call such a run BROKEN, because a test that
+So a test shouldn't carry on past a failed `randomize()`. An exception that the test doesn't catch
+ends the run, and the course's graders call such a run BROKEN, because a test that
 stopped in the middle of its stimulus says nothing about the design. Lab 04's `RouterRandSeq`
 catches the failure only to raise a clearer error, one that names the packet's class and the
 routing table it was given. Lab 04, Part 4 describes a run that the graders called
@@ -104,9 +102,8 @@ routing table it was given. Lab 04, Part 4 describes a run that the graders call
 pyvsc's constraints are meant to work as SystemVerilog's do, and Lab 03, Part 3 has you compare
 them with the SystemVerilog standard. The standard makes every combination of values that meets the
 constraints equally likely. pyvsc's source, `vsc/model/solvegroup_swizzler_partsel.py`, shows that it
-chooses another way. For each random field, in
-a random order, it picks a random target inside the range of values it has worked out the field can
-take. Then it offers the targets to the solver one at a time, in a random order, keeps each one the
+chooses another way. For each random field, in a random order, it picks a random target inside the
+range of values it has worked out the field can take. Then it offers the targets to the solver one at a time, in a random order, keeps each one the
 constraints still allow, and drops the rest. A field whose target was dropped gets whatever value
 the solver finds, and that value isn't random.
 
@@ -120,28 +117,26 @@ all, and 1,000 with `c_shift`:
 
 ![How often each operation came out in 1,000 randomizations, with no constraint and with c_shift](../assets/img/constrained-random-skew.svg)
 
-*With no constraint, each operation came out about 1,000 / 6 times. With `c_shift`, the shifts came
-out about a third as often, and `ADD` more than twice as often.*
+*The two `[SKEW]` lines as bars. The dashed line is 1,000 / 6, an even spread.*
 
 Without the constraint, each operation came out close to 1,000 / 6 times, and `B` was below 4 in 18
 draws, about the 16 that 4 values in 256 would give. With `c_shift`, a target of `SHL` or `SHR`
 survives only if it's offered before `B`'s target, or if `B`'s target happens to be below 4. When
 `B`'s target goes first and is 4 or more, the shift is dropped, and the solver puts `ADD` in its
 place. So the two shifts came out 50 and 61 times, and `ADD` 392. Every draw met `c_shift`, and
-nothing warned. A constraint decides which values can come out, and on this solver you can't rely
-on it for how often each one does. The only way to know is to count, which is what Lab 03's
-coverage does for the router's packet.
+nothing warned. A constraint tells you which values can come out but not how often each one does,
+and to know that you count them, as Lab 03's coverage does for the router's packet.
 
-An enum that no constraint mentions came out even, as the first line shows. In DD105-A, Verilator
-5.050 gave an enum whose four names fill its two bits its first name 813 times in 1,000 (DD105-A's
-measurement), so if you've read that course, this is one thing you needn't work around here.
+An enum that no constraint mentions came out even, as the first line shows. (In DD105-A, Verilator
+5.050 gave an enum whose four names fill its two bits its first name 813 times in 1,000, by DD105-A's
+measurement.)
 
 ## Attributes that a constraint reads
 
-A constraint can read attributes that aren't random, and Lab 03's packet does: its `c_dst` reads
-`route_en`, the routing table's enable bits, to keep each packet on an enabled route. How you
-declare such an attribute matters, because pyvsc reads the constraint methods only once.
-`CrAttrTest` uses this class:
+A constraint can also read attributes that aren't random. Lab 03's packet has one, `route_en`, the
+routing table's enable bits, which its `c_dst` reads to keep each packet on an enabled route. pyvsc
+reads the constraint methods only once, so the way you declare such an attribute decides whether the
+solver sees a later change to it. `CrAttrTest` uses this class:
 
 ```python
 @vsc.randobj
@@ -167,10 +162,9 @@ It randomizes the object 200 times, sets both limits to 200, and randomizes it 2
 
 When pyvsc first read `c_lim`, `self.a_max` was the number 4, and it went into the rule as the
 number 4, so changing the attribute later changed nothing. `self.b_max` is a pyvsc field, so the
-rule refers to the field and reads its value at every call. That's why Lab 03's packet holds
-`route_en` and its three length weights in `vsc.uint8_t` attributes: a test changes them between
-calls, and the solver sees each change. No error or warning tells you that a plain attribute has
-been frozen.
+rule refers to the field and reads its value at every call. Lab 03's packet holds `route_en` and
+its three length weights in `vsc.uint8_t` attributes for that reason, because a test changes them
+between calls. No error or warning tells you that a plain attribute has been frozen.
 
 ## dist
 
@@ -209,7 +203,8 @@ equal to `B`, or free. Then the test asks for `A < 0x10`, which no `ff` can meet
 
 No call failed, and the other three kinds shared the draws in about the ratio 10 : 30 : 40 of their
 weights. In DD105-A, Verilator failed 921 and 199 times in 1,000 on the same two shapes, because it
-picks an entry of the `dist` first and solves the rest afterwards (DD105-A's measurements). On pyvsc
+behaves as if it picks an entry of the `dist` first and solves the rest afterwards (DD105-A's
+measurements). On pyvsc
 you can constrain a packet's length inline whatever its weights, and line 3 of Lab 03's
 experiments shows it on the router's packet.
 
@@ -254,15 +249,18 @@ picks between the two shifts and the four other operations, and `ShiftSelOrdered
 ```
 
 By the standard, `is_shift` should come out about 500 times with `solve_order` and about 333 without,
-because two of the six operations are shifts. pyvsc gave 509, and 412. So `solve_order` did its job
-for `is_shift`, but the operations within each half are far from even, `SHR` 427 against `SHL` 82.
+because two of the six operations are shifts. pyvsc gave 509, and 412. So `solve_order` gave
+`is_shift` the spread the standard asks for, but the operations within each half are far from even,
+`SHR` 427 against `SHL` 82.
 That's the dropped-target effect again. Once `is_shift` is fixed, `op`'s target is still one of
 all six operations. When `is_shift` is 1, the four targets that aren't shifts are dropped and the
 solver puts `SHR`; when it's 0, the two shift targets are dropped and the solver puts `ADD`. If the
 spread of the operations matters to your test, count it.
 
-Lab 03's experiments also try `unique` on a list and a constraint on a list's `sum`, the two that
-DD105-A found Verilator gets wrong. Lab 03, Part 4 uses the second, in a `FillPlan` whose eight
+## unique and sum
+
+Lab 03's experiments also try `vsc.unique()` on a list and a constraint on a list's `sum`, the two
+that DD105-A found Verilator gets wrong. Lab 03, Part 4 uses the second, in a `FillPlan` whose eight
 lengths add up to 8.
 
 ## Seeds
@@ -292,8 +290,8 @@ and on seed 2:
 The run's seed decided the first and third rows, and reseeding after the first `randomize()`
 changed nothing. Reseeding before it decided the second row, whatever the run's seed. So an object
 that the test makes and randomizes repeats with the seed, and you can rerun a failing seed and watch
-the same failure happen again. Lab 03's generator makes and randomizes every packet inside the test
-for that reason.
+the same failure happen again. Lab 03's generator makes and randomizes every packet inside the test,
+so the run's seed decides them all.
 
 A seed reproduces a run only when the testbench draws the same numbers in the same order. Every
 random value in the labs comes from Python's `random`, one draw after another: pyvsc's state for
@@ -303,7 +301,8 @@ ours with the same seed.
 
 ## Speed
 
-pyvsc is slow next to Python's own `random`. `CrSpeedTest` timed 1,000 calls of each kind:
+pyvsc is slow next to Python's own `random`. `CrSpeedTest` timed 1,000 calls of each pyvsc kind and
+100,000 of the plain one:
 
 ```text
 [SPEED] per second: randomize() on one AluVec 531; a new AluVec each time 494; three random.randrange() calls 1037162
@@ -326,10 +325,9 @@ idle cycles with `random`. Even so, Lab 03's graded test takes about 5 s, where 
 
 ## Counting what came out
 
-The shifts that came out a third as often as the other operations broke no constraint and printed
-no warning, and the test passed. In a testbench with a design in it, the scoreboard wouldn't have
-noticed either, because it checks the design's answers and not how often each input was sent. The
-tests on this page found it by counting. In Lab 03 you count with coverpoints instead, and their
+In a testbench with a design in it, a skew like `CrSkewTest`'s wouldn't fail anything either,
+because the scoreboard checks the design's answers and not how often each input was sent. In Lab 03
+you count with coverpoints, and their
 first run shows a third of the router's packets 1 beat long and a third 8 beats long (263 of 800
 each), because the packet's length comes from a three-name enum, `kind`, that nothing weights yet.
 [Functional coverage you can read](functional-coverage-you-can-read.md) explains how to read those
@@ -364,9 +362,9 @@ counts.
 
    </details>
 
-3. Two runs of the same test on seed 3 send different packets. The test makes its packets at the
-   start of the test, and you added a component that calls `random.random()` once at time 0. Which
-   packets change?
+3. You add a monitor that calls `random.random()` once at the start of its `run_phase`, and a test
+   that sent the same packets on seed 3 every time now sends different ones. Which values change, and
+   why?
 
    <details>
    <summary>Answer</summary>

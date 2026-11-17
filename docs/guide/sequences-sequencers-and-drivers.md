@@ -20,14 +20,16 @@ with the time, at every step. Its files are in
 
 The item is an object whose class derives from `uvm_sequence_item`. Lab 04's item is `RouterPkt`,
 and the example's is `AluItem`, which holds an operation and two operands, and the ALU's answer once
-the vector has been driven. Both are pyvsc classes too, decorated with `@vsc.randobj`, so a sequence
-can call `randomize()` on them.
+the vector has been driven. Both are also pyvsc classes, decorated with `@vsc.randobj`, so a
+sequence can call `randomize()` on them.
 
 A sequence is an object too, not a component. Its class derives from `uvm_sequence`, and its
 `body()` coroutine makes the items and sends them. A test makes one when it needs it, sets its knobs,
 and runs it with `await seq.start(sequencer)`, which returns when `body()` has finished. A pyuvm
-sequence has no logger of its own, so the example's sequences print their lines, and `labs/ref`'s
-register sequences report through a component's logger instead.
+sequence has no logger of its own, so the example's sequences print their lines, and the register
+sequences in the course's reference testbench,
+[`labs/ref`](https://github.com/uoftasic/dd105-b/tree/main/labs/ref), report through a component's
+logger instead.
 
 The sequencer is a component in the agent. It sits between any number of sequences and one driver,
 and it hands the driver one item at a time. You don't write a sequencer class: Lab 04's input agent
@@ -92,8 +94,8 @@ while True:
 at once. The sequence then randomized the item and called `finish_item()`, which hands the item over
 and blocks. Only then did `get_next_item()` return, in the same time step, because pyuvm's
 `get_next_item()` waits for `finish_item()` before it gives the driver the item. The driver held the
-vector on the pins for one period and called `item_done()` at 10 ns, and that's when `finish_item()`
-returned. So the sequence's loop runs at the driver's pace, which here is one item every 10 ns:
+vector on the pins for one period and called `item_done()` at 10 ns, which let `finish_item()`
+return in the same time step. So the sequence's loop runs at the driver's pace, which here is one item every 10 ns:
 
 ![The first two items of SqTimelineTest: the sequence waits in finish_item from 0 to 10 ns and from 10 to 20 ns while the driver holds each vector for one period.](../assets/img/sequences-handshake.svg)
 
@@ -146,7 +148,8 @@ longer than the new one from the sequence that just finished, and the other sequ
 sequence that you start on a sequencer that's already busy therefore takes turns with the one running
 there, item by item. pyuvm 4.0.1's sequencer has no other way to choose: its source has no
 arbitration modes, priorities or locks, which SystemVerilog UVM's sequencer has. Lab 05 starts a
-sequence on each output agent that runs for the whole test, and this is worth remembering there.
+sequence that runs for the whole test on each output agent, so another sequence started on one of
+those sequencers would take turns with it.
 
 ## Sequences that start sequences
 
@@ -195,7 +198,7 @@ in the item's `rdata` before it calls `item_done()`, and `start()` doesn't retur
 [READ] SHR(f8, 03) = 1f
 ```
 
-## What pyuvm's driver port doesn't have
+## get_next_item() and item_done()
 
 A SystemVerilog UVM driver can call `try_next_item()`, which returns at once with no item when none
 is waiting. To get an item, pyuvm 4.0.1's `seq_item_port` has only `get_next_item()`, which waits,
@@ -211,8 +214,8 @@ driver that calls `get_next_item()` twice, and pyuvm stopped the test at once:
    SqDoubleGetTest: UVMSequenceError: You must call item_done() before calling get_next_item again
 ```
 
-The graders call the run BROKEN rather than a failure, because the exception says the testbench is
-wrong, not the design.
+The graders call the run BROKEN rather than a failure, because the exception came from the
+testbench, so the run says nothing about the design.
 
 ## Check yourself
 

@@ -1,19 +1,21 @@
-// DD105-A Lab 07: assertions for the router's valid/ready rules, and for
-// the rules about reset.
+// DD105-B Lab 07: assertions for the router's valid/ready rules, and for
+// the rules about reset. DD105-A's Lab 07 file, which is the reference for
+// both courses; only these comments differ.
 //
-// Plain SystemVerilog with no UVM in it, so any testbench can use it: this
-// lab binds it into the router (router_sva_bind.sv), and a testbench in
-// another language could bind it the same way and read the counters. The
-// rule names (I1, O2, ...) are the ones in the router specification,
-// docs/reference/router-spec.md, "Valid/ready rules", "APB rules" and
-// "Reset".
+// Plain SystemVerilog, so a Python testbench can use it: this lab binds it
+// into the router (router_sva_bind.sv), and the pyuvm testbench reads the
+// counters through cocotb. The rule names (I1, O2, ...) are the ones in the
+// router specification, docs/reference/router-spec.md, "Valid/ready rules",
+// "APB rules" and "Reset".
 //
 // Every assertion has its own failure counter, n_<rule>, and n_fail is their
-// sum; the top module passes n_fail to the scoreboard, which reports it at
-// the end of the test. A failure also calls $error, which this simulator
-// prints as "%Error: ... Assertion failed in ...". Its default error limit is
-// 1, so the first failure ends the run unless the run has
-// +verilator+error+limit+N; this lab's Makefile passes a large limit, so
+// sum; the course's BaseTest reads cocotb.top.u_sva.n_fail at the end of the
+// test and fails the test if it isn't 0. A failure also calls $error, which
+// the simulator prints as "%Error: ... Assertion failed in ...". (A comment
+// line must not start with the simulator's name, which it would read as a
+// directive.) Its default error limit is 1, so the first failure would end
+// the run, which cocotb reports as SimFailure; labs/common/pyuvm.mk passes
+// +verilator+error+limit+100000 to every run of a lab with assertions, so
 // every failure prints and the counters keep counting.
 //
 // Lab 05's rules (I1, I2, O1, O2, O6) are about normal operation, so each is

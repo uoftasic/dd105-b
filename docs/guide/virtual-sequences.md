@@ -3,15 +3,15 @@
 This page answers: *the routing table, the packets and the backpressure are each driven by a
 different agent. How do you make them change together, from one place?*
 
-Lab 04's tests did one thing at a time, in the test's own steps. A test wrote the routing table,
-set the sinks, sent packets, drained, read `DROP_CNT` and then started again, and each step waited
-for the one before it to finish. In
+In Lab 04 the tests did the work themselves, one step at a time. In each phase a test set the
+sinks, wrote the routing table, sent the packets, drained, read `DROP_CNT` and cleared it, and each
+step waited for the one before it to finish. In
 [Lab 05, Part 4](../labs/lab-05-protocol-rules-and-backpressure-overview.md#part-4-a-virtual-sequence)
-you'll want routes that move to the other output while packets are still going in, and both sinks
-changing their behaviour at the same time. So the APB agent, the source agent and both sinks'
-agents all have work to do at once, in an order that you choose. You do this with a **virtual
-sequence**, which is a sequence that starts other sequences on several agents' sequencers and
-changes those agents' knobs, but makes no items of its own.
+you'll want to move routes to the other output while packets are still going in, and to change how
+both sinks behave at the same time. The APB agent, the source agent and both sinks' agents then all
+have work to do at once, and you decide what each of them does and when. You do this with a
+**virtual sequence**, which is a sequence that starts other sequences on several agents'
+sequencers and changes those agents' knobs, but makes no items of its own.
 
 This page builds one for a small design of our own, a FIFO that holds four beats and has a
 valid/ready stream on each side. The files are in
@@ -26,11 +26,11 @@ good stand-in for them.
 ## A sequence given the environment
 
 An ordinary sequence runs on its agent's sequencer, which passes its items to the driver. A
-virtual sequence has no driver to feed, so in pyuvm it runs on no sequencer at all. What it needs
-is a way to reach every agent it steers. (In SystemVerilog UVM a virtual sequence usually runs on
-a sequencer of its own that holds those handles, and reaches it through a handle called
-`p_sequencer`.) pyuvm has no `p_sequencer`, so the sequence is given the environment when it's
-made, and keeps it:
+virtual sequence has no driver to feed, so in pyuvm it runs on no sequencer at all, and it needs
+some other way to reach every agent that it steers. (In SystemVerilog UVM a virtual sequence
+usually runs on a virtual sequencer, which holds a handle to each agent's sequencer, and the
+sequence reaches the virtual sequencer through a handle called `p_sequencer`.) pyuvm has no
+`p_sequencer`, so the sequence is given the environment when it's made, and keeps it:
 
 ```python
 class BaseVseq(uvm_sequence):
@@ -58,38 +58,39 @@ at its next rising edge. The test starts the virtual sequence with `start()` and
 v = cocotb.start_soon(self.VSEQ("v", self.env).start())
 ```
 
-Lab 05's `RouterTest` does the same with `await RouterLab05Vseq("vseq", self.env).start()`, and
-Lab 05's `RouterBaseVseq` gives you helpers like these, among them `route()`, `ctrl()`, `burst()`,
-`send_rand()`, `sink()`, `stall()` and `drain()`. Most of them are the base test's steps from
-Lab 04, rewritten as methods of a sequence.
+Lab 05's `RouterTest` starts its virtual sequence the same way, with
+`await RouterLab05Vseq("vseq", self.env).start()`. Lab 05's `RouterBaseVseq` gives you helpers of
+the same kind, among them `route()`, `ctrl()`, `burst()`, `send_rand()`, `sink()`, `stall()` and
+`drain()`, and most of them are the base test's steps from Lab 04, rewritten as methods of a
+sequence.
 
 ![The example's testbench: one virtual sequence steering two drivers](../assets/img/virtual-sequence-handles.svg){width=720 fig-alt="A block diagram. On the left, a box labelled virtual sequence, self.env. One line from it, labelled starts SrcSeq on it, goes to env.src.sqr, which passes items to the source driver, which drives in_valid and in_data into the FIFO. A second line, labelled writes the knob, goes to env.snk_cfg ready_pct, which the sink driver reads each cycle; the sink driver drives out_ready into the FIFO. Below the FIFO, a monitor watches every beat in and out."}
 
-*Our example's testbench. The virtual sequence reaches the source through the source's sequencer,
-and the sink through the sink's configuration object, using the environment it was given. The
+*Our example's testbench. Using the environment it was given, the virtual sequence reaches the
+source through the source's sequencer and the sink through the sink's configuration object. The
 monitor checks every beat, whatever caused it.*
 
-Two things follow from running on no sequencer. The first is that a virtual sequence can't send an
-item itself. `VseqItemTest` runs a virtual sequence whose `body()` calls `start_item()`, and pyuvm
-raised an exception at once, which the grader called BROKEN:
+Because it runs on no sequencer, a virtual sequence can't send an item itself. `VseqItemTest` runs
+a virtual sequence whose `body()` calls `start_item()`. pyuvm raised a `UVMSequenceError` at that
+first call, and the graders called the run BROKEN:
 
 ```text
  BROKEN: UVMSequenceError   0.27 s   log: build/runs/VseqItemTest-s1/run.log
    VseqItemTest: UVMSequenceError: Tried start_item in a virtual sequence v
 ```
 
-The second is that a pyuvm sequence has no logger of its own, since it isn't a component, so
-`info()` reports through the environment's. Every message from the virtual sequence therefore
-carries the environment's path, `[uvm_test_top.env]`, and the `[VSEQ]` tag at the start of the
-message is what tells it apart from the environment's own lines. Lab 06's register sequences
-report through the environment's logger in the same way.
+A pyuvm sequence has no logger of its own, because it isn't a component, so `info()` reports
+through the environment's logger. Every message from the virtual sequence therefore carries the
+environment's path, `[uvm_test_top.env]`, and you tell its lines from the environment's own by the
+`[VSEQ]` tag at the start of each message. In Lab 06 you'll pass the environment's logger to each
+register sequence you make, and the register sequences report through it.
 
 ## Doing two things at once
 
-The test starts our virtual sequence, `DemoVseq`. Its first step stalls the sink and then sends
-six beats in one branch while a second branch waits 15 cycles and lets the sink go. `par()` starts
-each coroutine it's given as a cocotb task, and then waits for each task in turn, so it returns
-when all of them are done:
+The test starts our virtual sequence, `DemoVseq`. Its first step stalls the sink, and then sends
+six beats in one branch while a second branch waits 15 cycles and makes the sink ready in every
+cycle again. `par()` starts each coroutine it's given as a cocotb task, and then waits for each
+task in turn, so it returns when all of them are done:
 
 ```python
 @staticmethod
@@ -129,8 +130,8 @@ By 160 ns the FIFO held four beats and was full, and `send()` still had two of i
 send. It could only return once the sink had taken some beats, and the sink would only take beats
 once something set `ready_pct` again. If you wrote the two one after the other, `send()` and then
 `sink(100)`, they would deadlock, because `send()` waits for the sink and the line that releases
-the sink waits for `send()` to return. The example's `+SERIAL` does exactly that, and the test's
-own limit of 2,000 cycles ended the run:
+the sink waits for `send()` to return. With `+SERIAL` the example runs them in that order, and the
+test's own limit of 2,000 cycles ended the run:
 
 ```text
  20010.00ns ERROR    ..tual-sequences/test_vseq.py(281) [uvm_test_top]: [TEST] the virtual sequence is still running after 2000 cycles; the FIFO holds 4 beats
@@ -140,12 +141,12 @@ own limit of 2,000 cycles ended the run:
 With `par()` the two branches run at the same time, and the step ended at 200 ns, when the last
 beat had gone in.
 
-`par()` awaits each task, and that matters when a branch goes wrong. Awaiting a cocotb task
-re-raises any exception the task raised, so a branch that fails fails the sequence and the test.
-`labs/ref`'s probe of cocotb 2.0.1 found that a test which instead waits on a task's `complete`
-trigger and never looks at the task again passes, with the exception lost. So if you wait on
-`complete`, as our test does to give up after 2,000 cycles, call the task's `result()` afterwards,
-which raises the exception if there was one.
+`par()` awaits each task, and awaiting a cocotb task re-raises any exception that the task raised,
+so a branch that fails also fails the sequence and the test. One of `labs/ref`'s probes of
+cocotb 2.0.1 waits on a task's `complete` trigger instead, and never calls the task's `result()`.
+That test passes, and the task's exception is lost. So if you wait on `complete`, as our test does
+to give up after 2,000 cycles, call the task's `result()` afterwards, which raises the exception if
+there was one.
 
 ## A loop that ends with the traffic
 
@@ -177,8 +178,8 @@ the looping branch and a third branch that moves routes. If the traffic branch d
 
 None of these sequences checks anything. In this example the monitor does the checking, and in the
 labs the scoreboard and the assertions do. The monitor watches both sides of the FIFO in every
-cycle and checks every beat that comes out, whatever is driving the FIFO, and at the end of this
-run it said `[MON] 44 beats in, 44 out, 0 out of order`.
+cycle and checks every beat that comes out, whatever is driving the FIFO. At the end of the run,
+after all three steps, it printed `[MON] 44 beats in, 44 out, 0 out of order`.
 
 ## Two sequences on one sequencer
 
@@ -199,27 +200,28 @@ pyuvm's sequencer keeps one queue. Each `start_item()` puts its item at the back
 sequencer hands items to the driver from the front, in the order they were asked for. Each sequence
 asks for its next item only after the driver has finished its last one, so the two sequences
 alternated item by item. Sometimes that's what you want, for example to mix two traffic streams
-together. It also means that a sequence you start on a sequencer that already has one running
-shares the driver with the first one rather than replacing it, and pyuvm 4.0.1's sequencer has no
-way for one sequence to keep the driver to itself. Each of Lab 05's sinks runs a sequence that
-never ends, and Part 4 asks you why `sink()` and `stall()` change the sink's `OutCfg` rather than
-starting a sequence on the sink's sequencer.
+together. It also means that if you start a second sequence on a sequencer while another one is
+running there, the two share the driver, and pyuvm 4.0.1's sequencer has no way for one sequence
+to keep the driver to itself. Each of Lab 05's sinks runs a sequence that never ends, and Part 4
+asks you why `sink()` and `stall()` change the sink's `OutCfg` rather than starting a sequence on
+the sink's sequencer.
 
 ## Configuration changes and the scoreboard
 
-With a virtual sequence it's easy to change the configuration while traffic is moving, and then
-the scoreboard has to apply each change from the right cycle. In Lab 04 the tests wrote the
-routing table only between phases, so the scoreboard could apply a write as soon as it saw it.
-In Lab 05 a route can change between one header and the next, and the specification says that a
-header accepted in the same cycle as the write completes still uses the old route. Lab 05's
-scoreboard stamps each route write with the cycle it completed in, and Part 4 asks you why it uses
-the cycle rather than the order in which the two monitors report.
+With a virtual sequence you can change the configuration while traffic is moving, and then the
+scoreboard has to apply each change from the right cycle. In Lab 04 the tests wrote the routing
+table only between phases, so the scoreboard could apply a write as soon as it saw it. In Lab 05 a
+route can change between one header and the next, and the specification says that a header
+accepted in the cycle in which the write completes still uses the old route. So in Lab 05 the APB
+monitor stamps each transfer with the cycle it completed in, and the scoreboard applies a route
+write only at the first header of a later cycle. Part 4 asks you why it goes by the cycle rather
+than by the order in which the two monitors report.
 
-A virtual sequence also has to be added to a test with some care about random values. Every random
-value in the labs comes from Python's `random`, one after another, so a sequence that draws values
-early in a test moves every value drawn after it. Making a pyuvm sequence and starting it draws
-nothing, though, so it's only what the sequence itself draws that moves anything.
-[Regressions and seeds](regressions-and-seeds.md) has the measurements, and in Lab 06, Part 5 you'll
+Adding a virtual sequence to a test can also change the random values that the test draws after
+it. Every random value in the labs comes from Python's `random`, one after another, so a sequence
+that draws values early in a test moves every value drawn after it. Making a pyuvm sequence and
+starting it draws nothing, though, so only the sequence's own draws move the values after them.
+[Regressions and seeds](regressions-and-seeds.md) has the measurements. In Lab 06, Part 5 you'll
 see the packets of Labs 04 and 05 change because of eight values drawn early in `RouterTest`.
 
 ## Check yourself
@@ -233,7 +235,8 @@ see the packets of Labs 04 and 05 change because of eight values drawn early in 
    `send()` returns only when all six beats have gone into the FIFO, and the FIFO holds four. The
    fifth beat waits for `in_ready`, which comes back only when the sink takes a beat, and the sink
    takes beats only after `sink(100)`. In the same branch as `send()`, `sink(100)` would never be
-   reached, which is what the `+SERIAL` run showed: 4 beats in, 0 out, after 2,000 cycles.
+   reached. The `+SERIAL` run puts it there, and after 2,000 cycles its monitor had counted 4 beats
+   in and 0 out.
 
    </details>
 
@@ -243,9 +246,9 @@ see the packets of Labs 04 and 05 change because of eight values drawn early in 
    <details>
    <summary>Answer</summary>
 
-   For both tasks to finish. Without the flag the backpressure loop never ends, so the virtual
-   sequence never returns, the test never drops its objection, and the run goes on until something
-   stops it. In our example that's the test's limit of 2,000 cycles; in the labs it's the test's
+   It waits for both tasks to finish. Without the flag the backpressure loop never ends, so the
+   virtual sequence never returns, the test never drops its objection, and the run goes on until
+   something stops it. In our example that's the test's limit of 2,000 cycles; in the labs it's the test's
    watchdog (`+MAX_CYCLES`) or `make`'s run timeout.
 
    </details>
@@ -264,9 +267,9 @@ see the packets of Labs 04 and 05 change because of eight values drawn early in 
 
 ## Further reading
 
-ChipVerify's pages are SystemVerilog UVM, where a virtual sequence usually runs on a virtual
-sequencer and reaches its handles through `p_sequencer`. pyuvm has neither, and the pattern on
-this page, a sequence given the environment, is the one the labs use.
+ChipVerify's pages describe SystemVerilog UVM, where a virtual sequence usually runs on a virtual
+sequencer and reaches the agents' sequencers through `p_sequencer`. pyuvm has neither, and the labs
+use the pattern on this page, a sequence given the environment.
 
 - [UVM Virtual Sequence](https://www.chipverify.com/uvm/uvm-virtual-sequence): both of
   SystemVerilog UVM's styles, `p_sequencer` and `start(null)`; the second is the one closest to

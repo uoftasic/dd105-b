@@ -51,6 +51,8 @@ website:
             href: labs/lab-01-one-alu-two-frameworks-overview.md
           - text: "3. Lab 02: A layered testbench without pyuvm"
             href: labs/lab-02-a-layered-testbench-without-pyuvm-overview.md
+          - text: "4. Lab 03: Constraints and coverage"
+            href: labs/lab-03-constraints-and-coverage-overview.md
       - section: "Reference"
         contents:
           - text: "The packet router"

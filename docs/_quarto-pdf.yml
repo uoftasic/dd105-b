@@ -18,6 +18,7 @@ book:
         - guide/getting-started.md
         - labs/lab-01-one-alu-two-frameworks-overview.md
         - labs/lab-02-a-layered-testbench-without-pyuvm-overview.md
+        - labs/lab-03-constraints-and-coverage-overview.md
     - part: "Reference"
       chapters:
         - reference/router-spec.md

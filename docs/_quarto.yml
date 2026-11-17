@@ -59,6 +59,8 @@ website:
             href: labs/lab-05-protocol-rules-and-backpressure-overview.md
           - text: "7. Lab 06: The register block"
             href: labs/lab-06-the-register-block-overview.md
+          - text: "8. Lab 07: Capstone"
+            href: labs/lab-07-capstone-overview.md
       - section: "Reference"
         contents:
           - text: "The packet router"

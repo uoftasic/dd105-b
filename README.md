@@ -13,8 +13,8 @@ for functional coverage, on Verilator 5.050. The only SystemVerilog a student wr
 assertions in Lab 05.
 
 This repository is being built. The shared build, the graders, the reference environment, CI and
-Lab 01 are in place. Labs 02 to 07 and the guide pages aren't yet, and the site's home page and
-Getting started page are still the template's samples.
+Labs 01 and 02 are in place. Labs 03 to 07 and the guide pages aren't yet, and the site's home page
+and Getting started page are still the template's samples.
 
 ## Quick start
 
@@ -41,6 +41,7 @@ scripts/ci/in-image.sh make -C labs/ref check-all   # the reference environment 
 | `labs/common/selftest/` | proves every verdict class still fires, on a small ALU with pyuvm fixtures |
 | `labs/ref/` | the router's reference pyuvm environment, written from the specification; it catches all fifteen bugs |
 | `labs/lab-01-one-alu-two-frameworks/` | Lab 01: SimProc's ALU with its three bugs, A01 to A03, DD104's cocotb test and a pyuvm testbench |
+| `labs/lab-02-a-layered-testbench-without-pyuvm/` | Lab 02: a plain-cocotb testbench for the router, whose monitor and scoreboard the student writes, and B05 and B09 |
 | `labs/lab-05-protocol-rules-and-backpressure/` | so far only Lab 05's assertions and their `bind` |
 
 `labs/common/bugs.py` is the answer key to the planted bugs, so a student should not open it until
@@ -49,7 +50,7 @@ the labs are done.
 `.github/workflows/labs.yml` checks the reference solutions in the course image: it makes the
 course venv, then `labs/common/selftest` must pass, and `labs/ref` must catch all fifteen bugs and
 pass the golden router on seeds 1 to 5. Each lab gets a step that requires the starter's
-`make check` to fail and the solution's to pass; Lab 01 has one so far. It runs on changes to
+`make check` to fail and the solution's to pass; Labs 01 and 02 have one so far. It runs on changes to
 `labs/`, its scripts in
 `scripts/ci/` and itself, every Monday, and by hand. Each step is one command you can run locally,
 for example `scripts/ci/in-image.sh scripts/ci/check-labs.sh ref`.

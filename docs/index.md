@@ -36,3 +36,4 @@ Work down the table in order. A Read row points you to one or more guide pages, 
 |---|---|---|---|
 | 1 | Read | [Getting started](guide/getting-started.md) | _N_ min |
 | 2 | Do | [Lab 01: One ALU, two frameworks](labs/lab-01-one-alu-two-frameworks-overview.md). Test SimProc's ALU with DD104's cocotb test and with a pyuvm testbench, compare what each costs with DD105-A's SystemVerilog numbers, and extend the pyuvm scoreboard until it catches A03, the zero-flag bug. | 1 h 15 min |
+| 3 | Do | [Lab 02: A layered testbench without pyuvm](labs/lab-02-a-layered-testbench-without-pyuvm-overview.md). Write the monitor and the scoreboard of a plain-cocotb testbench for the router, catch B05 and B09 with it, and find out which part of the stimulus each catch depends on. | 1 h 30 min |

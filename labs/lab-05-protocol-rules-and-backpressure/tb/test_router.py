@@ -1,12 +1,16 @@
 """
-DD105-B Lab 04: the tests. Every one runs on the same simulator, and TEST=
+DD105-B Lab 05: the tests. Every one runs on the same simulator, and TEST=
 picks one when the simulator starts:
 
-  RouterInjectTest  RouterStallTest, with NoroutePkt swapped in for RouterPkt
-                    by a factory override (Part 4); make check and make
-                    check-all grade this one
-  RouterStallTest   RouterRandTest, with one output stalled in each phase
-                    while the other runs (Part 3)
+  RouterTest        RouterInjectTest's steps, then RouterLab05Vseq (Part 4);
+                    make check and make check-all grade this one
+  RouterLab05Test   RouterLab05Vseq on its own (Part 4)
+  RouterSinkTest    RouterRandTest with both sinks in SNK_RANDOM, each beat
+                    answered by an item (Part 3)
+  RouterInjectTest  Lab 04's: RouterStallTest, with NoroutePkt swapped in for
+                    RouterPkt by a factory override
+  RouterStallTest   Lab 04's: RouterRandTest, with one output stalled in each
+                    phase while the other runs
   RouterRandTest    Lab 03's router_rand_test: CTRL.EN, then +PHASES phases
                     of +N random packets, each with its own random routing
                     table and a DROP_CNT check; then close_holes() and a last
@@ -20,8 +24,10 @@ Plusargs: +N=<packets> (200 a phase; 100 in RouterClassTest), +PHASES=<n>
 and +OVERRIDE=<class>,<class>, a factory override by name, which the base
 test applies before it builds anything.
 
-This is the reference solution: RouterStallTest, NoroutePkt and
-RouterInjectTest are filled in, as Parts 3 and 4 of the lab ask.
+This is our Lab 04 solution (RouterStallTest, NoroutePkt and
+RouterInjectTest filled in) with Lab 05's three tests added. The base test
+also starts a SinkSeq on each output before anything else (Lab 05). Nothing
+in this file is left for you to write.
 
 Every test derives from RouterLabTest, which derives from the course's
 RouterBaseTest (labs/common/py/dd105b_base.py). BaseTest's final_phase fails
@@ -38,8 +44,10 @@ from cocotb.triggers import ClockCycles, First, RisingEdge
 from pyuvm import ConfigDB, uvm_factory
 
 from dd105b_base import RouterBaseTest
-from router_agents import ApbRwSeq, OutCfg, RouterOneSeq, RouterPkt, RouterRandSeq
+from router_agents import (SNK_PCT, SNK_RANDOM, ApbRwSeq, OutCfg, RouterOneSeq, RouterPkt,
+                           RouterRandSeq, SinkSeq)
 from router_env import RouterEnv
+from router_vseq import RouterLab05Vseq
 
 CTRL, DROP_CNT, ROUTE0 = 0x04, 0x10, 0x20
 
@@ -95,6 +103,10 @@ class RouterLabTest(RouterBaseTest):
 
     async def run_phase(self):
         self.raise_objection()
+        # Lab 05: each sink's sequence runs for the whole test, so its driver
+        # always has the next item when it asks for one. Nothing waits for it.
+        for p in (0, 1):
+            cocotb.start_soon(SinkSeq(f"sink{p}_seq", self.ocfg[p]).start(self.env.out[p].sqr))
         await self.reset()
         body = cocotb.start_soon(self.body())
         dog = cocotb.start_soon(self.watchdog(self.max_cycles))
@@ -169,6 +181,12 @@ class RouterLabTest(RouterBaseTest):
     async def cycles(self, n):
         for _ in range(n):
             await RisingEdge(self.dut.clk)
+
+    def sink_desc(self, p):
+        """How sink p answers, for the [PHASE] line: 'ready 5%' in SNK_PCT,
+        as Lab 04 printed it, or the name of its mode (Lab 05)."""
+        c = self.ocfg[p]
+        return f"ready {c.ready_pct}%" if c.mode == SNK_PCT else c.mode
 
     async def drain(self):
         """Make both outputs ready and wait until the scoreboard expects
@@ -247,9 +265,8 @@ class RouterRandTest(RouterLabTest):
         for k in range(1, n_phases + 1):
             routes = self.random_routes()
             self.set_sinks(k)
-            self.logger.info(f"[PHASE] {k} of {n_phases}: routes {routes}, {n} packets; output 0 "
-                             f"ready {self.ocfg[0].ready_pct}%, output 1 ready "
-                             f"{self.ocfg[1].ready_pct}%")
+            self.logger.info(f"[PHASE] {k} of {n_phases}: routes {routes}, {n} packets; "
+                             f"output 0 {self.sink_desc(0)}, output 1 {self.sink_desc(1)}")
             await self.write_routes(routes)
             await self.send_random(n)
             await self.drain()
@@ -308,7 +325,7 @@ class RouterClassTest(RouterLabTest):
 
 @pyuvm.test()
 class RouterStallTest(RouterRandTest):
-    """Part 3: RouterRandTest with one output stalled in each phase.
+    """Lab 04, Part 3: RouterRandTest with one output stalled in each phase.
 
     Output 0 in phases 1 and 3, and output 1 in phases 2 and 4, is ready in
     5% of cycles, so it fills past 8 beats while the other output, always
@@ -322,10 +339,10 @@ class RouterStallTest(RouterRandTest):
 
 @vsc.randobj
 class NoroutePkt(RouterPkt):
-    """Part 4: a RouterPkt that goes to a disabled route one time in four.
-    Its constraint c_dst has the same name as RouterPkt's, so it replaces
-    it. pre_randomize() runs before the solver, so to_disabled is already
-    fixed when c_dst is solved."""
+    """Lab 04, Part 4: a RouterPkt that goes to a disabled route one time in
+    four. Its constraint c_dst has the same name as RouterPkt's, so it
+    replaces it. pre_randomize() runs before the solver, so to_disabled is
+    already fixed when c_dst is solved."""
 
     def __init__(self, name="pkt"):
         super().__init__(name)
@@ -345,7 +362,7 @@ class NoroutePkt(RouterPkt):
 
 @pyuvm.test()
 class RouterInjectTest(RouterStallTest):
-    """Part 4: RouterStallTest with NoroutePkt in place of RouterPkt.
+    """Lab 04, Part 4: RouterStallTest with NoroutePkt in place of RouterPkt.
 
     Every RouterPkt the factory makes is a NoroutePkt. Nothing else
     changes."""
@@ -353,3 +370,47 @@ class RouterInjectTest(RouterStallTest):
     def build_phase(self):
         uvm_factory().set_type_override_by_type(RouterPkt, NoroutePkt)
         super().build_phase()
+
+
+# ── Lab 05 ───────────────────────────────────────────────────────────────────
+
+@pyuvm.test()
+class RouterSinkTest(RouterRandTest):
+    """Part 3: RouterRandTest with both sinks in SNK_RANDOM, so the sink
+    driver answers each beat with an item from SinkSeq. close_holes() stalls
+    output 0 with ready_pct 0, which only SNK_PCT reads, so it switches both
+    sinks back to SNK_PCT first."""
+
+    def set_sinks(self, k):
+        for c in self.ocfg:
+            c.mode = SNK_RANDOM
+
+    async def close_holes(self):
+        for c in self.ocfg:
+            c.mode = SNK_PCT
+        await super().close_holes()
+
+
+@pyuvm.test()
+class RouterTest(RouterInjectTest):
+    """The graded test: everything RouterInjectTest does, unchanged, and then
+    this lab's virtual sequence (Part 4). The factory override is still on,
+    so the sequence's random packets are NoroutePkts too; with every route
+    enabled they behave as RouterPkts.
+
+    The sequence is made after RouterInjectTest's steps, because every
+    random value comes from Python's random, one after another: anything
+    the sequence drew first would change every packet after it."""
+
+    async def body(self):
+        await super().body()
+        self.logger.info("[VSEQ] RouterInjectTest's steps are done; starting RouterLab05Vseq")
+        await RouterLab05Vseq("vseq", self.env).start()
+
+
+@pyuvm.test()
+class RouterLab05Test(RouterLabTest):
+    """Part 4: RouterLab05Vseq on its own, from a router just out of reset."""
+
+    async def body(self):
+        await RouterLab05Vseq("vseq", self.env).start()

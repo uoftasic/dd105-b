@@ -10,9 +10,10 @@
 // Every assertion has its own failure counter, n_<rule>, and n_fail is their
 // sum; the course's BaseTest reads cocotb.top.u_sva.n_fail at the end of the
 // test and fails the test if it isn't 0. A failure also calls $error, which
-// Verilator prints as "%Error: ... Assertion failed in ...". Its default
-// error limit is 1, so the first failure would end the run, which cocotb
-// reports as SimFailure; labs/common/pyuvm.mk passes
+// the simulator prints as "%Error: ... Assertion failed in ...". (A comment
+// line must not start with the simulator's name, which it would read as a
+// directive.) Its default error limit is 1, so the first failure would end
+// the run, which cocotb reports as SimFailure; labs/common/pyuvm.mk passes
 // +verilator+error+limit+100000 to every run of a lab with assertions, so
 // every failure prints and the counters keep counting.
 //

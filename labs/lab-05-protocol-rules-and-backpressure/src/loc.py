@@ -1,5 +1,5 @@
 """
-DD105-B Lab 04: count a testbench's lines (the same counter as Lab 01's).
+DD105-B Lab 05: count a testbench's lines (the same counter as Lab 01's).
 
     python3 src/loc.py FILE...        (or `make loc`)
 

@@ -35,4 +35,4 @@ Work down the table in order. A Read row points you to one or more guide pages, 
 | # | | What | Time |
 |---|---|---|---|
 | 1 | Read | [Getting started](guide/getting-started.md) | _N_ min |
-| 2 | Do | [Lab 01: Starter script](labs/lab-01-overview.md). Run the starter Python script, then change the message it prints and predict whether its checksum goes up or down. | _N_ min |
+| 2 | Do | [Lab 01: One ALU, two frameworks](labs/lab-01-one-alu-two-frameworks-overview.md). Test SimProc's ALU with DD104's cocotb test and with a pyuvm testbench, compare what each costs with DD105-A's SystemVerilog numbers, and extend the pyuvm scoreboard until it catches the flags bug. | 1 h 15 min |

@@ -12,9 +12,9 @@ Python: pyuvm 4.0.1 on cocotb 2.0.1, with pyvsc 1.1.0 for constrained random and
 for functional coverage, on Verilator 5.050. The only SystemVerilog a student writes is the
 assertions in Lab 05.
 
-This repository is being built. The shared build, the graders, the reference environment and CI are
-in place; the labs and the guide pages aren't yet, and the site still has the template's sample
-pages beside the router's two reference pages.
+This repository is being built. The shared build, the graders, the reference environment, CI and
+Lab 01 are in place. Labs 02 to 07 and the guide pages aren't yet, and the site's home page and
+Getting started page are still the template's samples.
 
 ## Quick start
 
@@ -40,17 +40,17 @@ scripts/ci/in-image.sh make -C labs/ref check-all   # the reference environment 
 | `labs/common/` | the router's RTL and bug catalogue, the shared cocotb + pyuvm build (`pyuvm.mk`), the course venv's `requirements.txt`, the base test and the graders; see [`labs/common/README.md`](labs/common/README.md) |
 | `labs/common/selftest/` | proves every verdict class still fires, on a small ALU with pyuvm fixtures |
 | `labs/ref/` | the router's reference pyuvm environment, written from the specification; it catches all fifteen bugs |
-| `labs/lab-01-one-alu-two-frameworks/` | so far only Lab 01's ALU and its three bugs, A01 to A03 |
+| `labs/lab-01-one-alu-two-frameworks/` | Lab 01: SimProc's ALU with its three bugs, A01 to A03, DD104's cocotb test and a pyuvm testbench |
 | `labs/lab-05-protocol-rules-and-backpressure/` | so far only Lab 05's assertions and their `bind` |
-| `labs/lab-01/` | the template's sample lab, until Lab 01 replaces it |
 
 `labs/common/bugs.py` is the answer key to the planted bugs, so a student should not open it until
 the labs are done.
 
 `.github/workflows/labs.yml` checks the reference solutions in the course image: it makes the
 course venv, then `labs/common/selftest` must pass, and `labs/ref` must catch all fifteen bugs and
-pass the golden router on seeds 1 to 5. The labs will each get a step that requires the starter's
-`make check` to fail and the solution's to pass. It runs on changes to `labs/`, its scripts in
+pass the golden router on seeds 1 to 5. Each lab gets a step that requires the starter's
+`make check` to fail and the solution's to pass; Lab 01 has one so far. It runs on changes to
+`labs/`, its scripts in
 `scripts/ci/` and itself, every Monday, and by hand. Each step is one command you can run locally,
 for example `scripts/ci/in-image.sh scripts/ci/check-labs.sh ref`.
 
@@ -72,7 +72,7 @@ quarto render docs --profile pdf --to typst    # whole course as one PDF in docs
 | `docs/labs/` | Yes | Lab writeups: every command a student runs, in numbered parts and steps |
 | `docs/reference/` | Yes | Lookup pages: the router's specification and a one-page summary |
 | `labs/` | No | Runnable packages |
-| `scripts/` | No | `check_site.py`, the link check for the rendered site; `ci/`, the reference-solution checks; `figures/`, the script that draws the router's block diagram |
+| `scripts/` | No | `check_site.py`, the link check for the rendered site; `ci/`, the reference-solution checks; `figures/`, the script that draws the router's block diagram; `screenshots/`, the tool that draws the waveform figures |
 | `notebooks/`, `data/`, `figures/` | No | Repo scaffolding, unused by DD105-B |
 
 GitHub Pages is set to Source: GitHub Actions. On every push to `main` that touches `docs/`,
@@ -92,6 +92,8 @@ from [uoftasic/dd105-a](https://github.com/uoftasic/dd105-a) at commit
 `da489f273945e44c49069adee8dc45ac346bd42a` (Nov 16, 2026). Two commits, "Copy the shared files from
 DD105-A da489f2" and "Copy the router's directed reference test from DD105-A da489f2", hold them
 byte for byte, and the commits after those hold every change DD105-B made to them.
+The copy of `scripts/screenshots/`, from the same DD105-A commit, is in a later commit of its own,
+"Copy scripts/screenshots from DD105-A da489f2".
 
 | Here | From DD105-A | What it is |
 |---|---|---|
@@ -104,6 +106,7 @@ byte for byte, and the commits after those hold every change DD105-B made to the
 | `labs/lab-05-protocol-rules-and-backpressure/tb/router_sva.sv`, `tb/router_sva_bind.sv`, `solutions/router_sva.sv` | the same paths | Lab 05's assertions (the starter with its TODOs, and the solution) and the `bind` that puts them into the router |
 | `labs/ref/tb/router_sva.sv`, `labs/ref/tb/router_sva_bind.sv` | the same paths | the reference environment's full set of assertions (valid/ready, APB and reset rules) and their `bind` |
 | `labs/lab-01-one-alu-two-frameworks/rtl/alu.sv`, `labs/lab-01-one-alu-two-frameworks/bugs.json` | `labs/lab-01-one-alu-two-testbenches/rtl/alu.sv`, `bugs.json` | SimProc's ALU with DD104's three ALU bugs, A01 to A03, behind `+BUG` |
+| `scripts/screenshots/` | `scripts/screenshots/` | the tool that draws the labs' waveform figures in a headless Surfer or GTKWave |
 
 DD105-B's changes to these files are comments and links: the assertion files, the ALU and
 `inject.py` describe DD105-B (Python reads the counters, Verilator only), and the spec pages link
@@ -117,7 +120,9 @@ timing examples.
 DD105-B also started from code it didn't copy byte for byte: `labs/common/check.py`, `hunt.py` and
 `regress.py`, `scripts/ci/check-labs.sh` and `in-image.sh`, `labs/common/dd105b_trace.vlt` and the
 selftest's ALU and assertion are DD105-A's, adapted; `labs/common/verdict.py` is DD104's, with
-DD105-A's run-folder reading added. Each file's header says so.
+DD105-A's run-folder reading added. Each file's header says so. Lab 01's `cocotb/test_alu.py` (DD104
+Lab 03's reference test) and `src/loc.py` are DD105-A's at the same commit, with the first line of
+each docstring naming DD105-B.
 
 DD105-B doesn't use DD105-A's `third_party/uvm` (the SystemVerilog UVM library), so it isn't copied.
 DD105-A's `docs/reference/register-layer.md` documents SystemVerilog UVM's register layer, whose

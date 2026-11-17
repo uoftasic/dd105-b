@@ -8,7 +8,7 @@
   one-line pointer here. Replace this page with your course's first reading.
 -->
 
-This page explains how the course is laid out and how its pages show math and figures. Read it before [Lab 01: Starter script](../labs/lab-01-overview.md).
+This page explains how the course is laid out and how its pages show math and figures. Read it before [Lab 01: One ALU, two frameworks](../labs/lab-01-one-alu-two-frameworks-overview.md).
 
 ## Course layout
 
@@ -17,7 +17,7 @@ The [course path](../index.md#course-path) on the home page lists all the pages 
 - A Read row points to guide pages like this one, which explain the ideas with figures and worked examples. You don't need a terminal open to read them.
 - A Do row points to a lab writeup, and the labs are where you run things.
 
-The files a lab runs (code, data, and any scripts that check your results) are in the course's [GitHub repo](https://github.com/uoftasic/dd105-b) under `labs/`, and this site has only the writeups. You'll run your first script, `labs/lab-01/src/main.py`, in [Lab 01](../labs/lab-01-overview.md), Part 2.
+The files a lab runs (code, data, and any scripts that check your results) are in the course's [GitHub repo](https://github.com/uoftasic/dd105-b) under `labs/`, and this site has only the writeups. You'll run your first test, `labs/lab-01-one-alu-two-frameworks/cocotb/test_alu.py`, in [Lab 01](../labs/lab-01-one-alu-two-frameworks-overview.md), Part 2.
 
 ## Lab structure
 

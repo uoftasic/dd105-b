@@ -95,9 +95,9 @@ Does the port do what the Lab 03 testbench did, and which of this lab's bugs doe
    DD105-B BaseTest: 0 errors logged, no bound assertions
    ```
 
-   and `ok: 0 errors   3.61 s`. pyuvm puts the file and line of each logging call in front of
-   its message, and then the path of the component that logged it: `uvm_test_top` is the test, and
-   `uvm_test_top.env.sb` is the scoreboard. The `[DROP]` line comes from Lab 03's `DROP_CNT` check,
+   and `ok: 0 errors   3.61 s`. After the time and the level, each line names the file and line of
+   the logging call and then, in brackets, the component that logged it: `uvm_test_top` is the
+   test, and `uvm_test_top.env.sb` is the scoreboard. The `[DROP]` line comes from Lab 03's `DROP_CNT` check,
    which the scoreboard now does: it compares every read of `DROP_CNT` that the APB monitor reports
    with the drops it predicted.
 
@@ -494,8 +494,8 @@ makes them or the driver that sends them?
    them in `new_packet()` with the constructor, `RouterPkt("pkt")`, which the override can't reach.
    When we made them with `create()` instead, `RouterInjectTest` ended `BROKEN: SolveFailure` on 2
    of seeds 1 to 20. The packet for DST 0 was then a `NoroutePkt`, and whenever `pre_randomize()`
-   chose a disabled route for it, no DST could meet both its `c_dst` and `hdr_dst == 0`, since
-   `ROUTE0` is the one enabled route.
+   set its `to_disabled`, no DST could meet both its `c_dst` and `hdr_dst == 0`, since `ROUTE0` is
+   the one enabled route.
 
 4. Write down what you expect the golden run's first `[SB]` line to say about NOROUTE drops. Then
    run the default test:

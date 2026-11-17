@@ -6,11 +6,12 @@ DD105-B Lab 03: constraint experiments, with pyvsc and no simulator.
 
 Each experiment randomizes a small pyvsc class many times and prints one
 line: how often each value came out, or how often randomize() failed. Before
-you run it, write down what each line should show if pyvsc follows
-SystemVerilog's rules for the same constraints. Lines 1 to 3 use the shapes
-of the lab's packet (three length kinds); the others are shapes its tests can
-use. The numbers follow DD105-A's traps.sv, which ran the same experiments on
-Verilator's solver. Change a class and run again.
+you run it, write down what each of lines 1 to 6 should show if pyvsc
+follows SystemVerilog's rules for the same constraints. Lines 1 to 3 use the shapes
+of the lab's packet (three length kinds); lines 4 to 6 are shapes its tests
+can use; line 7 times the solver, and line 8 shows when a pyvsc object takes
+its random state. Lines 1 to 6 follow DD105-A's traps.sv, which ran the same
+experiments on Verilator's solver. Change a class and run again.
 """
 
 import argparse

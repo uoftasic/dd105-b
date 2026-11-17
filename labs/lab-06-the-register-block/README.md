@@ -6,9 +6,10 @@ This package is our solution to Lab 05, with this lab's pieces added: a register
 router's ten registers on pyuvm's `uvm_reg` classes, with its adapter, a predictor and two
 register sequences; a monitor that reports `rst_n` and `irq` every cycle; and scoreboard checks on
 `STATUS` reads, on `PSLVERR` and on reads of bad addresses. Eight pieces are left for you, marked
-`TODO (Part n)`: the fields of four registers, the adapter, the reset sequence, the predictor and
-its connections, the bit-bash sequence, the `irq` check, and this lab's virtual sequence. The
-router and its planted bugs come from [`../common`](../common/README.md).
+`TODO (Part n)`: the fields of `STATUS`, `DROP_CNT`, `LEVEL` and the `ROUTE` registers, the
+adapter, the reset sequence, the predictor and its connections, the bit-bash sequence, the `irq`
+check, and this lab's virtual sequence. The router and its planted bugs come from
+[`../common`](../common/README.md).
 
 Run it in the course image, from this folder:
 
@@ -24,9 +25,9 @@ make clean                          # remove build/ (the ccache and the venv sta
 
 Every file you edit in this lab is Python, so nothing you do rebuilds the simulator.
 `tb/router_ral.py` imports nothing from the course venv, so `make regcheck` and `make predict`
-run with the image's own Python. `make check`, `make check-all` and `make regress` build the model
-the same way before any run, and stop with `make regcheck`'s message if it doesn't build: pyuvm
-reports a wrong model with `AssertionError`, which a run would count as a check that fired.
+run with the image's own Python. `make check` and `make check-all` build the model the same way
+before any run, and stop with `make regcheck`'s message if it doesn't build: pyuvm reports a wrong
+model with `AssertionError`, which a run would count as a check that fired.
 
 `RouterLab06Test` runs `RouterLab06Vseq` alone. Until you write that sequence's steps it reads
 nothing and sends nothing, so the test fails on the golden router ("nothing was checked"), and so

@@ -231,10 +231,11 @@ class ApbRegAdapter(uvm_reg_adapter):
 # ── the predictor ────────────────────────────────────────────────────────────
 
 class RouterRegPredictor(uvm_subscriber):
-    """SystemVerilog UVM's uvm_reg_predictor, which pyuvm doesn't have. It
-    subscribes to the APB monitor, so the mirror follows every transfer on
-    the bus, whoever started it: the register model's own operations and
-    the raw transfers of Labs 03 to 05 alike.
+    """The course's stand-in for SystemVerilog UVM's uvm_reg_predictor
+    (pyuvm's class of that name is empty). It subscribes to the APB monitor,
+    so the mirror follows every transfer on the bus, whoever started it:
+    the register model's own operations, and the raw transfers of Lab 04's
+    steps and Lab 05's sequence alike.
 
       a write   predict(value, UVM_PREDICT_WRITE): each field takes the
                 value its access policy gives (RW the value written, W1C

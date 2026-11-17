@@ -130,7 +130,7 @@ make run TEST=MonRandTest BUG=A01 PLUSARGS=+OVERRIDE=AluItem,AluEqualItem
 On the ALU with bug A01 the run logged
 
 ```text
-     0.00ns INFO     ..-and-scoreboards/mon_env.py(169) [uvm_test_top]: [OVERRIDE] the factory makes AluEqualItem for every AluItem
+     0.00ns INFO     ..-and-scoreboards/mon_env.py(171) [uvm_test_top]: [OVERRIDE] the factory makes AluEqualItem for every AluItem
 ```
 
 and ended `MISSED: 0 errors`. The same test without the plusarg is `caught: 30 errors`. Changing a
@@ -180,12 +180,12 @@ wrong, turn on `ConfigDB`'s trace with `ConfigDB().is_tracing = True`, which log
 every `get()` that finds a value. The test does that before its `set()`:
 
 ```text
-     0.00ns INFO     uvm.logger_holder136667496791984   CFGDB/SET Context: uvm_test_top  --  uvm_test_top.env.scoreboard check_flags=True
+     0.00ns INFO     uvm.logger_holder126772875082400   CFGDB/SET Context: uvm_test_top  --  uvm_test_top.env.scoreboard check_flags=True
 [TEST] uvm_test_top set check_flags = True for "env.scoreboard"
-     0.00ns INFO     uvm.logger_holder136667496791984   CFGDB/SET Context:   --  * vif=<sq_agent.AluIf object at 0x7c4c61993f50>
-     0.00ns INFO     uvm.logger_holder136667496791984   CFGDB/GET Context: uvm_test_top.env.agt.drv  --  uvm_test_top.env.agt.drv vif=<sq_agent.AluIf object at 0x7c4c61993f50>
-     0.00ns INFO     uvm.logger_holder136667496791984   CFGDB/GET Context: uvm_test_top.env.agt.mon  --  uvm_test_top.env.agt.mon vif=<sq_agent.AluIf object at 0x7c4c61993f50>
-     0.00ns INFO     uvm.logger_holder136667496791984   CFGDB/GET Context:   --   vif=<sq_agent.AluIf object at 0x7c4c61993f50>
+     0.00ns INFO     uvm.logger_holder126772875082400   CFGDB/SET Context:   --  * vif=<sq_agent.AluIf object at 0x734c9c2fba40>
+     0.00ns INFO     uvm.logger_holder126772875082400   CFGDB/GET Context: uvm_test_top.env.agt.drv  --  uvm_test_top.env.agt.drv vif=<sq_agent.AluIf object at 0x734c9c2fba40>
+     0.00ns INFO     uvm.logger_holder126772875082400   CFGDB/GET Context: uvm_test_top.env.agt.mon  --  uvm_test_top.env.agt.mon vif=<sq_agent.AluIf object at 0x734c9c2fba40>
+     0.00ns INFO     uvm.logger_holder126772875082400   CFGDB/GET Context:   --   vif=<sq_agent.AluIf object at 0x734c9c2fba40>
 ```
 
 The `set()` was for `uvm_test_top.env.scoreboard`, and there's no `GET` line for `check_flags` at all,
@@ -199,7 +199,7 @@ finds nothing raises `UVMConfigItemNotFound` and ends the run. `FacMissingTest` 
 that does that, with nothing set:
 
 ```text
- BROKEN: UVMConfigItemNotFound   1.89 s   log: build/runs/FacMissingTest-s1/run.log
+ BROKEN: UVMConfigItemNotFound   1.86 s   log: build/runs/FacMissingTest-s1/run.log
    FacMissingTest: UVMConfigItemNotFound: "Component uvm_test_top.env.sb has no key: check_flags
    ConfigDB().get() asked for a name nobody set. That is configuration,
    not a check.

@@ -207,7 +207,7 @@ A driver must also call `item_done()` before it asks for the next item. `SqDoubl
 driver that calls `get_next_item()` twice, and pyuvm stopped the test at once:
 
 ```text
- BROKEN: UVMSequenceError   1.87 s   log: build/runs/SqDoubleGetTest-s1/run.log
+ BROKEN: UVMSequenceError   1.88 s   log: build/runs/SqDoubleGetTest-s1/run.log
    SqDoubleGetTest: UVMSequenceError: You must call item_done() before calling get_next_item again
 ```
 

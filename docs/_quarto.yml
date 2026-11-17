@@ -57,6 +57,8 @@ website:
             href: labs/lab-04-the-same-testbench-in-pyuvm-overview.md
           - text: "6. Lab 05: Protocol rules and backpressure"
             href: labs/lab-05-protocol-rules-and-backpressure-overview.md
+          - text: "7. Lab 06: The register block"
+            href: labs/lab-06-the-register-block-overview.md
       - section: "Reference"
         contents:
           - text: "The packet router"

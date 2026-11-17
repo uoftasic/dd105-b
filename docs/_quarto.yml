@@ -55,6 +55,8 @@ website:
             href: labs/lab-03-constraints-and-coverage-overview.md
           - text: "5. Lab 04: The same testbench in pyuvm"
             href: labs/lab-04-the-same-testbench-in-pyuvm-overview.md
+          - text: "6. Lab 05: Protocol rules and backpressure"
+            href: labs/lab-05-protocol-rules-and-backpressure-overview.md
       - section: "Reference"
         contents:
           - text: "The packet router"

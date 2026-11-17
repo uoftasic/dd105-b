@@ -112,7 +112,8 @@ So B11 meets the course's rule: missed by the starter and caught by the solution
 
 The seven bins the regression leaves empty are the seven of `router.pkt.x_fate_level` that the
 specification rules out, as in Lab 04. `router.pkt` has 42 bins now (`oversize` is new) and
-`router.wait` 14, all hit. The three numbers are DD105-A's (A: 49 of 56, `87.5%`).
+`router.wait` 14, all hit. DD105-A's regression reached the same total (A:
+`covergroup : 87.5% (49/56)`).
 
 ### `make check`
 
@@ -175,9 +176,9 @@ Every random value in this testbench comes from Python's `random`, in one sequen
 that draws one value more moves every value after it (chain spec, decision 8). This lab's
 additions draw nothing in Lab 04's tests:
 
-- `SinkDriver` in `SNK_PCT` with no item held runs Lab 04's loop exactly: right after each rising
-  edge it draws only when `ready_pct` is between 0 and 100, and it doesn't wait for the falling
-  edge, so its place among the tasks that wake at each rising edge is Lab 04's.
+- `SinkDriver` in `SNK_PCT` with no item held runs the loop of Lab 04's `OutReadyDriver`: right
+  after each rising edge it draws only when `ready_pct` is between 0 and 100, and it doesn't wait
+  for the falling edge, so it waits on the same edges as Lab 04's driver did.
 - `SinkSeq` makes each item's values after `start_item()` returns, which in pyuvm 4.0.1 is when
   the driver asks for the item (`get_next_item()` sets the item's `start_condition`). In
   `SNK_PCT` the driver asks for none, so the sequences draw nothing.
@@ -200,7 +201,7 @@ Part 1 of the page has the student run it.
 |---|---|
 | `make build`, after the builds of Labs 01 to 04 | 2.4 s, 6 of 7 files from the ccache |
 | `make build` after Part 2's edit to `router_sva.sv` | 2.4 s, 6 of 7 files from the ccache |
-| `make build` with an empty ccache | 8.0 s |
+| `make build` of the solution with an empty ccache | 8.0 s, 0 of 7 files from the ccache |
 | `make run` after a change to the Python | no rebuild |
 | `make run` (`RouterTest`) | 5.7 to 7.6 s (starter), 7.0 to 7.4 s (solution) |
 | `make run TEST=RouterInjectTest`, `RouterStallTest`, `RouterRandTest`, `RouterSinkTest` | 5.3 to 5.8 s |

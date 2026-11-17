@@ -1,5 +1,5 @@
 """
-DD105-B Lab 06: the virtual sequences.
+DD105-B Lab 07: the virtual sequences.
 
 A virtual sequence drives every agent from one place: register writes and
 reads through the APB agent, packets through the source agent, and each
@@ -10,8 +10,13 @@ sink's backpressure through its OutCfg.
                    Lab 06, on the register model
   RouterLab05Vseq  Lab 05's: backpressure, oversize packets, and routes that
                    move while packets are coming in
-  RouterLab06Vseq  this lab's: the register model's sequences, the addresses
-                   outside the map, and STATUS and INT_EN (Parts 2 to 5)
+  RouterLab06Vseq  Lab 06's: the register model's sequences, the addresses
+                   outside the map, and STATUS and INT_EN
+  RouterResetVseq  this lab's: resets with traffic in flight (Part 5)
+  RouterSaturateVseq  this lab's: both drop counters to 255 and past it
+                   (Part 6)
+  RouterLab07Vseq  this lab's two sequences, then four phases of random
+                   traffic with resets in the middle of them
 
 pyuvm has no p_sequencer, so a virtual sequence is given the environment
 when it is made, and it runs on no sequencer of its own:
@@ -25,9 +30,16 @@ make the interesting thing happen.
 
 Lab 06 adds the register helpers wr_reg(), rd_reg(), check_reg() and
 rd_all_regs(), which go through the register model, to the raw ones,
-wr() and rd(), which go around it. This is the reference solution:
-RouterLab05Vseq.body() is our Lab 05 solution, and RouterLab06Vseq.body()
-is filled in, as Parts 2 to 5 of the lab ask.
+wr() and rd(), which go around it. This is Lab 06's solution, with
+RouterLab05Vseq.body() and RouterLab06Vseq.body() filled in. Lab 07 adds
+reset() to the base sequence, and the last three sequences.
+
+Three pieces are yours to write in this lab, marked TODO: the body of
+RouterResetVseq (Part 5), the resets in RouterLab07Vseq's random phases
+(Part 5), and the body of RouterSaturateVseq (Part 6), with the lines in
+RouterLab07Vseq that run the two sequences. Their tests exist already, and
+until you write a body, its test fails on the golden router with "nothing
+was checked".
 """
 
 import random
@@ -36,8 +48,8 @@ import cocotb
 from cocotb.triggers import Lock, RisingEdge
 from pyuvm import check_t, path_t, uvm_resp_t, uvm_sequence
 
-from router_agents import (SNK_FAST, SNK_PCT, SNK_RANDOM, SNK_SLOW, ApbRwSeq, RouterOneSeq,
-                           RouterPkt, RouterRandSeq)
+from router_agents import (SNK_FAST, SNK_PCT, SNK_RANDOM, SNK_SLOW, ApbRwSeq, ResetSeq,
+                           RouterOneSeq, RouterPkt, RouterRandSeq)
 from router_ral import RegBitBashSeq, RegResetSeq, good_addr, volatile_mask
 
 CTRL, DROP_CNT, ROUTE0 = 0x04, 0x10, 0x20
@@ -71,6 +83,19 @@ class RouterBaseVseq(uvm_sequence):
         """n clock cycles; each wait ends at a rising edge."""
         for _ in range(n):
             await RisingEdge(self.env.dut.clk)
+
+    # ── Lab 07: reset ───────────────────────────────────────────────────────
+    async def reset(self, n=3):
+        """rst_n low for n cycles, through the reset driver. The first reset
+        cycle starts two cycles after the call, and this returns right after
+        the rising edge at which rst_n goes back to 1. The router comes out
+        of a reset with every register at its reset value, so CTRL.EN is 0
+        and every route is disabled, and nothing goes in until something
+        writes them again. The scoreboard sees the reset and puts its model
+        and the register model's mirror back to their reset values itself."""
+        self.logger.info(f"[VSEQ] reset for {n} cycle{'' if n == 1 else 's'}")
+        await ResetSeq("reset", n).start(self.env.sys.sqr)
+        self.route_en = 0
 
     # ── registers, raw ──────────────────────────────────────────────────────
     # One APB transfer each, as the base test's write_reg() and read_reg(),
@@ -126,9 +151,9 @@ class RouterBaseVseq(uvm_sequence):
 
     async def rd_reg(self, reg):
         """Read reg through the model, and return the value read. The
-        scoreboard checks every read of STATUS, and the predictor, once it
-        is connected (Part 3), checks every read against the mirror outside
-        the volatile fields."""
+        scoreboard checks every read of STATUS, and the predictor (connected
+        in Lab 06, Part 3) checks every read against the mirror outside the
+        volatile fields."""
         async with self.lock(reg):
             status, value = await reg.read(self.regs.map, path_t.FRONTDOOR, check_t.NO_CHECK)
         if status != uvm_resp_t.PASS_RESP:
@@ -285,14 +310,14 @@ class RouterLab05Vseq(RouterBaseVseq):
 class RouterLab06Vseq(RouterBaseVseq):
 
     async def body(self):
-        # Part 2: the reset values. The sequence reads every register with a
-        # field it can check and compares it with its reset value.
+        # Lab 06, Part 2: the reset values. The sequence reads every register
+        # with a field it can check and compares it with its reset value.
         await RegResetSeq("RegResetSeq", self.regs, self.logger).start()
 
-        # Part 3: every bit of every register written and read back. Then the
-        # router set up with raw APB writes, as Labs 04 and 05 do, and read
-        # back through the model, which knows about them only through the
-        # predictor.
+        # Lab 06, Part 3: every bit of every register written and read back.
+        # Then the router set up with raw APB writes, as Labs 04 and 05 do,
+        # and read back through the model, which knows about them only through
+        # the predictor.
         await RegBitBashSeq("RegBitBashSeq", self.regs, self.logger).start()
         await self.route(0, 1, 0)
         await self.route(1, 1, 1)
@@ -303,8 +328,8 @@ class RouterLab06Vseq(RouterBaseVseq):
         for r in self.regs.ROUTE:
             await self.check_reg(r)
 
-        # Part 4: the 246 addresses outside the map, which the model can't
-        # reach. Each must end with PSLVERR, read 0 and change nothing.
+        # Lab 06, Part 4: the 246 addresses outside the map, which the model
+        # can't reach. Each must end with PSLVERR, read 0 and change nothing.
         for a in range(256):
             if not good_addr(a):
                 await self.rd(a)
@@ -313,9 +338,9 @@ class RouterLab06Vseq(RouterBaseVseq):
                 await self.wr(a, 0xFFFF_FFFF)
         await self.rd_all_regs()
 
-        # Part 5: STATUS and INT_EN. DST 1 is disabled, so its packet is a
-        # NOROUTE drop; a 9-beat packet is OVERSIZE; and ten packets into a
-        # stalled, empty output 0 end with a FULL drop. INT_EN is 0 all the
+        # Lab 06, Part 5: STATUS and INT_EN. DST 1 is disabled, so its packet
+        # is a NOROUTE drop; a 9-beat packet is OVERSIZE; and ten packets into
+        # a stalled, empty output 0 end with a FULL drop. INT_EN is 0 all the
         # while, so irq stays 0.
         await self.route(1, 0, 0)
         self.sink(0, SNK_FAST)
@@ -340,4 +365,120 @@ class RouterLab06Vseq(RouterBaseVseq):
         await self.wr_reg(self.regs.STATUS, 0b010)
         await self.rd_reg(self.regs.STATUS)
         await self.drain()
+        await self.rd_all_regs()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Lab 07, Part 5: resets with traffic in flight. RouterResetTest runs it on its
+# own, and RouterLab07Vseq runs it in RouterTest.
+# ══════════════════════════════════════════════════════════════════════════════
+class RouterResetVseq(RouterBaseVseq):
+
+    async def setup(self):
+        """What a reset takes away: every route enabled, two DSTs to each
+        output, every interrupt enabled, and the input open."""
+        await self.route(0, 1, 0)
+        await self.route(1, 1, 1)
+        await self.route(2, 1, 0)
+        await self.route(3, 1, 1)
+        await self.wr_reg(self.regs.INT_EN, 0b111)
+        await self.ctrl(1)
+
+    async def body(self):
+        # TODO (Part 5): reset the router with traffic in flight, and let the
+        # checks see that nothing from before a reset comes out after it.
+        # Until now the router has been reset only at time 0, when it holds
+        # nothing. Start with setup(); after each reset, let the sinks take
+        # beats, call setup() again and send more. Reach at least these:
+        #
+        #   example E8: output 0 stalled with a packet waiting in its buffer,
+        #     and the next packet half accepted, when reset(2) starts
+        #     (RESET_WITH_BEATS and RESET_MID_PACKET in router_env.py). Make
+        #     that packet with RouterPkt.make(), give it a gap after its
+        #     first two beats (p.gaps[i] for i >= 2), and run send() and the
+        #     reset side by side with par(). Then make the sink fast:
+        #     nothing should come out.
+        #   a reset while register transfers are going on: a loop of
+        #     rd_reg() and wr_reg() beside a reset (rule A4)
+        #   a reset with output 1 part way through delivering an 8-beat
+        #     packet to a slow sink (SNK_SLOW)
+        #   a reset in the middle of random traffic (send_rand())
+        pass
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Lab 07, Part 6: both drop counters to 255 and past it. RouterSaturateTest
+# runs it on its own, and RouterLab07Vseq runs it in RouterTest.
+# ══════════════════════════════════════════════════════════════════════════════
+class RouterSaturateVseq(RouterBaseVseq):
+
+    async def body(self):
+        # TODO (Part 6): take both drop counters to 255 and past it, and read
+        # DROP_CNT on the way, so that these corners happen:
+        #
+        #   NOROUTE_SATURATED  a NOROUTE drop with NOROUTE_CNT already at 255
+        #   FULL_SATURATED     a FULL drop with FULL_CNT already at 255
+        #
+        # Start with reset(3), which disables every route and clears both
+        # counters. A 1-beat packet for a disabled route is one drop a cycle;
+        # a FULL drop needs its output stalled and holding more than 8 beats
+        # first. The scoreboard checks a DROP_CNT read against the drops it
+        # has counted when the read completes, which is right only when no
+        # packet is coming in, so read between bursts, never beside one.
+        # Then clear the counters with a write, and read them again.
+        pass
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Lab 07: this lab's two sequences, then four phases of random traffic, each
+# on a random configuration while both sinks change their modes. RouterTest
+# runs it last, after everything Lab 06's RouterTest ran, so nothing it draws
+# from random changes what runs before it. It takes Lab 05's backpressure()
+# from RouterLab05Vseq.
+# ══════════════════════════════════════════════════════════════════════════════
+class RouterLab07Vseq(RouterLab05Vseq):
+    n_phases = 4
+    per = 150           # packets in each phase
+
+    async def run(self, seq):
+        """Run another virtual sequence on the same environment."""
+        self.logger.info(f"[VSEQ] starting {type(seq).__name__}")
+        await seq.start()
+
+    async def random_config(self):
+        """Each route enabled four times in five (at least one of them) to a
+        random output, random interrupt enables, and the input open."""
+        while True:
+            en = [int(random.randrange(100) < 80) for _ in range(4)]
+            if any(en):
+                break
+        for n in range(4):
+            await self.route(n, en[n], random.randrange(2))
+        await self.wr_reg(self.regs.INT_EN, random.randrange(8))
+        await self.ctrl(1)
+
+    async def body(self):
+        # TODO (Parts 5 and 6): run RouterResetVseq and RouterSaturateVseq
+        # here, with await self.run(RouterResetVseq("reset", self.env)) and
+        # the same for RouterSaturateVseq.
+        for ph in range(1, self.n_phases + 1):
+            do_reset = False
+            # TODO (Part 5): set do_reset in about half the phases after the first.
+            self.logger.info(f"[VSEQ] random phase {ph} of {self.n_phases}: {self.per} packets"
+                             f"{', with a reset' if do_reset else ''}")
+            await self.random_config()
+            self.traffic_done = False
+
+            async def traffic():
+                await self.send_rand(self.per, gap_one_in=5, w_over=10)
+                self.traffic_done = True
+
+            # TODO (Part 5): a third thread, run beside the other two, that
+            # if do_reset is True waits 30 to 300 cycles, resets the router
+            # for 1 to 4 cycles, and sets up a random configuration again
+            # (random_config()).
+            await self.par(traffic(), self.backpressure())
+            await self.drain()
+            await self.rd(DROP_CNT)
+            await self.wr(DROP_CNT, 0)
         await self.rd_all_regs()

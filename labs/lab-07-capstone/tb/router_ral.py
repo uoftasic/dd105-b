@@ -1,18 +1,19 @@
 """
-DD105-B Lab 06: the router's register layer, on pyuvm 4.0.1.
+DD105-B Lab 07: the router's register layer, on pyuvm 4.0.1. Lab 06's
+solution, unchanged apart from these comments.
 
   IdReg ... RouteReg  the router's registers, one class each (the four
                       ROUTE registers share RouteReg), with the fields of
                       router-spec.md's "Register map"
   RouterRegs          the register model: the ten registers in one map
-  ApbRegAdapter       a register operation to one ApbItem, and back (Part 2)
+  ApbRegAdapter       a register operation to one ApbItem, and back (Lab 06)
   RouterRegPredictor  keeps the model's mirror in step with every transfer
-                      the APB monitor sees, and checks every read (Part 3)
+                      the APB monitor sees, and checks every read (Lab 06)
   RegSeq              what the two register sequences share
   RegResetSeq         reads every register it can check and compares it
-                      with its reset value (Part 2)
+                      with its reset value (Lab 06)
   RegBitBashSeq       writes every bit outside a volatile field both ways
-                      and reads it back (Part 3)
+                      and reads it back (Lab 06)
 
 pyuvm has the classes for the model, the map and the adapter, and nothing
 that keeps the mirror up to date: its uvm_reg_predictor class is empty,
@@ -24,9 +25,9 @@ This file imports nothing from the course venv, so `make regcheck`, and the
 graders before every verdict, can build RouterRegs with the image's own
 Python.
 
-This is the reference solution: the fields of STATUS, DROP_CNT, LEVEL and
-the ROUTE registers, the adapter, the predictor's write() and both
-sequences' body() are filled in, as Parts 2 and 3 of the lab ask.
+The fields of STATUS, DROP_CNT, LEVEL and the ROUTE registers, the adapter,
+the predictor's write() and both sequences' body() are filled in, as Lab
+06's Parts 2 and 3 asked. Nothing in this file is left for you to write.
 """
 
 from pyuvm import (access_e, check_t, path_t, uvm_predict_e, uvm_reg, uvm_reg_adapter,

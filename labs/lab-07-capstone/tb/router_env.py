@@ -1,34 +1,41 @@
 """
-DD105-B Lab 06: the scoreboard, the coverage and the environment.
+DD105-B Lab 07: the scoreboard, the coverage and the environment.
 
-  Fwd                 one input of a component that has several
-  PktRecord           what happened to one input packet, for the coverage
-  RegChange           what changes STATUS and INT_EN in one cycle (Lab 06)
-  RouterScoreboard    Lab 03's scoreboard and tracker in one component, fed by
-                      the monitors' analysis ports
-  RouterCoverage      Lab 03's coverage, as a subscriber, with an oversize
-                      bin (Lab 05)
-  RouterWaitCoverage  how long output beats waited (Lab 05)
-  RouterEnv           makes the agents, the scoreboard, the coverage and the
-                      register model, and connects them
+  Fwd                   one input of a component that has several
+  PktRecord             what happened to one input packet, for the coverage
+  RegChange             what changes STATUS and INT_EN in one cycle (Lab 06)
+  RouterScoreboard      Lab 03's scoreboard and tracker in one component, fed
+                        by the monitors' analysis ports
+  RouterCoverage        Lab 03's coverage, as a subscriber, with an oversize
+                        bin (Lab 05)
+  RouterWaitCoverage    how long output beats waited (Lab 05)
+  RouterCornerCoverage  the four corners the scoreboard counts (Lab 07)
+  RouterEnv             makes the agents, the scoreboard, the coverage and
+                        the register model, and connects them
 
-This is our Lab 05 solution with Lab 06's additions, each marked "Lab 06":
-the scoreboard models STATUS and INT_EN cycle by cycle, from the sys
-monitor's samples, and checks every read of STATUS, PSLVERR on every
-transfer, the data of every read of a bad address, and irq in every cycle;
-and the env makes the register model, its adapter and its predictor. Lab
-05's additions are still marked "Lab 05".
+This is Lab 06's solution: the irq check in write_sys() and the predictor's
+connections in RouterEnv.connect_phase() are filled in. Lab 06's additions
+are still marked "Lab 06".
 
-This is the reference solution: the irq check in write_sys() (Part 5) and
-the predictor's connections in RouterEnv.connect_phase() (Part 3) are
-filled in.
+Lab 07 lets the testbench reset the router in the middle of a test, so the
+scoreboard follows a reset with traffic in flight: in the first cycle of a
+reset it throws away every beat it expected, the packet coming in and the
+route writes it was holding, sets its routing table, levels and drop counts
+back to their reset values, and puts the register model's mirror back to
+its reset values too (reset_model()). It counts four corners for the
+coverage (RouterCornerCoverage): a reset with beats still to come out, a
+reset with a packet half accepted, and a drop of each kind with its counter
+already at 255. The environment makes the sys agent, which has the reset
+driver, in place of Lab 06's lone sys monitor, and the ResetState the
+drivers share. Lab 07's additions are marked "Lab 07". Nothing in this file
+is left for you to write.
 """
 
 from cocotb.triggers import Event
 from cocotb_coverage.coverage import CoverCross, CoverPoint, coverage_db
 from pyuvm import ConfigDB, uvm_analysis_port, uvm_component, uvm_env, uvm_subscriber
 
-from router_agents import ApbAgent, OutAgent, SrcAgent, SysMonitor
+from router_agents import ApbAgent, OutAgent, ResetState, SrcAgent, SysAgent
 from router_ral import ApbRegAdapter, RouterRegPredictor, RouterRegs, good_addr
 
 # Register addresses (router-spec.md, Register map).
@@ -36,6 +43,13 @@ STATUS, INT_EN, DROP_CNT, ROUTE0 = 0x08, 0x0C, 0x10, 0x20
 
 # Lab 03's fates, in Lab 03's order: the coverage's router.pkt.fate bins are 0 to 3.
 NOROUTE, FULL, OUT0, OUT1 = 0, 1, 2, 3
+
+# Lab 07: the corners the scoreboard counts, in the order of router.corner's bins.
+RESET_WITH_BEATS = 0        # a reset with beats still to come out of an output (E8)
+RESET_MID_PACKET = 1        # a reset with a packet half accepted
+NOROUTE_SATURATED = 2       # a NOROUTE drop with NOROUTE_CNT already at 255
+FULL_SATURATED = 3          # a FULL drop with FULL_CNT already at 255
+CORNERS = ["reset_with_beats", "reset_mid_packet", "noroute_saturated", "full_saturated"]
 
 
 class Fwd(uvm_subscriber):
@@ -81,6 +95,8 @@ class PktRecord:
 # packets and the APB writes; and checks on every transfer's PSLVERR and on
 # every read of STATUS and of a bad address. The register model's predictor
 # checks the other registers' reads.
+#
+# Lab 07 adds reset_model(), for a reset after time 0, and the four corners.
 
 class RegChange:
     """Lab 06: what changes STATUS and INT_EN in one cycle."""
@@ -101,6 +117,7 @@ class RouterScoreboard(uvm_component):
         self.apb_imp = Fwd("apb_imp", self, self.write_apb)
         self.sys_imp = Fwd("sys_imp", self, self.write_sys)     # Lab 06
         self.fate_ap = uvm_analysis_port("fate_ap", self)
+        self.corner_ap = uvm_analysis_port("corner_ap", self)   # Lab 07
         self.stop = Event()             # set at the MAX_ERRORS-th error; the test then ends
         self.n_err = 0
         # The routing table, as written over APB (reset: every route disabled).
@@ -150,6 +167,12 @@ class RouterScoreboard(uvm_component):
         self.n_bad = 0                  # transfers to bad addresses
         self.n_irq_checked = 0          # cycles irq was checked in
         self.n_irq_bad = 0              # ... and was wrong in
+        # Lab 07: resets after the one at time 0, and the corners.
+        self.regs = None                # the register model; the env sets it
+        self.in_reset = True            # the cycle before was a reset cycle; the run starts in reset
+        self.n_resets = 0               # resets after the one at time 0
+        self.n_lost = 0                 # beats they threw away
+        self.n_corner = [0, 0, 0, 0]    # how often each corner happened
 
     def error(self, msg):
         self.n_err += 1
@@ -191,10 +214,14 @@ class RouterScoreboard(uvm_component):
             self.in_port = None
             if not self.route_en[dst]:
                 self.cur.fate = NOROUTE
+                if self.noroute_cnt >= 255:
+                    self.corner(NOROUTE_SATURATED)      # Lab 07
                 self.noroute_cnt += 1
                 self.status_event(b.cycle, 0b001)       # Lab 06: STATUS.NOROUTE
             elif self.cur.level > 8:
                 self.cur.fate = FULL
+                if self.full_cnt >= 255:
+                    self.corner(FULL_SATURATED)         # Lab 07
                 self.full_cnt += 1
                 self.status_event(b.cycle, 0b010)       # Lab 06: STATUS.FULL
             else:
@@ -319,12 +346,54 @@ class RouterScoreboard(uvm_component):
         whose enable is set is 1, with no delay."""
         return int(self.status & self.int_en != 0)
 
+    # ── Lab 07: resets and corners ──────────────────────────────────────────
+    def corner(self, k):
+        """A corner happened: count it and tell the corner coverage."""
+        self.n_corner[k] += 1
+        self.corner_ap.write(k)
+
+    def reset_model(self, c):
+        """The first cycle of a reset after the one at time 0. Every beat in
+        the router is gone, the beats a sink was part way through included
+        (router-spec.md, Reset), and so is the configuration. No monitor
+        reports a beat or a transfer in a reset cycle, and every one from the
+        cycles before has been reported by now, so nothing reported later is
+        from before the reset."""
+        lost = self.outstanding()
+        self.n_resets += 1
+        self.n_lost += lost
+        if lost > 0:
+            self.corner(RESET_WITH_BEATS)
+        if self.in_beats > 0:
+            self.corner(RESET_MID_PACKET)
+        self.logger.info(f"[SB] reset from cycle {c}: {lost} expected beat{' is' if lost == 1 else 's are'} "
+                         f"lost, {self.in_beats} beat{'' if self.in_beats == 1 else 's'} of the packet "
+                         "coming in")
+        for p in (0, 1):
+            self.expected[p].clear()
+            self.written[p] = 0
+            self.taken[p] = 0
+            self.last_take[p] = 0
+        self.in_beats = 0
+        self.in_port = None
+        self.cur = None
+        self.pending.clear()
+        self.route_en = [0, 0, 0, 0]
+        self.route_port = [0, 0, 0, 0]
+        self.noroute_cnt = 0
+        self.full_cnt = 0
+        self.regs.map.reset("HARD")
+
     def write_sys(self, s):
         """rst_n and irq in cycle s.cycle, from the sys monitor. In a reset
-        cycle every register is at its reset value. The tests reset the
-        router only at time 0, before anything has happened, so this resets
-        STATUS and INT_EN and nothing else in the scoreboard."""
+        cycle every register is at its reset value. Lab 06 reset the router
+        only at time 0, before anything had happened, so this reset only
+        STATUS and INT_EN; for a reset after that, Lab 07's reset_model()
+        does the rest."""
         if not s.rst_n:
+            if not self.in_reset:
+                self.reset_model(s.cycle)       # Lab 07
+            self.in_reset = True
             self.changes.clear()
             self.status = 0
             self.int_en = 0
@@ -335,6 +404,7 @@ class RouterScoreboard(uvm_component):
             if s.irq:
                 self.error(f"irq is 1 in cycle {s.cycle}, a reset cycle")
             return
+        self.in_reset = False                   # Lab 07
         self.advance(s.cycle)
         # irq follows STATUS and INT_EN with no delay, so it's checked against
         # the model's registers in this cycle. A wrong irq is reported in the
@@ -377,6 +447,10 @@ class RouterScoreboard(uvm_component):
         self.logger.info(f"[SB] registers: {self.n_reads} reads, {self.n_status} of STATUS checked; "
                          f"{self.n_bad} transfers to bad addresses; irq checked in "
                          f"{self.n_irq_checked} cycles, wrong in {self.n_irq_bad}")      # Lab 06
+        c = self.n_corner
+        self.logger.info(f"[SB] resets: {self.n_resets} after the one at time 0, {self.n_lost} expected "
+                         f"beats lost; corners hit: "
+                         + " ".join(f"{CORNERS[k]}={c[k]}" for k in range(4)))     # Lab 07
         if self.n_unwatched:
             self.logger.info(f"[SB] {self.n_unwatched} beats went to output 1, which nothing watches")
 
@@ -410,7 +484,7 @@ def sample_pkt(rec):
 
 class RouterCoverage(uvm_subscriber):
     """Samples each PktRecord the scoreboard writes to its fate_ap, and writes
-    coverage.xml (both groups) into the run's folder at the end, where
+    coverage.xml (every group) into the run's folder at the end, where
     `make cov` finds it."""
 
     def write(self, rec):
@@ -419,8 +493,10 @@ class RouterCoverage(uvm_subscriber):
     def report_phase(self):
         coverage_db.export_to_xml("coverage.xml")
         pkt, wait = coverage_db["router.pkt"], coverage_db["router.wait"]
+        corner = coverage_db["router.corner"]                   # Lab 07
         self.logger.info(f"[COV] router.pkt: {pkt.coverage} of {pkt.size} bins hit; router.wait: "
-                         f"{wait.coverage} of {wait.size}; coverage.xml written")
+                         f"{wait.coverage} of {wait.size}; router.corner: {corner.coverage} of "
+                         f"{corner.size}; coverage.xml written")
 
 
 # Lab 05: backpressure. For each packet an output delivers, the longest any of
@@ -454,26 +530,51 @@ class RouterWaitCoverage(uvm_subscriber):
             self.max_wait[b.port] = 0
 
 
+# Lab 07: the four corners the scoreboard counts, one bin each, in the order
+# of CORNERS. A test that never resets with traffic in flight, or never takes
+# a counter to 255, leaves its bins empty. DD105-A's cg_corner. With these 4,
+# the coverage has 60 bins.
+
+@CoverPoint("router.corner.kind", xf=lambda k: k, bins=[0, 1, 2, 3], bins_labels=CORNERS)
+def sample_corner(k):
+    pass
+
+
+class RouterCornerCoverage(uvm_subscriber):
+    """Samples router.corner for each corner the scoreboard writes to its
+    corner_ap."""
+
+    def write(self, k):
+        sample_corner(k)
+
+
 # ── the environment ──────────────────────────────────────────────────────────
 # Lab 03's Env built its pieces in its constructor and handed them queues.
 # Here build_phase makes them through the factory, and connect_phase joins
 # each monitor's analysis port to the scoreboard. Lab 06 adds the sys
 # monitor and the register layer: the model, which isn't a component, its
-# adapter, and the predictor.
+# adapter, and the predictor. Lab 07 puts the sys monitor in a sys agent
+# with the reset driver, and adds the corner coverage.
 
 class RouterEnv(uvm_env):
     def build_phase(self):
         self.dut = ConfigDB().get(self, "", "DUT")
+        # Lab 07: the warning the reset driver gives the APB and source
+        # drivers, in ConfigDB before they are made.
+        self.rst = ResetState()
+        ConfigDB().set(self, "*", "RESET", self.rst)
         self.src = SrcAgent.create("src", self)
         self.apb = ApbAgent.create("apb", self)
         self.out = [OutAgent.create("out0", self), OutAgent.create("out1", self)]
         self.sb = RouterScoreboard.create("sb", self)
         self.cov = RouterCoverage.create("cov", self)
         self.wcov = RouterWaitCoverage.create("wcov", self)     # Lab 05
+        self.ccov = RouterCornerCoverage.create("ccov", self)   # Lab 07
         # Lab 06: rst_n and irq every cycle, and the register layer. The
         # router is reset at time 0, before anything reaches it, so the
-        # model's mirror starts at the reset values.
-        self.sys_mon = SysMonitor.create("sys_mon", self)
+        # model's mirror starts at the reset values. Lab 07: the sys agent
+        # has the sys monitor and the reset driver.
+        self.sys = SysAgent.create("sys", self)
         self.regs = RouterRegs("regs")
         self.regs.map.reset("HARD")
         self.adapter = ApbRegAdapter("adapter")
@@ -490,13 +591,17 @@ class RouterEnv(uvm_env):
         # Lab 06: the scoreboard's STATUS, INT_EN and irq model, and the map,
         # which sends each register operation through the adapter to the APB
         # agent's sequencer.
-        self.sys_mon.ap.connect(self.sb.sys_imp.analysis_export)
+        self.sys.mon.ap.connect(self.sb.sys_imp.analysis_export)
         self.regs.map.set_sequencer(self.apb.sqr)
         self.regs.map.set_adapter(self.adapter)
-        # Part 3: the predictor keeps the mirror in step with every transfer
-        # on the bus, whoever started it, and checks every read against it.
+        # Lab 06, Part 3: the predictor keeps the mirror in step with every
+        # transfer on the bus, whoever started it, and checks every read
+        # against it.
         self.predictor.regs = self.regs
         self.apb.mon.ap.connect(self.predictor.analysis_export)
+        # Lab 07: the corners, and the model the scoreboard resets.
+        self.sb.corner_ap.connect(self.ccov.analysis_export)
+        self.sb.regs = self.regs
 
     async def run_phase(self):
         # An output with no agent has nothing driving its out_ready. Hold it

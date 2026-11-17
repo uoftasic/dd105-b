@@ -1,10 +1,10 @@
-// DD105-A Lab 07: attach the assertions to every router.
+// DD105-B Lab 07: attach the assertions to every router.
 //
 // The bind puts one router_sva, named u_sva, inside the router module, wired
 // to the router's own ports. The router's RTL doesn't change, and the same
-// bind works on the golden design and on the faulty build. The top module
-// reads u_sva.n_fail (the number of assertion failures so far) through the
-// router instance, dut.u_sva.n_fail.
+// bind works on the golden design and on the faulty build. The router is
+// cocotb's top level, so Python reads u_sva.n_fail (the number of assertion
+// failures so far) as cocotb.top.u_sva.n_fail.
 //
 // This is Lab 05's bind. Lab 07 adds the APB port and irq, which the rules
 // about reset need.

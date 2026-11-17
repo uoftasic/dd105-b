@@ -53,6 +53,8 @@ Does the port do what the Lab 03 testbench did, and which of this lab's bugs doe
    ```text
     built /foss/designs/modules/dd105-b/labs/lab-04-the-same-testbench-in-pyuvm/build/sim_build/Vtop in 2.2 s (1.9M in /foss/designs/modules/dd105-b/labs/lab-04-the-same-testbench-in-pyuvm/build/sim_build)
     ccache:  Hits: 23 / 35 (65.71%)  Misses: 12 / 35 (34.29%)
+   ========================================================================
+    /foss/designs/modules/dd105-b/labs/lab-04-the-same-testbench-in-pyuvm/build/sim_build/Vtop is up to date.
    ```
 
    This is the same router as in Labs 02 and 03. Our counts include the builds of Labs 01 to 03,
@@ -95,11 +97,11 @@ Does the port do what the Lab 03 testbench did, and which of this lab's bugs doe
    DD105-B BaseTest: 0 errors logged, no bound assertions
    ```
 
-   and `ok: 0 errors   3.61 s`. After the time and the level, each line names the file and line of
+   and `ok: 0 errors   3.61 s`. After the time and `INFO`, each line names the file and line of
    the logging call and then, in brackets, the component that logged it: `uvm_test_top` is the
-   test, and `uvm_test_top.env.sb` is the scoreboard. The `[DROP]` line comes from Lab 03's `DROP_CNT` check,
-   which the scoreboard now does: it compares every read of `DROP_CNT` that the APB monitor reports
-   with the drops it predicted.
+   test, and `uvm_test_top.env.sb` is the scoreboard. The `[DROP]` line comes from Lab 03's
+   `DROP_CNT` check, which the scoreboard now does: it compares every read of `DROP_CNT` that the
+   APB monitor reports with the drops it predicted.
 
    The default test is `RouterInjectTest`, which for now does what `RouterRandTest` does: Lab 03's
    four phases and its `close_holes()`. The second run prints:
@@ -235,10 +237,11 @@ Does the port do what the Lab 03 testbench did, and which of this lab's bugs doe
 
    B13 changes a packet's fate only when one output holds more than 8 beats and the other 8 or
    fewer. In the random phases both outputs are always ready, so neither holds more than a beat or
-   two (Lab 02's test reports a highest level of 2). In `close_holes()` output 0 fills, but the
-   packet for DST 0 arrives at exactly 8, which B13 admits too, because output 1 is empty, and the
-   last packet goes to a disabled route, which is a NOROUTE drop either way. No packet for an
-   enabled route met an output holding more than 8 beats, which is also why `full` was never hit.
+   two (`RouterClassTest` reported a highest level of 2 in step 3). In `close_holes()` output 0
+   fills, but the packet for DST 0 arrives at exactly 8, which B13 admits too, because output 1 is
+   empty, and the last packet goes to a disabled route, which is a NOROUTE drop either way. No
+   packet for an enabled route met an output holding more than 8 beats, which is also why `full`
+   was never hit.
 
    </details>
 
@@ -491,8 +494,8 @@ makes them or the driver that sends them?
    different packets.
 
    The override reaches every packet the factory makes, wherever it's made. `close_holes()` picks
-   the DST of its two random packets itself, so it needs both to be plain `RouterPkt`s. It makes
-   them in `new_packet()` with the constructor, `RouterPkt("pkt")`, which the override can't reach.
+   the DST of its two random packets itself, so it makes both as plain `RouterPkt`s, in
+   `new_packet()` with the constructor, `RouterPkt("pkt")`, which the override can't reach.
    When we made them with `create()` instead, `RouterInjectTest` ended `BROKEN: SolveFailure` on 2
    of seeds 1 to 20. The packet for DST 0 was then a `NoroutePkt`, and whenever `pre_randomize()`
    set its `to_disabled`, no DST could meet both its `c_dst` and `hdr_dst == 0`, since `ROUTE0` is
@@ -611,7 +614,8 @@ makes them or the driver that sends them?
    The seven empty bins are the ones no test can hit, so this is as far as the percentage goes.
    The stall test's FULL drops hit the three bins of Part 1's second group. The two bins of the
    third group are hit because `level()` now gives output 1's real level. The five bins of the
-   fourth group are hit now that `RouterInjectTest` sends packets to disabled routes while one output is stalled.
+   fourth group are hit now that `RouterInjectTest` sends packets to disabled routes while one
+   output is stalled.
 
 Check: `2 of 2 caught.` from `make check-all`, and the bin `full` hit.
 

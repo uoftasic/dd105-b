@@ -7,7 +7,7 @@
 #   scripts/ci/in-image.sh scripts/ci/check-labs.sh venv
 #   scripts/ci/in-image.sh scripts/ci/check-labs.sh selftest
 #   scripts/ci/in-image.sh scripts/ci/check-labs.sh ref
-#   scripts/ci/in-image.sh scripts/ci/check-labs.sh lab lab-02-a-layered-testbench-without-pyuvm
+#   scripts/ci/in-image.sh scripts/ci/check-labs.sh lab lab-01-one-alu-two-frameworks
 #
 #   venv        `make venv`: the course venv (pyvsc, cocotb-coverage), made from
 #               scratch in the clone unless it is already there
@@ -97,7 +97,7 @@ restore_starter() {
 }
 
 step_lab() {
-  local lab=${1:?which lab? for example lab-02-a-layered-testbench-without-pyuvm}
+  local lab=${1:?which lab? for example lab-01-one-alu-two-frameworks}
   LABDIR=labs/$lab
   [ -f "$LABDIR/Makefile" ] && [ -d "$LABDIR/solutions" ] || fail "$lab: no Makefile or no solutions/"
 

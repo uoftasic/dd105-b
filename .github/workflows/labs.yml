@@ -4,7 +4,7 @@
 # labs/ref's `make check-all` must catch all 15 planted bugs, with its
 # RouterAllTest passing the golden router on seeds 1 to 5. Each lab has a
 # step that checks its starter's `make check` FAILS (its test passes the
-# lab's bug) and its solution's PASSES, as in DD105-A; so far Labs 01 and 02 have one.
+# lab's bug) and its solution's PASSES, as in DD105-A; so far Labs 01 to 03 have one.
 # scripts/ci/check-labs.sh is each check, and scripts/ci/in-image.sh runs it
 # in the course image, so every step below can be rehearsed on any machine
 # with Docker by running the same command.
@@ -33,8 +33,10 @@
 # so a warm ccache saves it little. Lab 01's step, rehearsed on its own on
 # Nov 16 on ieee-asic-1 in the same image and limits, took 11 s with an empty
 # ccache and 3 s with a warm one, and Lab 02's, rehearsed the same way, 10 s
-# and 2 s. Add the free-disk step and the pull of the image, which a local
-# rehearsal can't measure.
+# and 2 s. Lab 03's, rehearsed the same way after the venv step, took 26 s
+# and 17 s: its four runs of router_rand_test take 3 to 5 s each, because
+# the packets come from pyvsc. Add the free-disk step and the pull of the
+# image, which a local rehearsal can't measure.
 #
 # The weekly run catches breakage from outside the repo: a digest Docker Hub
 # stops serving, a pinned package PyPI stops serving, or a change to GitHub's
@@ -142,6 +144,13 @@ jobs:
       - name: Lab 02
         if: success() || failure()
         run: scripts/ci/in-image.sh scripts/ci/check-labs.sh lab lab-02-a-layered-testbench-without-pyuvm | tee -a "$RUNNER_TEMP/ci.log"
+
+      # The starter's random packets never reach a NOROUTE drop at a full
+      # output, so its make check must miss B07 (a FULL drop counted as well);
+      # the solution's close_holes() must catch it. It needs the course venv.
+      - name: Lab 03
+        if: success() || failure()
+        run: scripts/ci/in-image.sh scripts/ci/check-labs.sh lab lab-03-constraints-and-coverage | tee -a "$RUNNER_TEMP/ci.log"
 
       - name: Summary
         if: success() || failure()

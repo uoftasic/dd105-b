@@ -13,6 +13,7 @@
 #   scripts/ci/in-image.sh scripts/ci/check-labs.sh lab lab-04-the-same-testbench-in-pyuvm
 #   scripts/ci/in-image.sh scripts/ci/check-labs.sh lab lab-05-protocol-rules-and-backpressure
 #   scripts/ci/in-image.sh scripts/ci/check-labs.sh lab lab-06-the-register-block
+#   scripts/ci/in-image.sh scripts/ci/check-labs.sh lab lab-07-capstone
 #
 #   venv        `make venv`: the course venv (pyvsc, cocotb-coverage), made from
 #               scratch in the clone unless it is already there
@@ -149,5 +150,5 @@ case "${1:-}" in
   selftest) step_selftest ;;
   ref)      step_ref ;;
   lab)      step_lab "${2:-}" ;;
-  *)        sed -n '2,34p' "$0"; exit 2 ;;
+  *)        sed -n '2,35p' "$0"; exit 2 ;;
 esac

@@ -60,8 +60,8 @@ inputs there ([Ports](router-spec.md#ports), [Cycles and handshakes](router-spec
 | Output 1 | `out1_ready` | `out1_valid`, `out1_data[7:0]`, `out1_last` | the same as output 0 |
 
 A **handshake** happens in a cycle where `valid` and `ready` are both 1, and the beat moves at the
-rising edge that ends that cycle. The course's testbenches change inputs 1 ns after a rising edge
-and sample at the falling edge, so nothing changes at the moment it's sampled.
+rising edge that ends that cycle. The course's Python testbenches change inputs right after a rising
+edge and sample at the falling edge, so nothing changes at the moment it's sampled.
 
 Verilator has only the values 0 and 1, so a `data` signal whose `valid` is low still holds
 whatever it last carried. Never compare `out0_data` or `out0_last` in a cycle where `out0_valid` is

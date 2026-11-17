@@ -62,8 +62,8 @@ What does your Lab 05 testbench check about the registers?
     /foss/designs/modules/dd105-b/labs/lab-06-the-register-block/build/sim_build/Vtop is up to date.
    ```
 
-   Our counts include the builds of Labs 01 to 05, which came to 35 hits and 14 misses, so this
-   build's own were 6 hits and 1 miss.
+   Our counts include the builds of Labs 01 to 05, with Lab 05's rebuild after its Part 2, which
+   came to 35 hits and 14 misses, so this build's own were 6 hits and 1 miss.
 
 2. Run the graded test, `RouterTest`, and pull the scoreboard's summary out of the log:
 
@@ -409,9 +409,8 @@ sequence test?
    `DROP_CNT` from Labs 04 and 05.
 
 4. Write `RegBitBashSeq.body()` in `tb/router_ral.py`. For every bit that isn't in a volatile
-   field, twice, it writes the register with that bit flipped from the mirror, takes the mirror
-   (which your predictor has just moved), reads the register back, and compares the value read
-   with the mirror it took. Take the mirror before the read: once the read completes, your
+   field, twice, it writes the register with that bit flipped from the mirror, takes the mirror,
+   reads the register back, and compares the value read with the mirror it took. Take the mirror before the read: once the read completes, your
    predictor puts the value read in the mirror, and a sequence that compared with it then would
    be comparing the value read with itself. Then write the first Part 3 `TODO` of
    `RouterLab06Vseq`, which runs the bit bash before the raw writes. Run the test and look at

@@ -15,6 +15,8 @@ Package: [`labs/lab-07-capstone/`](https://github.com/uoftasic/dd105-b/tree/main
 ## Before you start
 
 - Finish [Lab 06](lab-06-the-register-block-overview.md).
+- Read [Verification plans and sign-off](../guide/verification-plans-and-sign-off.md) and
+  [Writing the verification report](../guide/writing-the-verification-report.md).
 - Keep [the router's specification](../reference/router-spec.md) open for the whole lab, with
   [the router in one page](../reference/the-router-in-one-page.md) beside it if you like. The plan
   you write in Part 2 is a list of the specification's rules.

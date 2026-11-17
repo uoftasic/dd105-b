@@ -22,6 +22,8 @@ Package: [`labs/lab-03-constraints-and-coverage/`](https://github.com/uoftasic/d
   cp ../lab-02-a-layered-testbench-without-pyuvm/tb/monitor.py ../lab-02-a-layered-testbench-without-pyuvm/tb/scoreboard.py tb/
   ```
 
+- Read [Constrained random with pyvsc](../guide/constrained-random-with-pyvsc.md) and
+  [Functional coverage you can read](../guide/functional-coverage-you-can-read.md).
 - Keep the [router specification](../reference/router-spec.md) open, and read its
   [Routing](../reference/router-spec.md#routing) section again, because this lab is about the level
   of an output and what the router does with a packet at each level.

@@ -17,6 +17,8 @@ Package: [`labs/lab-06-the-register-block/`](https://github.com/uoftasic/dd105-b
 ## Before you start
 
 - Finish [Lab 05](lab-05-protocol-rules-and-backpressure-overview.md).
+- Read [Register models in pyuvm](../guide/register-models-in-pyuvm.md) and
+  [Regressions and seeds](../guide/regressions-and-seeds.md).
 - Keep the router specification open at its
   [Register map](../reference/router-spec.md#register-map), [APB](../reference/router-spec.md#apb),
   [STATUS](../reference/router-spec.md#status), [INT_EN](../reference/router-spec.md#int_en) and

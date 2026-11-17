@@ -15,6 +15,9 @@ Package: [`labs/lab-05-protocol-rules-and-backpressure/`](https://github.com/uof
 ## Before you start
 
 - Finish [Lab 04](lab-04-the-same-testbench-in-pyuvm-overview.md).
+- Read [Assertions for interface rules](../guide/assertions-for-interface-rules.md),
+  [Reactive agents and backpressure](../guide/reactive-agents-and-backpressure.md) and
+  [Virtual sequences](../guide/virtual-sequences.md).
 - Keep the router specification open at
   [Valid/ready rules](../reference/router-spec.md#validready-rules). The rule names on this page
   (I1, I2, O1, O2, O6, O7 and O8) are the ones defined there.

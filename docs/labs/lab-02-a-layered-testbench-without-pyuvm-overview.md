@@ -12,6 +12,8 @@ Package: [`labs/lab-02-a-layered-testbench-without-pyuvm/`](https://github.com/u
 
 - Finish [Lab 01](lab-01-one-alu-two-frameworks-overview.md). This lab uses the same `make`
   targets, the same terminal and the same course folder.
+- Read [Python classes and cocotb concurrency](../guide/python-classes-and-cocotb-concurrency.md)
+  and [Driving and sampling on the clock](../guide/driving-and-sampling-on-the-clock.md).
 - Read [The router in one page](../reference/the-router-in-one-page.md), and keep the
   [specification](../reference/router-spec.md) open. You'll use its Cycles and handshakes, Packets,
   Routing and The outputs sections, and the stream rules under Valid/ready rules.

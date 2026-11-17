@@ -29,7 +29,7 @@ chosen when you run, so changing them never rebuilds.
 ## The course venv
 
 pyvsc (constrained random) and cocotb-coverage (functional coverage) aren't in the image. From
-Lab 03 on, the labs use them from a venv that one target makes:
+Lab 03 on, the labs use them, and so does `labs/ref`, from a venv that one target makes:
 
 ```bash
 make venv          # from any lab folder, once
@@ -110,8 +110,9 @@ Every run also gets `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`. cocotb 2.0.1 sets up pyt
 rewriting before it imports the tests, and pytest then loads every installed pytest plugin; one of
 the image's imports siliconcompiler. The course research measured 8.6 to 9.8 s for one `make` run of
 a short router test with the plugins and 4.7 to 5.7 s without, through cocotb's makefiles. Started
-directly with the plugins off, `make run TEST=RouterSmokeTest` in `labs/ref` took 0.46 s of wall
-time, twice, after a first run of 1.11 s.
+directly with the plugins off, `make run TEST=RouterSmokeTest` in `labs/ref` took 2.24 s of wall
+time, twice, after a first run of 4.18 s, and 1.5 s of that is importing pyvsc (`python -c "import
+vsc"` took 1.525 s in the venv).
 
 `COCOTB_TEST_FILTER` is set to `(^|\.)<TEST>$`, so `TEST=RouterRandTest` runs that test and not
 `RouterRandTestLong`. cocotb's own makefile pastes the filter into a shell line without quotes, so a

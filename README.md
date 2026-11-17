@@ -48,11 +48,11 @@ scripts/ci/in-image.sh make -C labs/ref check-all   # the reference environment 
 the labs are done.
 
 `.github/workflows/labs.yml` checks the reference solutions in the course image: it makes the
-course venv, then `labs/common/selftest` must pass and `labs/ref` must catch all fifteen bugs. The
-labs will each get a step that requires the starter's `make check` to fail and the solution's to
-pass. It runs on changes to `labs/`, its scripts in `scripts/ci/` and itself, every Monday, and by
-hand. Each step is one command you can run locally, for example
-`scripts/ci/in-image.sh scripts/ci/check-labs.sh ref`.
+course venv, then `labs/common/selftest` must pass, and `labs/ref` must catch all fifteen bugs and
+pass the golden router on seeds 1 to 5. The labs will each get a step that requires the starter's
+`make check` to fail and the solution's to pass. It runs on changes to `labs/`, its scripts in
+`scripts/ci/` and itself, every Monday, and by hand. Each step is one command you can run locally,
+for example `scripts/ci/in-image.sh scripts/ci/check-labs.sh ref`.
 
 ## Docs
 

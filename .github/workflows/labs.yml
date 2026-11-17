@@ -1,7 +1,8 @@
 # The reference solutions, checked in the course image.
 #
 # labs/common's selftest must pass with every grader run end to end, and
-# labs/ref's `make check-all` must catch all 15 planted bugs. The labs come
+# labs/ref's `make check-all` must catch all 15 planted bugs, with its
+# RouterAllTest passing the golden router on seeds 1 to 5. The labs come
 # later; each will get a step that checks its starter's `make check` FAILS
 # (its test passes the lab's bug) and its solution's PASSES, as in DD105-A.
 # scripts/ci/check-labs.sh is each check, and scripts/ci/in-image.sh runs it
@@ -25,10 +26,12 @@
 # Time: one job, the checks one after another. Rehearsed on Nov 16, 2026 on a
 # local machine in asic-edu/gui-rig:2026.08 (the course image with X11 layers
 # added), with the same commands and limits, every check passing. With no
-# venv and an empty ccache: venv 14 s, selftest 38 s, labs/ref 16 s. Again
-# with the venv and the ccache that run left: 3 s, 31 s and 14 s. Add the
-# free-disk step and the pull of the image, which a local rehearsal can't
-# measure.
+# venv and an empty ccache: venv 13 s, selftest 37 s, labs/ref 1 min 37 s.
+# Again with the venv and the ccache that run left: 4 s, 31 s and 1 min 37 s.
+# labs/ref's step is check-all, 16 runs that took 55 to 60 s when run by
+# themselves, and five runs of RouterAllTest (37 s); its build is 8 s cold,
+# so a warm ccache saves it little. Add the free-disk step and the pull of the image, which a
+# local rehearsal can't measure.
 #
 # The weekly run catches breakage from outside the repo: a digest Docker Hub
 # stops serving, a pinned package PyPI stops serving, or a change to GitHub's
@@ -120,7 +123,8 @@ jobs:
         if: success() || failure()
         run: scripts/ci/in-image.sh scripts/ci/check-labs.sh selftest | tee -a "$RUNNER_TEMP/ci.log"
 
-      - name: labs/ref, check-all
+      # It needs the venv: the reference environment's packets are pyvsc's.
+      - name: labs/ref, check-all and five golden seeds
         if: success() || failure()
         run: scripts/ci/in-image.sh scripts/ci/check-labs.sh ref | tee -a "$RUNNER_TEMP/ci.log"
 

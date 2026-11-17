@@ -7,7 +7,7 @@ This page is for looking things up while you work through
 every field and whether the field is volatile, is in the
 [specification](router-spec.md#register-map).
 
-Every fact here comes from pyuvm 4.0.1's source in the course image, in
+Every fact here about pyuvm comes from pyuvm 4.0.1's source in the course image, in
 `/usr/local/lib/python3.12/dist-packages/pyuvm/`, or from a run of the six tests in
 [`guide-examples/pyuvm-register-api`](https://github.com/uoftasic/dd105-b/tree/main/guide-examples/pyuvm-register-api).
 A reference like `s19:70` means line 70 of that folder's `s19_uvm_reg_field.py`. The tests drive

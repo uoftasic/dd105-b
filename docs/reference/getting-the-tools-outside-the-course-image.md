@@ -140,8 +140,9 @@ pytest not found, install it to enable better AssertionError messages
 The three `[SB]` lines are the ones
 [Lab 06, Part 1](../labs/lab-06-the-register-block-overview.md#part-1-the-lab-05-testbench-against-the-registers)
 shows, and `make check` gave the starter's verdict from that part,
-`VERDICT: FAIL -- your test passes B01_status_write_clears_all too.` The venv came to 102 MB, made
-in 14.0 s. It has no pytest, because nothing the course installs asks for it, and that is why cocotb
+`VERDICT: FAIL -- your test passes B01_status_write_clears_all too.` In an earlier run of the same
+commands (with `/usr/bin/python3` and `pip`'s `--disable-pip-version-check`), the venv came to
+102 MB and took 14.0 s to make. It has no pytest, because nothing the course installs asks for it, and that is why cocotb
 printed the second line.
 
 ## Installing on other systems

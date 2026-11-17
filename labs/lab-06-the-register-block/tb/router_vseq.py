@@ -125,8 +125,9 @@ class RouterBaseVseq(uvm_sequence):
 
     async def rd_reg(self, reg):
         """Read reg through the model, and return the value read. The
-        scoreboard checks every read of STATUS, and the predictor checks
-        every read against the mirror outside the volatile fields."""
+        scoreboard checks every read of STATUS, and the predictor, once it
+        is connected (Part 3), checks every read against the mirror outside
+        the volatile fields."""
         async with self.lock(reg):
             status, value = await reg.read(self.regs.map, path_t.FRONTDOOR, check_t.NO_CHECK)
         if status != uvm_resp_t.PASS_RESP:

@@ -182,20 +182,21 @@ code, which Lab 01's builds left in the ccache.
 The catches are the spec's. The counts differ from DD105-A's because the packets do: A's come from
 `$urandom` and these from Python's `random`.
 
-Two Part 4 results match A's exactly, and neither is luck:
+Two Part 4 results match A's exactly:
 
 - `+DSTS=0` gives 68 errors in both courses because the count follows from `+N` and the routing
-  table, not from the random bytes or gaps. The header
-  is `DST` 0 and the sequence number, so under B05 packets 32 to 63 and 96 to 99 (bit 5 set) go to
-  output 1. Output 0 delivers packets 0 to 31 and 64 to 95, and from its 33rd packet on each one is
-  compared with the wrong expected packet: 32 mismatches, then 36 packets that never came out.
-- `+DSTS=0 +LEN=1 +N=16` prints the same message as A's, `00 at 405 ns`, `0f`, `385 ns`. The times
-  mean different things: A stamped a packet at the rising edge its last beat moved, at 5 ns past a
-  multiple of 10 in A's clock, and this monitor stamps it at the falling edge in the middle of that
-  beat's handshake cycle, 5 ns before the beat moves, which in this course's clock is also 5 ns past
-  a multiple of 10.
+  table, not from the random bytes or gaps. The header is `DST` 0 and the sequence number, so
+  under B05 packets 32 to 63 and 96 to 99 (bit 5 set) go to output 1. Output 0 delivers packets 0
+  to 31 and 64 to 95, and from its 33rd packet on each one is compared with the wrong expected
+  packet: 32 mismatches, then 36 packets that never came out.
+- `+DSTS=0 +LEN=1 +N=16` prints the same message as A's (`00` at 405 ns, and `0f`, which went in
+  at 385 ns), but the times mean different things. A's monitor stamped a packet at the rising edge
+  at which its last beat moved, and A's clock rises 5 ns past each multiple of 10 ns. This monitor
+  stamps it at the falling edge in the middle of that beat's handshake cycle, 5 ns before the beat
+  moves, and this course's clock falls 5 ns past each multiple of 10 ns. We haven't checked why
+  the times themselves coincide.
 
-Two details the spec leaves open:
+Two details of this code:
 
 - Each piece logs on its own logger, `tb.env`, `tb.drv`, `tb.in`, `tb.out0` and `tb.sb`, which
   cocotb prints in its name column. Python's root logger shows only warnings and errors, so
@@ -223,6 +224,6 @@ in, and keeps their code. The chain spec ("Lab 03", Starter) lists what it adds:
   `BUG_LIST := B07 B08`, `NEEDS_VENV := 1`, `BASE_TEST := 0`.
 
 What the Lab 03 builder needs to know about this code: the generator draws, for each packet in
-turn, its length, then its `DST`, then each beat's byte (none for the header) and its gap.
-`router_class_test` keeps that order if Lab 03 leaves `Generator` as it is for that test.
+turn, its length, then its `DST`, then each beat's byte (none for the header) and its gap. If
+Lab 03 keeps that order for `router_class_test`, the test sends the same packets as it does here.
 `scoreboard.py`'s docstring says the sinks are always ready, which Lab 03 changes to "until Part 4".

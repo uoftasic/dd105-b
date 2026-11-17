@@ -1,7 +1,7 @@
 # Lab 02: A layered testbench without pyuvm
 
-You'll finish a testbench for the router written as plain Python classes on cocotb, with no pyuvm.
-You write the monitor, which turns the handshakes on a valid/ready stream into packets, and the
+You'll finish a testbench for the router. Its pieces are plain Python classes on cocotb, with no
+pyuvm. You write the monitor, which turns the handshakes on a valid/ready stream into packets, and the
 scoreboard, which predicts the packets that should come out of output 0 and checks the ones that
 do. Then you'll use the testbench to catch two planted bugs, B05 and B09, and rerun it with
 different plusargs to find out what each catch depends on.
@@ -53,11 +53,12 @@ What does the shipped testbench do, and what does it check?
    ```
 
    The first two lines are `inject.py` writing a copy of the router's RTL with all fifteen planted
-   bugs in it, each behind the `+BUG` switch, as Lab 01's ALU had its three. That one simulator
-   serves every run in this lab. The ccache counts include Lab 01's two builds, so this build's
-   own are 5 hits and 2 misses: it compiled `Vtop__ALL.o`, the router, and `verilator.o`, cocotb's
-   `main()` for the simulator, which includes the header Verilator writes for each design. With an
-   empty ccache the build took us 7.6 to 7.7 s.
+   bugs in it, each behind the `+BUG` switch, as Lab 01's ALU had its three, and that one simulator
+   serves every run in this lab. The ccache's counts add up over every build in your clone. Ours
+   include Lab 01's two builds and nothing else, so this build's own were 5 hits and 2 misses. The
+   two files it compiled are `Vtop__ALL.o`, the router, and `verilator.o`, cocotb's `main()` for the
+   simulator, which includes the header Verilator writes for the design it built. With an empty
+   ccache the build took us 7.6 to 7.7 s.
 
 3. Read the files in `tb/`. Each class has one job. The generator hands its packets to the driver
    through a queue, and each monitor hands the packets it sees to the scoreboard through a queue of
@@ -87,8 +88,8 @@ What does the shipped testbench do, and what does it check?
    and 20 ns, and then makes the `Env` and runs it. The driver and the scoreboard log each error
    they find and count it, and a logged error fails nothing by itself, so the test's last line is
    an `assert` that the count is 0. That `AssertionError` is what the verdict counts as a check
-   that fired. There's no pyuvm here and so no `BaseTest`, and the lab's Makefile sets
-   `BASE_TEST := 0`, as Lab 01's `cocotb/Makefile` did.
+   that fired. This lab has no pyuvm and no `BaseTest`, so its Makefile sets `BASE_TEST := 0`,
+   which tells the verdict not to look for `BaseTest`'s line, as Lab 01's `cocotb/Makefile` did.
 
 4. Run the test:
 
@@ -162,16 +163,16 @@ Check: `0 of 2 caught`, and `[SB] 0 packets in` in `make run`.
 
 What goes into the router, and what comes out of output 0, packet by packet?
 
-1. Open `tb/monitor.py`. A `Monitor` watches one stream, named by the prefix of its signals, so
-   the same class watches `in_valid`, `in_ready`, `in_data` and `in_last` for the input monitor and
-   `out0_valid` and the rest for output 0's. It reads the pins at the falling edge in the middle of
-   each clock cycle. Every class in this testbench keeps the same rule: change the router's inputs
-   right after a rising edge, and read the pins at the falling edge. The router's outputs come
-   from flip-flops and change just after a rising edge too, so at the falling edge every signal
-   holds the value it has for the whole cycle, which is its value "in cycle n" as the
-   specification numbers cycles. A beat whose handshake the monitor sees at a falling edge moves
-   at the rising edge 5 ns later, so the times your monitor records are 5 ns before the edges at
-   which the beats moved.
+1. Open `tb/monitor.py`. A `Monitor` is given the prefix of one stream's signal names, so the
+   same class watches `in_valid`, `in_ready`, `in_data` and `in_last` on the input and
+   `out0_valid` and the rest on output 0. Every class in this testbench changes the router's
+   inputs right after a rising edge and reads the pins at the falling edge in the middle of the
+   cycle. The router's outputs come from flip-flops and change just after a rising edge too, so at
+   the falling edge every signal holds the value it has for the whole cycle, which is its value
+   "in cycle n" as the specification numbers cycles. A beat moves at the rising edge that ends a
+   cycle in which `valid` and `ready` are both 1, a handshake. The monitor sees the handshake at
+   the falling edge in the middle of that cycle, so the times it records are 5 ns before the edges
+   at which the beats moved.
 
 2. This is the golden router taking the first packet on its input and delivering it on output 0:
 
@@ -181,8 +182,7 @@ What goes into the router, and what comes out of output 0, packet by packet?
    takes it at the rising edge at 210 ns. `c0` is on `out0_data` from 220 ns. `out0_ready` is 1
    throughout.*
 
-   A beat moves at a rising edge that ends a cycle in which `valid` and `ready` were both 1. Find
-   `f2` on `in_data`. At how many falling edges is it on `in_data`, and how many beats is it?
+   Find `f2` on `in_data`. At how many falling edges is it on `in_data`, and how many beats is it?
 
    <details>
    <summary>Answer</summary>
@@ -195,7 +195,7 @@ What goes into the router, and what comes out of output 0, packet by packet?
 
    </details>
 
-3. Write `Monitor.run()`, following the `TODO`. Each time round a `while True` loop, wait for the
+3. Write `Monitor.run()` as the `TODO` describes. Each time round a `while True` loop, wait for the
    next falling edge with `await FallingEdge(self.dut.clk)`; drop any half-assembled packet while
    `rst_n` is 0; and in a handshake cycle add the beat to the packet `p`, starting a new one when
    `p` is `None`. When the beat has `last` = 1, the packet is finished, so put it in `to_sb` with
@@ -254,7 +254,7 @@ What goes into the router, and what comes out of output 0, packet by packet?
 
    </details>
 
-   The `[SB]` line still says 0, because the scoreboard is still empty.
+   The `[SB]` line says 0 packets in, because you haven't written the scoreboard yet.
 
 Check: your `tb.in` and `tb.out0` lines match the ones above. The seed is the same, so the packets
 are too.
@@ -302,7 +302,7 @@ Which packets should come out of output 0, and did they?
    make seeds SEEDS="1 2 3 4 5"
    ```
 
-   You should see `5 ok  (5 runs)`. The five runs took 1.5 s together.
+   You should see `5 ok  (5 runs)`. The command took us 1.5 s.
 
 5. Write down what you now expect from `make check-all`, then run it. With the reference
    scoreboard you should see:
@@ -518,8 +518,7 @@ Questions:
    <details>
    <summary>Answer</summary>
 
-   pyuvm connected the pieces in Lab 01: `AluEnv.connect_phase()` connected the monitor's analysis
-   port to the scoreboard. Here `Env.__init__()` makes three queues and passes each one to its two
+   In Lab 01, `AluEnv.connect_phase()` connected the monitor's analysis port to the scoreboard. Here `Env.__init__()` makes three queues and passes each one to its two
    ends. In Lab 01, pyuvm's phases started every component's `run_phase()`, and the test's
    objection decided when the test was over. Here `Env.run()` starts each piece with
    `cocotb.start_soon()` and ends the test after a fixed 50-cycle drain. In Lab 01 `BaseTest`

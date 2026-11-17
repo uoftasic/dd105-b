@@ -147,7 +147,7 @@ start or end.
 ## Size, theme and framing
 
 The defaults copy the waveform figures DD104 publishes (`dd104/docs/assets/img/surfer-counter.png`
-and `gtkwave-counter.png`), so DD105-A's figures look like them. That means the viewer's window
+and `gtkwave-counter.png`), so this course's figures look like them. That means the viewer's window
 alone, with no title bar or border, starting at its menu bar; the viewer's default theme
 (dark for Surfer, light for GTKWave); the side panels showing; 1400 px wide; and 25 px (Surfer)
 or 11 px (GTKWave) kept below the last trace.

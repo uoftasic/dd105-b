@@ -1,9 +1,11 @@
 # `labs/ref`: the router's reference pyuvm environment
 
-A complete pyuvm testbench for the packet router, written from the specification
-([`docs/reference/router-spec.md`](../../docs/reference/router-spec.md)), without reading the
-router's RTL. Its author had read the bug catalogue, `labs/common/bugs.py`, so the directed steps
-were not written blind. It builds with `labs/common/pyuvm.mk` like every DD105-B lab, and the
+A complete pyuvm testbench for the packet router. Its model was written from the specification
+([`docs/reference/router-spec.md`](../../docs/reference/router-spec.md)). Before writing it, its
+author had read the router's package and top module (`router_pkg.sv`, `router.sv`) and the bug
+catalogue, `labs/common/bugs.py`, whose anchors quote one line of RTL for each bug, but not
+`router_regs.sv`, `router_ingress.sv` or `router_fifo.sv`. So the directed steps were not written
+blind. It builds with `labs/common/pyuvm.mk` like every DD105-B lab, and the
 graders in `labs/common` run it. CI requires its `make check-all` to catch all 15 planted bugs.
 
 It has an APB agent, a source agent for the input stream, two sinks with random backpressure, a

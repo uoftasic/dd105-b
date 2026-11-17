@@ -1,10 +1,10 @@
 # Lab 02: A layered testbench without pyuvm
 
 You'll finish a testbench for the router. Its pieces are plain Python classes on cocotb, with no
-pyuvm. You write the monitor, which turns the handshakes on a valid/ready stream into packets, and
-the scoreboard, which predicts the packets that should come out of output 0 and checks the ones
-that do. Then you'll use the testbench to catch two planted bugs, B05 and B09, and rerun it with
-different plusargs to find out what each catch depends on.
+pyuvm. You'll write the monitor, which turns the handshakes on a valid/ready stream into packets,
+and the scoreboard, which predicts the packets that should come out of output 0 and checks the
+ones that do. Then you'll use the testbench to catch two planted bugs, B05 and B09, and rerun it
+with different plusargs to find out what each catch depends on.
 
 Package: [`labs/lab-02-a-layered-testbench-without-pyuvm/`](https://github.com/uoftasic/dd105-b/tree/main/labs/lab-02-a-layered-testbench-without-pyuvm)
 
@@ -52,18 +52,21 @@ What does the shipped testbench do, and what does it check?
     /foss/designs/modules/dd105-b/labs/lab-02-a-layered-testbench-without-pyuvm/build/sim_build/Vtop is up to date.
    ```
 
-   The first two lines are `inject.py` writing a copy of the router's RTL with all fifteen planted
-   bugs in it, each behind the `+BUG` switch, as Lab 01's ALU had its three. So the simulator you
-   just built serves every run in this lab, whichever bug is switched on. The ccache's counts add up
-   over every build in your clone. Ours include only Lab 01's two builds, which came to 6 hits and
-   8 misses, so this build's own were 5 hits and 2 misses. The two files it compiled are
-   `Vtop__ALL.o`, the router, and `verilator.o`, cocotb's `main()` for the simulator, which
-   includes the header that Verilator writes for the design it built. With an empty ccache the
-   build took us 7.6 to 7.7 s.
+   In the first two lines, `inject.py` writes a copy of the router's RTL with all fifteen planted
+   bugs in it, each behind the `+BUG` switch, as Lab 01's ALU had its three bugs. So the simulator
+   you just built is the one that every run in this lab uses, whichever bug you switch on.
+
+   The ccache's counts add up over every build in your clone. Before this build, our counts
+   covered only Lab 01's two builds, which came to 6 hits and 8 misses, so this build's own counts
+   were 5 hits and 2 misses. The two files that this build compiled are `Vtop__ALL.o`, the router,
+   and `verilator.o`, cocotb's `main()` for the simulator, which includes the header that
+   Verilator writes for whichever design it built. The other five are Verilator's support code,
+   which Lab 01's builds had already put in the ccache. With an empty ccache, the build took us
+   7.6 to 7.7 s.
 
 3. Read the files in `tb/`. The generator hands its packets to the driver through a queue, and
-   each monitor hands the packets it sees to the scoreboard through a queue of its own. A queue is
-   a `cocotb.queue.Queue`: one end calls `await q.put(p)`, and the other calls `await q.get()`,
+   each monitor hands the packets it sees to the scoreboard through a queue of its own. Each queue
+   is a `cocotb.queue.Queue`. One end calls `await q.put(p)`, and the other calls `await q.get()`,
    which waits until there's a packet to take.
 
    | File | Class | Its job |
@@ -77,21 +80,23 @@ What does the shipped testbench do, and what does it check?
    | `monitor.py` | `Monitor` | yours: turns a stream's handshakes into packets |
    | `scoreboard.py` | `Scoreboard` | yours: predicts output 0 and checks it |
    | `env.py` | `Env` | makes the pieces from `Generator` to `Scoreboard`, connects them with queues, and runs the test |
-   | `test_router.py` | `router_class_test` | the clock, the reset, the `Env`, and the assert that ends the test |
+   | `test_router.py` | `router_class_test` | the clock, the reset, the `Env`, and the assert at the end, which fails the test if the testbench reported errors |
 
-   Read `Env.run()` closely. It waits for the reset to end and writes the configuration. Then it
-   starts the sinks, the monitors and the scoreboard with `cocotb.start_soon()`, which runs each
-   `run()` as a task of its own beside the test. It sends the packets, waits 50 cycles for the
-   outputs to drain, and asks the scoreboard for its report. Nothing in it waits for the monitors
-   or the scoreboard, so the test ends after those 50 cycles however much of them you've written.
+   Read `Env.run()` closely. It waits for the reset to end and writes the routing table and
+   `CTRL.EN`. Then it starts the sinks, the monitors, the scoreboard and the generator with
+   `cocotb.start_soon()`, which runs each one's `run()` as a task of its own beside the test. It
+   runs the driver itself. When the driver has sent every packet, `Env.run()` waits 50 cycles for
+   the outputs to drain and asks the scoreboard for its report. Nothing in `Env.run()` waits for
+   the monitors or the scoreboard, so the test ends after those 50 cycles however much of the
+   monitor and the scoreboard you've written.
 
    `router_class_test` starts a 10 ns clock, holds `rst_n` low through the rising edges at 0, 10
    and 20 ns, and then makes the `Env` and runs it. The driver and the scoreboard log each error
-   they find and count it, and a logged error fails nothing by itself, so the test's last line is
-   an `assert` that the count is 0. When the count isn't 0, the assert raises an `AssertionError`,
+   they find and count it. A logged error fails nothing by itself, so the test's last line is an
+   `assert` that the count is 0. When the count isn't 0, the assert raises an `AssertionError`,
    which the verdict counts as a check that fired. This lab has no pyuvm and no `BaseTest`, so its
-   Makefile sets `BASE_TEST := 0`, which tells the verdict not to look for `BaseTest`'s line, as
-   Lab 01's `cocotb/Makefile` did.
+   Makefile sets `BASE_TEST := 0`, as Lab 01's `cocotb/Makefile` did. That setting tells the
+   verdict not to look for the line that `BaseTest` prints at the end of a test.
 
 4. Run the test:
 
@@ -117,11 +122,13 @@ What does the shipped testbench do, and what does it check?
    ------------------------------------------------------------------------
    ```
 
-   The third column is the logger that wrote the line. Each piece has its own, named `tb.` and
-   the piece, so `tb.env` is the environment and `tb.sb` the scoreboard. The first `[ENV]` line
-   gives the test's knobs, which are plusargs (the package README lists them). `routes 0110` is
-   the routing table, one character per entry from `ROUTE0` to `ROUTE3`, so packets for `DST` 0
-   and 3 go to output 0, and packets for `DST` 1 and 2 go to output 1.
+   The third column is the logger that wrote the line. The environment, the driver, the two
+   monitors and the scoreboard each have a logger of their own, named `tb.` followed by a short
+   name for the piece: `tb.env`, `tb.drv`, `tb.in`, `tb.out0` and `tb.sb`. The first `[ENV]` line
+   gives the test's knobs, which are plusargs (the package README lists them). `routes 0110` is the
+   routing table, one character per entry from `ROUTE0` to `ROUTE3`, and each character is the
+   output that the entry sends packets to. So packets for `DST` 0 and 3 go to output 0, and packets
+   for `DST` 1 and 2 go to output 1.
 
 5. `make check-all` runs the test on the golden router and on the two bugs this lab hunts. Write
    down what you expect it to report, then run it:
@@ -152,10 +159,10 @@ What does the shipped testbench do, and what does it check?
    <details>
    <summary>Answer</summary>
 
-   The `[SB]` line says the scoreboard saw 0 packets and checked 0, because the starter's monitor
-   and scoreboard are empty, so nothing compared those 243 beats with anything. A pass means only
-   that no check fired, and with no checks the test passes on the golden router and on both bugs
-   alike.
+   The starter's monitor and scoreboard are empty, so nothing compared those 243 beats with
+   anything. That's why the `[SB]` line says the scoreboard took in 0 packets and checked 0. A
+   pass means only that no check fired, and this testbench has no checks that could fire, so it
+   passes on all three routers.
 
    </details>
 
@@ -171,9 +178,9 @@ What goes into the router, and what comes out of output 0, packet by packet?
    `ApbMaster` change the router's inputs right after a rising edge, and every class that reads the
    pins, `Monitor` included, reads them at the falling edge in the middle of the cycle. The
    router's outputs come from flip-flops and change just after a rising edge too, so at the
-   falling edge every signal holds the value it has for the whole cycle, which is its value
-   "in cycle n" as the specification numbers cycles. A cycle in which `valid` and `ready` are both
-   1 is a handshake, and the beat moves at the rising edge that ends it. The monitor sees the
+   falling edge every signal holds the value it has for the whole cycle. That's what the
+   specification means by a signal's value "in cycle n". A cycle in which `valid` and `ready` are
+   both 1 is a handshake, and the beat moves at the rising edge that ends it. The monitor sees the
    handshake at the falling edge in the middle of that cycle, so the times it records are 5 ns
    before the edges at which the beats moved.
 
@@ -192,9 +199,9 @@ What goes into the router, and what comes out of output 0, packet by packet?
 
    It's on `in_data` at two falling edges, 235 ns and 245 ns, and it's one beat. The driver put it
    there at 230 ns, the router took it at the edge at 240 ns, and the driver then left one idle
-   cycle with `in_valid` at 0, so at 245 ns the pins still show `f2` but nothing moves. A monitor
-   that looked only at `in_data` would record it twice. Output 0 shows the same idle cycle two
-   cycles later, with `out0_valid` at 0 from 260 to 270 ns.
+   cycle with `in_valid` at 0. So at 245 ns `in_data` still shows `f2`, but with `in_valid` at 0
+   there's no handshake. A monitor that looked only at `in_data` would record it twice. Output 0
+   shows the same idle cycle two cycles later, with `out0_valid` at 0 from 260 to 270 ns.
 
    </details>
 
@@ -202,19 +209,19 @@ What goes into the router, and what comes out of output 0, packet by packet?
    next falling edge with `await FallingEdge(self.dut.clk)`; drop any half-assembled packet while
    `rst_n` is 0; and in a handshake cycle add the beat to the packet `p`, starting a new one when
    `p` is `None`. When the beat has `last` = 1, the packet is finished, so put it in `to_sb` with
-   `await self.to_sb.put(p)` and set `p` back to `None` for the next one. Use the
-   `self.log.info(f"{p}")` line and its condition from the `TODO`, so that your output can be
-   compared with the one below.
+   `await self.to_sb.put(p)` and set `p` back to `None` for the next one. Log each finished packet
+   with the `self.log.info(f"{p}")` line and the condition in the `TODO`, so that you can compare
+   your output with the one below.
 
 4. Run `make build`. It prints `Vtop is up to date.`, because the simulator is built from the
-   router's RTL alone and `tb/` is Python, as in Lab 01. A mistake in your code shows up when you
-   run: if `run()` raises an exception, such as a `NameError`, the test ends there and the verdict
-   is `BROKEN`, with the traceback in the log.
+   router's RTL alone and `tb/` is Python, as in Lab 01. So you'll find a mistake in your code
+   only when you run the test. If `run()` raises an exception, such as a `NameError`, the test ends
+   there, the verdict is `BROKEN`, and the traceback is in the log.
 
 5. `+SHOW=5` makes each monitor log the first 5 packets it sees, each at the time it saw the
    packet's last handshake. Using the routing table `0110` and rule O8 of the specification, write
-   down which input packets you expect to see again on output 0, and how many ns after its `tb.in`
-   line each `tb.out0` line should come. Then run it:
+   down which input packets you expect to see again on output 0, and how many ns each `tb.out0`
+   line should come after the `tb.in` line of the same packet. Then run it:
 
    ```bash
    make run PLUSARGS="+SHOW=5"
@@ -251,16 +258,16 @@ What goes into the router, and what comes out of output 0, packet by packet?
    output from the second cycle after its input handshake, as example E2 in the specification
    shows, unless the beat before it is still waiting there, as in E3. Here the sink takes every
    beat in the first cycle it's offered, so nothing waits, and each packet's last beat is taken
-   from output 0 two cycles after it went in. `05` is packet 5. The input monitor had already
-   logged five packets, 0 to 4, and packet 1 was one of them, so output 0's fifth packet is one the
-   input monitor didn't log.
+   from output 0 two cycles after it went in. `05` is packet 5. The five packets that the input
+   monitor logged were packets 0 to 4, including packet 1, which went to output 1, so output 0's
+   fifth packet is packet 5, which went in after the input monitor had stopped logging.
 
    </details>
 
    The `[SB]` line says 0 packets in, because you haven't written the scoreboard yet.
 
-Check: your `tb.in` and `tb.out0` lines match the ones above. The seed is the same, so the packets
-are too.
+Check: your `tb.in` and `tb.out0` lines match the ones above. Your seed is the same as ours, so
+your packets are the same too.
 
 ## Part 3: The scoreboard
 
@@ -268,14 +275,17 @@ Which packets should come out of output 0, and did they?
 
 1. Read the docstring at the top of `tb/scoreboard.py`. The rule you're checking is O5, which says
    that an output delivers the beats of the packets routed to it in the order the router accepted
-   them, unchanged. In this lab the sinks never stall, so no packet is dropped for a full output,
-   and a packet goes to output 0 exactly when `ROUTE[DST]` is enabled with `PORT` 0.
+   them, unchanged. (The full rule also allows a changed `out_last` on a packet that the router cut
+   for being oversize, but every packet in this lab is 1 to 8 beats, so none is cut.) In this lab
+   the sinks never stall, so no packet is dropped for a full output, and a packet goes to output 0
+   exactly when `ROUTE[DST]` is enabled with `PORT` 0.
 
 2. Write the four `TODO`s:
 
-   - `run()`: two loops that each run forever, as two `async def` methods, one taking packets from
-     `from_in` and calling `predict()`, the other taking packets from `from_out0` and calling
-     `check()`. Start both with `cocotb.start_soon()` and await both.
+   - `run()`: two loops that each run forever, each in an `async def` method of its own. One takes
+     packets from `from_in` and calls `predict()` with each, and the other takes packets from
+     `from_out0` and calls `check()` with each. Start both with `cocotb.start_soon()` and await
+     both.
    - `predict()`: append the packet to `expected` if it will come out of output 0.
    - `check()`: compare what came out with the oldest packet in `expected`, using
      `Packet.same()`. A packet that comes out while `expected` is empty is an error too.
@@ -296,7 +306,7 @@ Which packets should come out of output 0, and did they?
    ```
 
    You should see `[SB] 100 packets in, 51 predicted for output 0, 51 checked, 0 errors` and
-   `ok: passed`. If an error fires here, the golden router is right, so the mistake is in your
+   `ok: passed`. The golden router is correct, so if an error fires here, the mistake is in your
    scoreboard or your monitor.
 
 4. Run it on five seeds:
@@ -320,8 +330,9 @@ Which packets should come out of output 0, and did they?
     Every bug in the list, each one caught by a check that fired.
    ```
 
-   The rows name the exception that ended each caught run, the `AssertionError` from the test's
-   last line. The number of errors is in that assert's message, which the next step shows.
+   Each caught row names the exception that ended the run, which is the `AssertionError` from the
+   test's last line. The number of errors is in that assert's message, which you'll see in the
+   next step.
 
 6. Look at the first error on B05:
 
@@ -343,22 +354,23 @@ Which packets should come out of output 0, and did they?
                                                            assert 47 == 0
    ```
 
-   followed by the traceback of the failed assert and the verdict, `caught: AssertionError`.
-   cocotb prints the assert's message and, under it, the comparison that failed.
+   followed by the traceback of the failed assert and the verdict, `caught: AssertionError`. In
+   the `WARNING` line, cocotb prints the assert's message, and under it the comparison that
+   failed.
 
-   In Part 2, `c0 3d 1a f2 51 72` came out of output 0 20 ns after it went in. Its header, `c0`, is
-   `1100_0000`. Which routing table entry should the router have used, which one did it use, and
-   which bits of the header did it read?
+   In Part 2, on the golden router, `c0 3d 1a f2 51 72` came out of output 0, 20 ns after it went
+   in. Its header, `c0`, is `1100_0000`. Which routing table entry should the router have used,
+   which one did it use, and which bits of the header did it read?
 
    <details>
    <summary>Answer</summary>
 
-   `DST` is bits 7:6, `11`, so it should have used `ROUTE3`, which sends to output 0. The packet
-   never came out of output 0, so the first packet that did, `03 03 16 14`, was compared with it,
-   and the scoreboard reported the mismatch. Bits 6:5 of `c0` are `10`, so the router read the
-   field one bit too low and used `ROUTE2`, which sends to output 1. That's B05,
-   `dst_field_off_by_one`. Packet 3's header, `03`, has `00` in both bits 7:6 and bits 6:5, so it
-   went where it should.
+   `DST` is bits 7:6 of the header, and in `c0` they're `11`, so the router should have used
+   `ROUTE3`, which sends packets to output 0. Bits 6:5 of `c0` are `10`, so this router read the
+   field one bit too low and used `ROUTE2`, which sends packets to output 1. That's B05,
+   `dst_field_off_by_one`. Packet 0 never came out of output 0, so the scoreboard compared it with
+   the first packet that did, `03 03 16 14`, and reported the mismatch. Packet 3's header, `03`,
+   has `00` in both bits 7:6 and bits 6:5, so it went where it should.
 
    </details>
 
@@ -378,10 +390,11 @@ Which packets should come out of output 0, and did they?
    <details>
    <summary>Answer</summary>
 
-   It's packet 0, `c0 3d 1a f2 51 72`, the first packet output 0 delivered in this run, at 285 ns.
-   Its beats came out of the buffer a second time. Before that, output 0 had delivered packet 0's
-   6 beats, `c2`, `03 03 16 14` and `04 57 6c 1b`, which is 15 beats, so the 16th beat, `05`, is the
-   first bad one. Part 4 shows why.
+   It's packet 0, `c0 3d 1a f2 51 72`. It was the first packet that output 0 delivered, at 285 ns,
+   in your Part 2 printout and in this run alike. At 775 ns its beats came out of the buffer a
+   second time. Before that, output 0 had delivered 15 beats: packet 0's 6 beats, then `c2`, then
+   `03 03 16 14` and `04 57 6c 1b`. So the 16th beat into output 0, `05`, is the first bad one.
+   Part 4 shows why.
 
    </details>
 
@@ -406,15 +419,16 @@ these runs rebuilds anything.
    <details>
    <summary>Answer</summary>
 
-   B05 changes which routing table entry the router reads. With all four entries set the same
-   way, every entry sends the packet to output 0, so whichever one the router reads, the packet
-   still comes out of output 0 in the order it went in, and nothing at the pins shows which entry
-   was used. A test checks the `DST` field only when each of its values, and each of its bits,
-   has an effect of its own on where a packet goes.
+   B05 changes which routing table entry the router reads. With `+ROUTES=0000`, every entry sends
+   packets to output 0, so whichever entry the router reads, each packet still comes out of output
+   0 in the order it went in, and nothing at the pins shows which entry was used. A test checks the
+   `DST` field only when each of its bits has an effect of its own on where a packet goes. With the
+   default `0110`, changing either bit of `DST` changes the output a packet goes to, and with
+   `0000` neither bit does.
 
    </details>
 
-2. `+DSTS=0` sends every packet to `DST` 0. Predict both results, then run:
+2. `+DSTS=0` makes the generator give every packet `DST` 0. Predict both results, then run:
 
    ```bash
    make check BUG=B05 PLUSARGS="+DSTS=0 +N=32"
@@ -441,10 +455,11 @@ these runs rebuilds anything.
 
    The header's other six bits are the sequence number, which counts 0 to 63 and wraps. For
    packets 0 to 31, bits 7:5 are all 0, so bits 6:5 read `00`, the same as `DST`, and the bug has
-   no effect. A run of 32 packets sends only those. Packet 32's header is `20`, `0010_0000`, whose
-   bits 6:5 are `01`, so the router uses `ROUTE1` and sends packets 32 to 63 to output 1. In the
-   first error, output 0 was expecting packet 32 (`20`), and the next packet it delivered was
-   packet 64, whose sequence number has wrapped to 0, so its header is `00`.
+   no effect. A run of 32 packets sends only those. Packet 32's header is `20`, which is
+   `0010_0000`, so its bits 6:5 are `01`. The router uses `ROUTE1` for packets 32 to 63, so it
+   sends all of them to output 1. In the first error, output 0 was expecting packet 32 (`20`), and
+   the next packet it delivered was packet 64, whose sequence number has wrapped to 0, so its
+   header is `00`.
 
    </details>
 
@@ -479,8 +494,8 @@ these runs rebuilds anything.
    surfer build/runs/router_class_test-s1-B09/waves.fst &
    ```
 
-   Surfer lists two scopes at the top: `$rootio`, which holds the router's ports a second time, and
-   `router`, the router itself, which is cocotb's top level. Add `clk`, `in_valid`, `in_ready`,
+   Surfer lists two scopes at the top. `$rootio` holds the router's ports a second time, and
+   `router` is the router itself, which is cocotb's top level. Add `clk`, `in_valid`, `in_ready`,
    `in_data`, `out0_valid` and `out0_data` from `router`, and `wr_ptr_q` and `rd_ptr_q` from
    `router.u_buf0`, output 0's buffer:
 
@@ -500,9 +515,9 @@ these runs rebuilds anything.
 
    The write pointer wrapped at 16, as if the RAM had 16 entries, so beat `0f` was written to
    entry `f`, which doesn't exist, and was lost. The read pointer wrapped correctly to entry 0,
-   which still held beat `00` from the start of the test. Up to the 15th beat, each beat is read
-   from the entry it was written to, so no test that puts fewer than 16 beats through an output
-   can see the bug.
+   which still held beat `00` from the start of the test. For the first 15 beats, each beat is
+   read from the entry it was written to, so no test that puts fewer than 16 beats through an
+   output can see the bug.
 
    </details>
 
@@ -526,13 +541,13 @@ Questions:
    phases started every component's `run_phase()`, and the test's objection decided when the test
    was over. Here `Env.run()` starts the sinks, the monitors, the scoreboard and the generator with
    `cocotb.start_soon()`, runs the driver itself, and ends the test after a fixed 50-cycle drain.
-   In Lab 01 `BaseTest` counted every error any component logged and failed the test. Here the
-   driver and the scoreboard each keep their own `n_errors`, `Env.n_errors()` adds them up, and the
-   test's `assert` fails it. In Lab 01 each test was its own class, picked with `TEST=`, and both
-   tests reused the same driver, monitor and scoreboard. Here there is one test, its variations are
-   the plusargs that `RouterCfg` reads, and anything those can't express needs a change to
-   `Env.run()`. In Lab 04 you'll finish a pyuvm port of this testbench as it stands after Lab 03,
-   and compare the two piece by piece.
+   In Lab 01 `BaseTest` counted every error any component logged, and failed the test if the count
+   wasn't 0. Here the driver and the scoreboard each keep their own `n_errors`, `Env.n_errors()`
+   adds them up, and the test's `assert` fails the test if the sum isn't 0. In Lab 01 each test
+   was its own class, picked with `TEST=`, and both tests reused the same driver, monitor and
+   scoreboard. Here there is one test, its variations are the plusargs that `RouterCfg` reads, and
+   anything those can't express needs a change to `Env.run()`. In Lab 04 you'll finish a pyuvm
+   port of this testbench as it stands after Lab 03, and compare the two piece by piece.
 
    </details>
 
@@ -543,11 +558,12 @@ Questions:
    <details>
    <summary>Answer</summary>
 
-   It's the same bug. `c2` is packet 2, the second packet that output 0 delivered, coming out of
-   the buffer again. After the first wrong packet the buffer keeps handing back old beats, so the
-   packets that output 0 delivers no longer line up with the ones in `expected`, and most of the
-   later errors follow from the first. Read the first error first. The later ones count
-   comparisons that failed after the two fell out of step, so their number says little about how
+   It's the same bug. `c2` is packet 2, which was the second packet that output 0 delivered, and
+   here its beat has come out of the buffer a second time. After the first wrong packet, the
+   buffer keeps handing back old beats, and the packets that output 0 delivers no longer line up
+   with the ones in `expected`.
+   Read the first error first. Most of the later ones are comparisons that failed because the
+   delivered packets and `expected` had fallen out of step, so their number says little about how
    many packets the router got wrong.
 
    </details>

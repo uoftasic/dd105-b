@@ -235,9 +235,9 @@ from it:
 - **`check_reg()`** is the course's stand-in for `mirror(UVM_CHECK)`: it takes the mirror before
   the read and compares after, as UVM's `mirror()` does. Part 3's order differs from DD105-A's
   for that reason: the page has the student write the raw setup and `check_reg()` first (5 errors
-  on the golden router), then the predictor, then the bit bash. DD105-A's bit bash ran before the
-  predictor because SystemVerilog UVM's compares with the value it wrote; a bit bash that compares
-  with the mirror needs the predictor.
+  on the golden router), then the predictor, then the bit bash. DD105-A's bit bash passed on the
+  golden router with no predictor connected (A's Part 3, step 3); this lab's bit bash compares
+  with the mirror, which only the predictor moves (the `wr_reg()` probe above).
 - **`make predict`** (`src/predict.py`) is new: it builds the student's model outside the
   simulator and prints what each kind of `predict()` does to four registers' mirrors, which is
   where the page meets `UVM_PREDICT_READ` on `W1C` and `WC` fields.

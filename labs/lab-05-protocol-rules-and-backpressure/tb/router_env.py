@@ -1,16 +1,20 @@
 """
-DD105-B Lab 04: the scoreboard, the coverage and the environment.
+DD105-B Lab 05: the scoreboard, the coverage and the environment.
 
-  Fwd               one input of a component that has several
-  PktRecord         what happened to one input packet, for the coverage
-  RouterScoreboard  Lab 03's scoreboard and tracker in one component, fed by
-                    the monitors' analysis ports
-  RouterCoverage    Lab 03's coverage, as a subscriber
-  RouterEnv         makes the agents, the scoreboard and the coverage, and
-                    connects them
+  Fwd                 one input of a component that has several
+  PktRecord           what happened to one input packet, for the coverage
+  RouterScoreboard    Lab 03's scoreboard and tracker in one component, fed by
+                      the monitors' analysis ports
+  RouterCoverage      Lab 03's coverage, as a subscriber, with an oversize
+                      bin (Lab 05)
+  RouterWaitCoverage  how long output beats waited (Lab 05)
+  RouterEnv           makes the agents, the scoreboard and the coverage, and
+                      connects them
 
-This is the reference solution: RouterEnv builds both output agents, and the
-scoreboard checks both outputs and models both levels (Parts 2 and 3).
+This is our Lab 04 solution with Lab 05's additions, each marked "Lab 05":
+the scoreboard follows route writes made while packets are coming in, the
+packet coverage has an oversize bin, and RouterWaitCoverage is new. Nothing
+in this file is left for you to write.
 """
 
 from cocotb.triggers import Event
@@ -78,6 +82,13 @@ class RouterScoreboard(uvm_component):
         # The routing table, as written over APB (reset: every route disabled).
         self.route_en = [0, 0, 0, 0]
         self.route_port = [0, 0, 0, 0]
+        # Lab 05: route writes not yet applied, as (cycle, route, en, port), in
+        # the order they completed. A header accepted in the cycle a write
+        # completes still uses the old entry (router-spec.md, Routing), so
+        # write_in applies a write only at a header of a later cycle. The APB
+        # and input monitors report at the same falling edge in no fixed
+        # order, so the cycle decides, not the order of the calls.
+        self.pending = []
         # The packet coming in.
         self.in_beats = 0               # beats of it taken so far; 0: the next beat is a header
         self.in_port = None             # the output it's written to, or None if it's dropped
@@ -125,6 +136,11 @@ class RouterScoreboard(uvm_component):
         """A beat taken from the input."""
         if self.in_beats == 0:
             # The header: the router decides here what happens to the whole packet.
+            # Lab 05: first, the route writes that completed before this cycle.
+            while self.pending and self.pending[0][0] < b.cycle:
+                _, r, en, port = self.pending.pop(0)
+                self.route_en[r] = en
+                self.route_port[r] = port
             dst = b.data >> 6
             port = self.route_port[dst]
             self.cur = PktRecord(dst, self.level(port, b.cycle))
@@ -170,9 +186,11 @@ class RouterScoreboard(uvm_component):
     def write_apb(self, t):
         """A completed APB transfer. Writes to ROUTE0 to ROUTE3 and DROP_CNT
         update the model, and every read of DROP_CNT is checked, as Lab 03's
-        check_drops() did. The tests write the routing table only while no
-        packet is coming in, so a write never lands in the cycle of a
-        header."""
+        check_drops() did. Lab 04's tests wrote the routing table only while
+        no packet was coming in; Lab 05's virtual sequence moves routes while
+        packets are coming in, so a route write waits in `pending` for a
+        header of a later cycle (see write_in). DROP_CNT is still written
+        only while no packet is coming in."""
         if t.slverr:
             return
         if t.write:
@@ -181,8 +199,7 @@ class RouterScoreboard(uvm_component):
                 self.full_cnt = 0
             elif t.addr in (0x20, 0x24, 0x28, 0x2C):
                 r = (t.addr - ROUTE0) >> 2
-                self.route_en[r] = t.wdata & 1
-                self.route_port[r] = (t.wdata >> 1) & 1
+                self.pending.append((t.cycle, r, t.wdata & 1, (t.wdata >> 1) & 1))
         elif t.addr == DROP_CNT:
             # FULL_CNT in bits 15:8 and NOROUTE_CNT in bits 7:0, each stopping at 255.
             full, noroute = min(self.full_cnt, 255), min(self.noroute_cnt, 255)
@@ -219,18 +236,21 @@ class RouterScoreboard(uvm_component):
 
 
 # ── the coverage ─────────────────────────────────────────────────────────────
-# Lab 03's coverage, with the same names and bins: 41 in all. The level's bins
-# are ranges, so the coverpoint needs rel= (Lab 03, Part 2).
+# Lab 03's coverage, with the same names and bins, and in Lab 05 one more bin
+# in router.pkt.len, `oversize`, for packets of 9 beats or more on the input,
+# before the router cuts them: 42 in all. The level's bins are ranges, so the
+# coverpoint needs rel= (Lab 03, Part 2), and so do the length's now.
 
 LEVEL_BINS = [(0, 0), (1, 7), (8, 8), (9, 9), (10, 16)]
+LEN_BINS = [(n, n) for n in range(1, 9)] + [(9, 1 << 30)]
 
 
 def in_range(value, rng):
     return rng[0] <= value <= rng[1]
 
 
-@CoverPoint("router.pkt.len", xf=lambda rec: rec.length, bins=list(range(1, 9)),
-            bins_labels=[f"len{n}" for n in range(1, 9)])
+@CoverPoint("router.pkt.len", xf=lambda rec: rec.length, bins=LEN_BINS, rel=in_range,
+            bins_labels=[f"len{n}" for n in range(1, 9)] + ["oversize"])
 @CoverPoint("router.pkt.dst", xf=lambda rec: rec.dst, bins=[0, 1, 2, 3],
             bins_labels=["dst0", "dst1", "dst2", "dst3"])
 @CoverPoint("router.pkt.fate", xf=lambda rec: rec.fate, bins=[0, 1, 2, 3],
@@ -244,16 +264,48 @@ def sample_pkt(rec):
 
 class RouterCoverage(uvm_subscriber):
     """Samples each PktRecord the scoreboard writes to its fate_ap, and writes
-    coverage.xml into the run's folder at the end, where `make cov` finds
-    it."""
+    coverage.xml (both groups) into the run's folder at the end, where
+    `make cov` finds it."""
 
     def write(self, rec):
         sample_pkt(rec)
 
     def report_phase(self):
         coverage_db.export_to_xml("coverage.xml")
-        pkt = coverage_db["router.pkt"]
-        self.logger.info(f"[COV] router.pkt: {pkt.coverage} of {pkt.size} bins hit; coverage.xml written")
+        pkt, wait = coverage_db["router.pkt"], coverage_db["router.wait"]
+        self.logger.info(f"[COV] router.pkt: {pkt.coverage} of {pkt.size} bins hit; router.wait: "
+                         f"{wait.coverage} of {wait.size}; coverage.xml written")
+
+
+# Lab 05: backpressure. For each packet an output delivers, the longest any of
+# its beats waited for out_ready: `none` is 0 cycles, `short_wait` 1 to 3,
+# `long_wait` 4 to 20 and `stalled` more than 20; and the cross with the
+# output. 14 bins. DD105-A's cg_wait.
+
+WAIT_BINS = [(0, 0), (1, 3), (4, 20), (21, 1 << 30)]
+
+
+@CoverPoint("router.wait.port", xf=lambda port, w: port, bins=[0, 1], bins_labels=["out0", "out1"])
+@CoverPoint("router.wait.wait", xf=lambda port, w: w, bins=WAIT_BINS, rel=in_range,
+            bins_labels=["none", "short_wait", "long_wait", "stalled"])
+@CoverCross("router.wait.x_port_wait", items=["router.wait.port", "router.wait.wait"])
+def sample_wait(port, w):
+    pass
+
+
+class RouterWaitCoverage(uvm_subscriber):
+    """Subscribes to both output monitors, which stamp each beat with how
+    long it waited, and samples router.wait at each packet's last beat with
+    the longest wait of its beats."""
+
+    def build_phase(self):
+        self.max_wait = [0, 0]      # the longest wait so far in the packet coming out of each output
+
+    def write(self, b):
+        self.max_wait[b.port] = max(self.max_wait[b.port], b.waited)
+        if b.last:
+            sample_wait(b.port, self.max_wait[b.port])
+            self.max_wait[b.port] = 0
 
 
 # ── the environment ──────────────────────────────────────────────────────────
@@ -269,6 +321,7 @@ class RouterEnv(uvm_env):
         self.out = [OutAgent.create("out0", self), OutAgent.create("out1", self)]
         self.sb = RouterScoreboard.create("sb", self)
         self.cov = RouterCoverage.create("cov", self)
+        self.wcov = RouterWaitCoverage.create("wcov", self)     # Lab 05
 
     def connect_phase(self):
         self.src.mon.ap.connect(self.sb.in_imp.analysis_export)
@@ -276,6 +329,8 @@ class RouterEnv(uvm_env):
         self.out[0].mon.ap.connect(self.sb.out_imp.analysis_export)
         self.out[1].mon.ap.connect(self.sb.out_imp.analysis_export)
         self.sb.fate_ap.connect(self.cov.analysis_export)
+        for o in self.out:
+            o.mon.ap.connect(self.wcov.analysis_export)         # Lab 05
 
     async def run_phase(self):
         # An output with no agent has nothing driving its out_ready. Hold it

@@ -1,9 +1,10 @@
 # Lab 03: Constraints and coverage
 
 You'll add functional coverage to the Lab 02 testbench, with cocotb-coverage, and read it to find
-which drops and which output levels the testbench's random packets never reach. Then you'll give the
-packet constraints, so that pyvsc's solver makes the mix of lengths you ask for. Last, you'll write
-the stimulus that reaches the two coverage holes where this lab's planted bugs, B07 and B08, are.
+which drops and which output levels the testbench's random packets never reach. Then you'll
+constrain the packet, so that pyvsc's solver makes the mix of lengths you ask for. Last, you'll
+write the stimulus that reaches the two coverage holes where this lab's planted bugs, B07 and B08,
+are.
 
 Package: [`labs/lab-03-constraints-and-coverage/`](https://github.com/uoftasic/dd105-b/tree/main/labs/lab-03-constraints-and-coverage)
 
@@ -14,8 +15,8 @@ Package: [`labs/lab-03-constraints-and-coverage/`](https://github.com/uoftasic/d
   adds a packet that pyvsc randomizes, a sink that can stall, an APB read, a tracker that predicts
   what the router does with each packet, and a check on `DROP_CNT`. Part 1 walks through each of
   them. If your own monitor and scoreboard passed Lab 02's `make check-all`, you can copy them over
-  ours (the error counts on this page come from ours, so yours may differ). Run the copy from the
-  lab folder, which Part 1's first step takes you to:
+  ours (the scoreboard's error messages on this page are ours, so yours may be worded differently).
+  Run the copy from the lab folder, which Part 1's first step takes you to:
 
   ```bash
   cp ../lab-02-a-layered-testbench-without-pyuvm/tb/monitor.py ../lab-02-a-layered-testbench-without-pyuvm/tb/scoreboard.py tb/
@@ -64,12 +65,13 @@ What does the starting testbench check, and does it catch this lab's two bugs?
    pyvsc                          1.1.0
    ```
 
-   You make it once, for this lab and the ones after it. pip downloads the two packages, so this
-   step needs the network. The venv is in your workspace under `/foss/designs`, so it survives a
-   restart of the container. It sees the image's own packages too, which is why it lists the
-   image's cocotb 2.0.1 and pyuvm 4.0.1 beside pyvsc 1.1.0 and cocotb-coverage 2.0.
-   Every run in this lab uses the venv's Python, and until the venv exists, `make check-all`,
-   `make cov`, `make traps`, and `make run` once it has built the simulator, stop with:
+   You make it once, for this lab and the ones after it. pip downloads the two packages and the
+   ones they depend on, so this step needs the network. The venv is in your workspace under
+   `/foss/designs`, so it survives a restart of the container. It sees the image's own packages
+   too, which is why it lists the image's cocotb 2.0.1 and pyuvm 4.0.1 beside pyvsc 1.1.0 and
+   cocotb-coverage 2.0. Every run in this lab uses the venv's Python. Until the venv exists,
+   `make check-all`, `make cov` and `make traps` stop at once with the message below, and
+   `make run` builds the simulator first and then stops with it:
 
    ```text
    ========================================================================
@@ -109,7 +111,7 @@ What does the starting testbench check, and does it catch this lab's two bugs?
    | `tracker.py` | new: follows output 0's level and decides what happens to each packet |
    | `coverage.py` | new: `sample_pkt()`, which the tracker calls once for every packet and which has no coverpoints yet, and `report()`, which writes the coverage file at the end of the test. Part 2 adds the coverpoints. |
    | `env.py` | Lab 02's `Env`, with `run()` split into steps a test can call one by one, and `check_drops()` |
-   | `test_router.py` | `router_rand_test`, `router_fill_test` and Lab 02's `router_class_test`. `close_holes()` is empty: Part 4 fills it in. |
+   | `test_router.py` | `router_rand_test`, `router_fill_test` and Lab 02's `router_class_test`, which now checks `DROP_CNT` at the end too. `close_holes()` is empty: Part 4 fills it in. |
 
    The tracker reads the input's and output 0's pins at the falling edge of every cycle, as the
    monitors do, and handles the cycle's input handshake before its output handshake, so the level a
@@ -426,9 +428,10 @@ How do you get the length distribution you ask for, and how do you know you got 
    call, where `random.randint()` ran 2.8 million times a second. So the packet's payload bytes and
    idle cycles come from Python's `random` in `build()`, and only the fields that a constraint
    mentions come from the solver. Line 8 shows that a pyvsc object takes its random state from
-   Python's `random` at its first `randomize()`: seeding `random` again before that call changes
-   every value after it, and seeding it again after the call changes none. The generator makes and
-   randomizes every packet inside the test, so the run's seed decides them.
+   Python's `random` at its first `randomize()`: seeding `random` again before that call gave a
+   different list from the first row's, and seeding it again after the call gave the same list as
+   the first row. The generator makes and randomizes every packet inside the test, so the run's
+   seed decides them.
 
    </details>
 
@@ -546,8 +549,8 @@ What stimulus reaches B07's and B08's bins, and does the testbench catch the bug
    Both tests that call `close_holes()` check `DROP_CNT` after it returns, so `close_holes()`
    doesn't need a check of its own. `RandPacket.make()` builds a fill packet without the solver,
    with its beats back to back. `randomize_with()` and `it.length == n` would work too (line 3 of
-   the experiments), and `build()` would then put idle cycles before about one beat in four. A log line that prints the plan's
-   lengths will help you read the waveform later.
+   the experiments), and `build()` would then put idle cycles before about one beat in four. A log
+   line that prints the plan's lengths will help you read the waveform later.
 
 4. The list stops after the packet for DST 1, with output 0 still stalled and holding 9 to 16
    beats. Suppose it sent one more random packet for DST 0 there. What would the golden router do
@@ -563,8 +566,8 @@ What stimulus reaches B07's and B08's bins, and does the testbench catch the bug
    `router_fill_test` printed:
 
    ```text
-   [DROP] DROP_CNT 00000101 as expected
-   dst 0, 7 beats: 03 2f 67 b4 02 99 32, which went in at 365 ns, never came out of output 0
+      910.00ns INFO     tb.env                             [DROP] DROP_CNT 00000101 as expected
+      910.00ns ERROR    tb.sb                              dst 0, 7 beats: 03 2f 67 b4 02 99 32, which went in at 365 ns, never came out of output 0
    ```
 
    To check FULL drops, the scoreboard has to model the levels itself, which is what Lab 04's
@@ -606,7 +609,8 @@ What stimulus reaches B07's and B08's bins, and does the testbench catch the bug
    The `[HOLES]` line of `router_rand_test` says
    `filled to 8 by packets of 2 2 3 1 beats, then 7 beats for DST 0 and 7 for DST 1`, a different
    plan from `router_fill_test`'s on the same seed, because cocotb seeds Python's `random` for each
-   test from the seed and the test's name. `make cov` reports:
+   test from the seed and the test's name, and `router_rand_test` has drawn 800 packets from it
+   before `close_holes()` starts. `make cov` reports:
 
    ```text
      top                                           58.54 %   24 of 41 bins

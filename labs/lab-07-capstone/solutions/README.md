@@ -99,7 +99,7 @@ The first checks in the solution, the same on every seed apart from the cycle:
 |---|---|---|
 | B15 | `u_out0.a_O4_rst`: `O4: out_valid is 1 during reset`, at 139460000 ps on seed 1 (cycle 13946, the first cycle of the E8 reset in `RouterResetVseq`) | this lab's assertion; the scoreboard follows with `output 0: got 00 in cycle 13949, and no beat was expected`, and on seeds 2 to 5 three or four cycles after the assertion |
 | B14 | `a_I7`: `I7: in_ready is 1 during reset`, at 10000 ps (cycle 1), on every seed | this lab's assertion, during the reset at time 0; the starter's first check is the predictor's, `[RAL] CTRL read 0x1 in cycle 10; the mirror holds 0x0` |
-| B02 | `irq is 1 from cycle 5906, but STATUS = 001 and INT_EN = 000 make it 0` | the `irq` check, in `RouterLab06Vseq`, as in Lab 06; the solution's later errors come after resets, which clear `STATUS` |
+| B02 | `irq is 1 from cycle 5906, but STATUS = 001 and INT_EN = 000 make it 0` | the `irq` check, in `RouterLab06Vseq`, as in Lab 06; the solution's three later errors come after resets, which clear `STATUS` and `INT_EN`, so that a drop sets a `STATUS` bit that `INT_EN` doesn't enable |
 
 Every other bug's first check comes before `RouterLab07Vseq` starts (at 139200 ns on seed 1), in
 the part of the run that is Lab 06's, so it is the check that fires first in Lab 06's solution, in

@@ -39,7 +39,7 @@ Given the same code and the same seed, every random choice in every coroutine co
 so you can repeat a run that failed exactly. `make run SEED=7` reruns seed 7 and puts the run in a
 folder named after the seed, `build/runs/<test>-s7`. `SEED=random` picks a seed for you and names
 the folder after it in the same way. When we ran `make run TEST=CountTest SEED=random`, the run went
-into `build/runs/CountTest-s1008902463`, so you can run that seed again by giving its number to
+into `build/runs/CountTest-s367546708`, so you can run that seed again by giving its number to
 `SEED=`.
 
 cocotb doesn't seed `random` with `COCOTB_RANDOM_SEED` alone. Before each test, cocotb 2.0.1 adds

@@ -149,7 +149,7 @@ because the test never got there. The course's grader reads the log as well as c
 and it called the run caught, with a note:
 
 ```text
- caught: 1 assertion   0.27 s   log: build/runs/StageTest-s1-drop/run.log
+ caught: 1 assertion   0.26 s   log: build/runs/StageTest-s1-drop/run.log
    stage_sva.sv:41: Assertion failed in stage.u_sva.a_S1: S1: out_valid fell without a handshake
    note: Verilator stopped the run at its error limit, so the rest of the test didn't run. Runs through make raise it (+verilator+error+limit+N).
 ```

@@ -224,7 +224,9 @@ stopped the test at the second call:
 ```
 
 The graders call this run BROKEN rather than FAIL, because the exception came from the testbench,
-and a run that ends that way tells you about the testbench and nothing about the design.
+and a run that ends that way tells you about the testbench and nothing about the design. The time
+on the first line is how long the simulator ran. On two builds, the first run after the build
+took us 3.54 s and 3.56 s, and each later run took 1.88 s.
 
 ## Check yourself
 

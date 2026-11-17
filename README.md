@@ -13,9 +13,9 @@ for functional coverage, on Verilator 5.050. The only SystemVerilog a student wr
 assertions in Labs 05 and 07.
 
 This repository is being built. The shared build, the graders, the reference environment, CI,
-Labs 01 to 07, the home page and the four reference pages are in place. The guide pages aren't yet:
-the home page, the sidebar and the course PDF's chapters name all eighteen, so the course PDF
-won't build until they exist, and `docs/guide/getting-started.md` is still the template's sample.
+Labs 01 to 07, the home page, the eighteen guide pages and the four reference pages are in place,
+and the site and the course PDF build. The repository isn't on GitHub yet, so Getting started
+describes `mod add dd105-b` without quoting what it prints.
 
 ## Quick start
 
@@ -79,7 +79,7 @@ quarto render docs --profile pdf --to typst    # whole course as one PDF in docs
 | `docs/reference/` | Yes | Lookup pages: the router's specification, a one-page summary of it, pyuvm's register API, and getting the tools outside the course image |
 | `labs/` | No | Runnable packages |
 | `guide-examples/` | No | The examples that the guide and reference pages quote, one folder per page, each built with `labs/common/pyuvm.mk`; [`guide-examples/README.md`](guide-examples/README.md) lists the commands behind every output a page quotes |
-| `scripts/` | No | `check_site.py`, the link check for the rendered site; `ci/`, the reference-solution checks; `figures/`, the script that draws the router's block diagram; `screenshots/`, the tool that draws the waveform figures |
+| `scripts/` | No | `check_site.py`, the link check for the rendered site; `ci/`, the reference-solution checks; `figures/`, the scripts that draw the site's SVG diagrams and charts; `screenshots/`, the tool that draws the waveform figures |
 | `notebooks/`, `data/`, `figures/` | No | Repo scaffolding, unused by DD105-B |
 
 On every push to `main` that touches `docs/`, `scripts/check_site.py` or the workflow itself,
@@ -102,7 +102,9 @@ DD105-A da489f2" and "Copy the router's directed reference test from DD105-A da4
 byte for byte, and the commits after those hold every change DD105-B made to them.
 The copy of `scripts/screenshots/`, from the same DD105-A commit, is in a later commit of its own,
 "Copy scripts/screenshots from DD105-A da489f2". Lab 07's assertions and templates, from the same
-commit, are in another, "Copy Lab 07's assertions and templates from DD105-A da489f2".
+commit, are in another, "Copy Lab 07's assertions and templates from DD105-A da489f2", and
+`scripts/figures/uvm_figure_style.py`, the same at that commit, is in "Figures: DD105-A's
+uvm_figure_style.py, copied unchanged".
 
 | Here | From DD105-A | What it is |
 |---|---|---|
@@ -118,6 +120,7 @@ commit, are in another, "Copy Lab 07's assertions and templates from DD105-A da4
 | `labs/lab-07-capstone/PLAN-template.md`, `REPORT-template.md` | the same paths | the capstone's verification plan and report templates |
 | `labs/lab-01-one-alu-two-frameworks/rtl/alu.sv`, `labs/lab-01-one-alu-two-frameworks/bugs.json` | `labs/lab-01-one-alu-two-testbenches/rtl/alu.sv`, `bugs.json` | SimProc's ALU with DD104's three ALU bugs, A01 to A03, behind `+BUG` |
 | `scripts/screenshots/` | `scripts/screenshots/` | the tool that draws the labs' waveform figures in a headless Surfer or GTKWave |
+| `scripts/figures/uvm_figure_style.py` | the same path | the matplotlib style of six of the guide pages' figures (unchanged) |
 
 DD105-B's changes to these files are comments, links and one sentence on each spec page, apart
 from Lab 07's two templates: the assertion files, the ALU and `inject.py` describe DD105-B (Python

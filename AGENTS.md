@@ -33,7 +33,7 @@ Three files wire up the site. `docs/_quarto.yml` holds the site settings, sideba
 
 ## Course structure
 
-Every course follows the same shape, so a student always knows whether they should be reading or doing, and what comes next. Lab 01's writeup, `docs/labs/lab-01-one-alu-two-frameworks-overview.md`, shows it for a lab, and `docs/index.md` for the home page. `docs/guide/getting-started.md` is still the template's sample of a guide page, until DD105-B's own replaces it.
+Every course follows the same shape, so a student always knows whether they should be reading or doing, and what comes next. Lab 01's writeup, `docs/labs/lab-01-one-alu-two-frameworks-overview.md`, shows it for a lab, `docs/index.md` for the home page, and `docs/guide/getting-started.md` for a guide page.
 
 ### Home page
 
@@ -147,7 +147,7 @@ Don't paste long HDL into site pages. Link to the files under `labs/` instead.
 ## Adding a guide page
 
 1. Add a kebab-case Markdown file under `docs/guide/` (for example `yosys-synth.md`).
-2. Add it to a Read row in the course path table, to the sidebar in `docs/_quarto.yml`, and to the chapters in `docs/_quarto-pdf.yml`, at the same position in each. DD105-B's eighteen guide pages are already listed in all three by file name, so a page written at its listed path needs only its Read row's time, which the home page marks `READTIME` until every page in the row exists. The course PDF won't build while any page it lists is missing.
+2. Add it to a Read row in the course path table, to the sidebar in `docs/_quarto.yml`, and to the chapters in `docs/_quarto-pdf.yml`, at the same position in each. Then count that Read row's time again, and the total time, as the `READTIME` comment on the home page describes.
 3. Put images in `docs/assets/img/`.
 4. Link to `labs/` and `scripts/` with GitHub URLs (`https://github.com/uoftasic/<course-id>/tree/main/labs/...`).
 

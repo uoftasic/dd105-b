@@ -216,7 +216,7 @@ what that means here is three checks, all on the golden router:
   `[ENV] sent 100 packets (476 beats); output 0 took 243 beats and output 1 took 233` and
   `[SB] 100 packets in, 51 predicted for output 0, 51 checked, 0 errors`, and predicted 51, 52, 51,
   44 and 50 packets for output 0 on seeds 1 to 5, as Lab 02's README records. So the sink's stall
-  knob, the read, the tracker, the coverage and the split `Env` draw nothing and move nothing.
+  knob, the read, the tracker, the coverage and the split `Env` take no value from `random`.
 
 cocotb seeds Python's `random` for each test from `COCOTB_RANDOM_SEED` and the test's full name
 (`regression.py` in cocotb 2.0.1 hashes `test_router.router_rand_test` with SHA-1). So the probes
@@ -265,8 +265,8 @@ empty. B07's `DROP_CNT` line is DD105-A's, character for character. Where the sp
 - **`make cov` lists only the empty bins**, so the page reads the length bins' counts from
   `build/coverage/merged.xml` with `grep`.
 - **`Env.first_error()`** puts a `DROP_CNT` error before a scoreboard error logged at the same
-  time, because `check_drops()` runs before the scoreboard's `report()`; so B08's assert names the
-  `DROP_CNT` line first, as the log shows it.
+  time, because `check_drops()` runs before the scoreboard's `report()`; so the first error that
+  B08's assert names is the `DROP_CNT` line, the first one in the log.
 
 ## Lab 04's files
 

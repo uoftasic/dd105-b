@@ -13,7 +13,7 @@ for functional coverage, on Verilator 5.050. The only SystemVerilog a student wr
 assertions in Lab 05.
 
 This repository is being built. The shared build, the graders, the reference environment, CI and
-Labs 01 to 04 are in place. Labs 05 to 07 and the guide pages aren't yet, and the site's home page
+Labs 01 to 05 are in place. Labs 06 and 07 and the guide pages aren't yet, and the site's home page
 and Getting started page are still the template's samples.
 
 ## Quick start
@@ -44,7 +44,7 @@ scripts/ci/in-image.sh make -C labs/ref check-all   # the reference environment 
 | `labs/lab-02-a-layered-testbench-without-pyuvm/` | Lab 02: a plain-cocotb testbench for the router, whose monitor and scoreboard the student writes, and B05 and B09 |
 | `labs/lab-03-constraints-and-coverage/` | Lab 03: Lab 02's testbench with pyvsc packets, a level tracker and a `DROP_CNT` check; the student writes its coverage with cocotb-coverage, its length constraints and the stimulus that reaches B07 and B08 |
 | `labs/lab-04-the-same-testbench-in-pyuvm/` | Lab 04: our Lab 03 solution ported to pyuvm; the student adds an agent for output 1, a stall test and a factory override that sends packets to disabled routes, which reach B06 and B13 |
-| `labs/lab-05-protocol-rules-and-backpressure/` | so far only Lab 05's assertions and their `bind` |
+| `labs/lab-05-protocol-rules-and-backpressure/` | Lab 05: our Lab 04 solution with assertions bound into the router, a sink that can answer each beat and a virtual sequence; the student writes three of the assertions, the sink driver's answer to a beat and the sequence, which reaches B11 |
 
 `labs/common/bugs.py` is the answer key to the planted bugs, so a student should not open it until
 the labs are done.
@@ -52,7 +52,7 @@ the labs are done.
 `.github/workflows/labs.yml` checks the reference solutions in the course image: it makes the
 course venv, then `labs/common/selftest` must pass, and `labs/ref` must catch all fifteen bugs and
 pass the golden router on seeds 1 to 5. Each lab gets a step that requires the starter's
-`make check` to fail and the solution's to pass; Labs 01 to 04 have one so far. It runs on changes to
+`make check` to fail and the solution's to pass; Labs 01 to 05 have one so far. It runs on changes to
 `labs/`, its scripts in
 `scripts/ci/` and itself, every Monday, and by hand. Each step is one command you can run locally,
 for example `scripts/ci/in-image.sh scripts/ci/check-labs.sh ref`.

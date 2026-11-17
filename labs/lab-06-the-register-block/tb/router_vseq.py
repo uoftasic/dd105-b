@@ -1,14 +1,17 @@
 """
-DD105-B Lab 05: the virtual sequences.
+DD105-B Lab 06: the virtual sequences.
 
 A virtual sequence drives every agent from one place: register writes and
 reads through the APB agent, packets through the source agent, and each
 sink's backpressure through its OutCfg.
 
   RouterBaseVseq   the steps every virtual sequence uses, written on Lab 04's
-                   sequences (ApbRwSeq, RouterRandSeq, RouterOneSeq)
-  RouterLab05Vseq  this lab's: backpressure, oversize packets, and routes
-                   that move while packets are coming in (Part 4)
+                   sequences (ApbRwSeq, RouterRandSeq, RouterOneSeq) and, in
+                   Lab 06, on the register model
+  RouterLab05Vseq  Lab 05's: backpressure, oversize packets, and routes that
+                   move while packets are coming in
+  RouterLab06Vseq  this lab's: the register model's sequences, the addresses
+                   outside the map, and STATUS and INT_EN (Parts 2 to 5)
 
 pyuvm has no p_sequencer, so a virtual sequence is given the environment
 when it is made, and it runs on no sequencer of its own:
@@ -20,18 +23,21 @@ test's steps did. None of them checks anything itself. The scoreboard and
 the assertions check every cycle of every run, so a sequence only has to
 make the interesting thing happen.
 
-This is the reference solution: RouterLab05Vseq.body() is filled in, as
-Part 4 of the lab asks.
+Lab 06 adds the register helpers wr_reg(), rd_reg(), check_reg() and
+rd_all_regs(), which go through the register model, to the raw ones,
+wr() and rd(), which go around it. RouterLab05Vseq.body() is our Lab 05
+solution. RouterLab06Vseq.body() is yours, one TODO per part of the lab.
 """
 
 import random
 
 import cocotb
-from cocotb.triggers import RisingEdge
-from pyuvm import uvm_sequence
+from cocotb.triggers import Lock, RisingEdge
+from pyuvm import check_t, path_t, uvm_resp_t, uvm_sequence
 
 from router_agents import (SNK_FAST, SNK_PCT, SNK_RANDOM, SNK_SLOW, ApbRwSeq, RouterOneSeq,
                            RouterPkt, RouterRandSeq)
+from router_ral import RegBitBashSeq, RegResetSeq, good_addr, volatile_mask
 
 CTRL, DROP_CNT, ROUTE0 = 0x04, 0x10, 0x20
 
@@ -65,10 +71,13 @@ class RouterBaseVseq(uvm_sequence):
         for _ in range(n):
             await RisingEdge(self.env.dut.clk)
 
-    # ── registers ───────────────────────────────────────────────────────────
-    # One APB transfer each, as the base test's write_reg() and read_reg().
-    # The scoreboard checks every DROP_CNT read, so a read is a check, and
-    # nothing here needs the value.
+    # ── registers, raw ──────────────────────────────────────────────────────
+    # One APB transfer each, as the base test's write_reg() and read_reg(),
+    # to any address, good or bad: these go around the register model. The
+    # scoreboard checks every DROP_CNT read, so a read is a check, and
+    # nothing here needs the value. In Lab 06 the scoreboard also checks
+    # PSLVERR on every transfer, and every read of STATUS and of a bad
+    # address.
     async def wr(self, addr, data):
         await ApbRwSeq("wr", True, addr, data).start(self.env.apb.sqr)
 
@@ -82,6 +91,65 @@ class RouterBaseVseq(uvm_sequence):
 
     async def ctrl(self, en):
         await self.wr(CTRL, en)
+
+    # ── Lab 06: registers through the register model ────────────────────────
+    # Each helper takes a register of the model (self.regs.CTRL,
+    # self.regs.ROUTE[2], ...). The map turns the operation into one APB
+    # transfer through the adapter, so the APB monitor, the scoreboard and
+    # the predictor see it as they see a raw one. pyuvm raises
+    # UVMFatalError for two operations on one register at once, where
+    # SystemVerilog UVM makes the second wait, so each helper holds a lock
+    # for its register while the operation runs.
+    @property
+    def regs(self):
+        return self.env.regs
+
+    @property
+    def logger(self):
+        """A pyuvm sequence has no logger, so the virtual sequences report
+        through the env's, which BaseTest counts."""
+        return self.env.logger
+
+    def lock(self, reg):
+        locks = self.env.__dict__.setdefault("reg_locks", {})
+        if reg.get_name() not in locks:
+            locks[reg.get_name()] = Lock()
+        return locks[reg.get_name()]
+
+    async def wr_reg(self, reg, value):
+        """Write value to reg through the model."""
+        async with self.lock(reg):
+            status = await reg.write(value, self.regs.map, path_t.FRONTDOOR, check_t.NO_CHECK)
+        if status != uvm_resp_t.PASS_RESP:
+            self.logger.error(f"[VSEQ] writing {value:#x} to {reg.get_name()} returned {status.name}")
+
+    async def rd_reg(self, reg):
+        """Read reg through the model, and return the value read. The
+        scoreboard checks every read of STATUS, and the predictor checks
+        every read against the mirror outside the volatile fields."""
+        async with self.lock(reg):
+            status, value = await reg.read(self.regs.map, path_t.FRONTDOOR, check_t.NO_CHECK)
+        if status != uvm_resp_t.PASS_RESP:
+            self.logger.error(f"[VSEQ] reading {reg.get_name()} returned {status.name}")
+        return value
+
+    async def check_reg(self, reg):
+        """Read reg through the model and compare the value read with what
+        the mirror held before the read, outside the volatile fields: what
+        SystemVerilog UVM's mirror(UVM_CHECK) does, which pyuvm doesn't
+        have. The mirror is taken first because the predictor, once it's
+        connected, puts the value read in it as the read completes."""
+        dc = volatile_mask(reg)
+        want = reg.get_mirrored_value()
+        got = await self.rd_reg(reg)
+        if (got | dc) != (want | dc):
+            self.logger.error(f"[VSEQ] check_reg: {reg.get_name()} read {got:#x}; "
+                              f"the mirror held {want:#x}")
+
+    async def rd_all_regs(self):
+        """Every register read once through the model, in address order."""
+        for reg in self.regs.regs:
+            await self.rd_reg(reg)
 
     # ── packets ─────────────────────────────────────────────────────────────
     async def send(self, pkts):
@@ -206,3 +274,36 @@ class RouterLab05Vseq(RouterBaseVseq):
         await self.par(traffic(), self.backpressure(), moves())
         await self.drain()
         await self.rd(DROP_CNT)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Lab 06: the register block. RouterTest runs this first, while the router
+# still holds its reset values, and RouterLab06Test runs it alone.
+# ══════════════════════════════════════════════════════════════════════════════
+class RouterLab06Vseq(RouterBaseVseq):
+
+    async def body(self):
+        # TODO (Part 2): the reset values. Start a RegResetSeq on the model,
+        # reporting through the env's logger:
+        #     await RegResetSeq("RegResetSeq", self.regs, self.logger).start()
+        # It runs on no sequencer of its own; the map sends its reads to the
+        # APB agent's sequencer.
+
+        # TODO (Part 3): every bit. Run a RegBitBashSeq the same way.
+
+        # TODO (Part 3): the router set up around the model. Set it up the
+        # way Labs 04 and 05 do, with raw APB writes that go around the
+        # model: route(0, 1, 0), route(1, 1, 1), route(2, 0, 1),
+        # route(3, 1, 1) and ctrl(1). Then read CTRL and the four ROUTE
+        # registers (self.regs.ROUTE[n]) back with check_reg().
+
+        # TODO (Part 4): the addresses outside the map. Read every address
+        # that has no register (good_addr(a) is False for those) with
+        # rd(a), then write each of them with wr(a, 0xFFFF_FFFF), and read
+        # every register with rd_all_regs().
+
+        # TODO (Part 5): STATUS and INT_EN. Part 5 of the lab lists the steps:
+        # set all three STATUS bits with INT_EN at 0, turn each enable on by
+        # itself, then clear the bits one at a time, reading STATUS after
+        # each.
+        pass

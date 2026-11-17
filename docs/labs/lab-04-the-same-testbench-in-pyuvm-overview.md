@@ -15,6 +15,10 @@ Package: [`labs/lab-04-the-same-testbench-in-pyuvm/`](https://github.com/uoftasi
 - Finish [Lab 02](lab-02-a-layered-testbench-without-pyuvm-overview.md) and
   [Lab 03](lab-03-constraints-and-coverage-overview.md). Keep your Lab 03 files in that lab's
   `tb/`, because Part 5 counts them.
+- Read [The pyuvm skeleton](../guide/the-pyuvm-skeleton.md),
+  [Sequences, sequencers and drivers](../guide/sequences-sequencers-and-drivers.md),
+  [Monitors, analysis ports and scoreboards](../guide/monitors-analysis-ports-and-scoreboards.md)
+  and [The factory and ConfigDB](../guide/the-factory-and-configdb.md).
 - Look again at `tb/alu_uvm.py` from [Lab 01](lab-01-one-alu-two-frameworks-overview.md). The port
   has the same kinds of pieces (sequences, drivers, monitors, agents, an environment, and tests
   that derive from `BaseTest`). It also leans on two things that file used and Lab 01's page didn't

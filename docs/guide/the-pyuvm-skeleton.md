@@ -81,7 +81,7 @@ cocotb runs functions marked `@cocotb.test()`. `@pyuvm.test()` wraps a test clas
 function and gives the function the class's name. When cocotb calls that function, the function asks
 pyuvm's `uvm_root` to make an instance of the class, name it `uvm_test_top`, and run the phases.
 `make run TEST=SkPhaseTest` passes cocotb a filter that matches the test name `SkPhaseTest` exactly,
-and cocotb runs only the test whose name matches, so one build serves every test in a lab.
+and cocotb runs only the test whose name matches, so one build serves all of a testbench's tests.
 
 `@pyuvm.test()` adds the cocotb test to the module that the decorator is written in, and cocotb looks
 for tests only in the modules that the lab's `TEST_MODULES` names. So write each test class, with its

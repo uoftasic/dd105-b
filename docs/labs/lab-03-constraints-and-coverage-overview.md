@@ -434,7 +434,7 @@ How do you get the length distribution you ask for, and how do you know you got 
 
    Line 7 measures pyvsc's speed. A two-field class was randomized 571 times a second, about
    1.8 ms a call, while `random.randint()` ran 2.8 million times a second. That's why the packet's
-   payload bytes and idle cycles come from Python's `random`, in `build()`, and the solver picks
+   payload bytes and idle cycles come from Python's `random`, in `build()`, and pyvsc picks
    only the packet's random fields: the DST, the kind and, once step 3 makes it random, the length.
 
    Line 8 shows that a pyvsc object takes its random state from Python's `random` at its first

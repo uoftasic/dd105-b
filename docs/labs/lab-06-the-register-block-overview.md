@@ -2,10 +2,11 @@
 
 In this lab you'll give the Lab 05 testbench a register model built on pyuvm's register classes. You
 write the fields of `STATUS`, `DROP_CNT`, `LEVEL` and the four `ROUTE` registers, the adapter that
-turns a register operation into an APB transfer, and a sequence that reads each register and
-compares it with its reset value. Then you write the predictor, which keeps the model's copy of the
-registers in step with every transfer on the bus, and a bit-bash sequence, which writes every bit
-both ways and reads it back. SystemVerilog UVM's library has these three pieces, and pyuvm 4.0.1
+turns a register operation into an APB transfer, and a reset sequence, which reads the registers
+that the router doesn't change on its own and compares each with its reset value. Then you write the
+predictor, which keeps the model's copy of the registers in step with every transfer on the bus, and
+a bit-bash sequence, which writes each bit both ways and reads it back, apart from the bits that the
+router changes on its own. SystemVerilog UVM's library has these three pieces, and pyuvm 4.0.1
 doesn't, so here you write them yourself. After that you test the 246 addresses that the model can't
 reach, and make the scoreboard check `irq` against `STATUS` and `INT_EN` in every cycle. The Lab 05
 testbench misses all five of this lab's planted bugs (B01, B02, B03, B04 and B14), and with your
@@ -28,9 +29,9 @@ added for you:
 
 | File | What Lab 06 adds |
 |---|---|
-| `tb/router_ral.py` | the register model, the adapter, the predictor and the two register sequences; four registers' fields, the adapter and the reset sequence are yours (Part 2), and so are the predictor and the bit-bash sequence (Part 3) |
+| `tb/router_ral.py` | the register model, the adapter, the predictor and the two register sequences; seven registers' fields, the adapter and the reset sequence are yours (Part 2), and so are the predictor and the bit-bash sequence (Part 3) |
 | `tb/router_agents.py` | `SysMonitor`, which reports `rst_n` and `irq` every cycle |
-| `tb/router_env.py` | the environment makes the register model, the adapter and the predictor, and you connect the predictor (Part 3); the scoreboard models `STATUS` and `INT_EN`, checks `STATUS` reads, `PSLVERR` and reads of bad addresses, and has an `irq` check for you to write (Part 5) |
+| `tb/router_env.py` | the environment makes the register model, the adapter and the predictor, and you connect the predictor (Part 3); the scoreboard models `STATUS` and `INT_EN`, checks `STATUS` reads, `PSLVERR` and reads of bad addresses, and has an `irq` check for you to write (Part 5); its Lab 05 error `no beat was checked` is now `nothing was checked`, which a test that reads a register doesn't get |
 | `tb/router_vseq.py` | helpers that go through the model (`wr_reg`, `rd_reg`, `check_reg`, `rd_all_regs`), and `RouterLab06Vseq`, with one `TODO` per part |
 | `tb/test_router.py` | `RouterTest` runs `RouterLab06Vseq` first, then everything Lab 05's `RouterTest` ran; `RouterLab06Test` runs the sequence alone |
 | `src/predict.py` | `make predict`, which shows what `predict()` does to your model (Part 3) |
@@ -62,8 +63,8 @@ What does your Lab 05 testbench check about the registers?
     /foss/designs/modules/dd105-b/labs/lab-06-the-register-block/build/sim_build/Vtop is up to date.
    ```
 
-   Our counts include the builds of Labs 01 to 05, with Lab 05's rebuild after its Part 2, which
-   came to 35 hits and 14 misses, so this build's own were 6 hits and 1 miss.
+   Our counts include the builds of Labs 01 to 05, with the rebuild in Lab 05's Part 2, which came
+   to 35 hits and 14 misses, so this build's own were 6 hits and 1 miss.
 
 2. Run the graded test, `RouterTest`, and pull the scoreboard's summary out of the log:
 
@@ -133,8 +134,9 @@ What does your Lab 05 testbench check about the registers?
    of `CTRL` in that window would show it, and so would a packet offered then, because `in_ready`
    stays 0 after reset until software sets `CTRL.EN`. Lab 04's steps write `CTRL` before the first
    packet and never read it, and the scoreboard wouldn't check a read of `CTRL` anyway: the only
-   register reads it checks are those of `DROP_CNT` and `STATUS`, and nothing checks `in_ready`.
-   B02 hides because nothing checks `irq` yet, as the third `[SB]` line says.
+   register reads it checks are those of `DROP_CNT` and `STATUS`. Nothing checks that `in_ready`
+   stays 0 until `CTRL.EN` is set. B02 hides because nothing checks `irq` yet, as the third `[SB]`
+   line says.
 
    </details>
 
@@ -211,9 +213,9 @@ with it?
 
 3. Write the adapter's two methods, `ApbRegAdapter.reg2bus()` and `bus2reg()`. The map calls
    `reg2bus()` with each register operation and starts the `ApbItem` it returns on the APB
-   sequencer. When the driver has finished the transfer, the map calls
-   `bus2reg()` with the same item, and the status `bus2reg()` puts in `rw.status` is what the
-   register's `read()` or `write()` returns. Give a transfer that ended with `PSLVERR` the status
+   sequencer. When the driver has finished the transfer, the map calls `bus2reg()` with the same
+   item, and the status `bus2reg()` puts in `rw.status` is what the register's `read()` or
+   `write()` returns. Give a transfer that ended with `PSLVERR` the status
    `uvm_resp_t.ERROR_RESP`. pyuvm passes the address as the string the register was configured
    with, so `reg2bus()` turns it back into a number with `int(rw.addr, 16)`.
 
@@ -336,10 +338,9 @@ sequence test?
    twelve other policies, back at its reset value instead of the value read; an `RW` or `RO`
    field keeps the value read. `UVM_PREDICT_DIRECT` takes the value read for every policy. No
    check in this testbench would notice the difference, since the mirror is never compared in a
-   volatile field: with
-   `UVM_PREDICT_READ` our solution still passed the golden router and still caught all five bugs.
-   Code that uses the mirror of `STATUS`, for example to clear exactly the bits it last read,
-   would go wrong.
+   volatile field: with `UVM_PREDICT_READ` our solution still passed the golden router and still
+   caught all five bugs. Code that uses the mirror of `STATUS`, for example to clear exactly the
+   bits it last read, would go wrong.
 
    </details>
 
@@ -410,11 +411,11 @@ sequence test?
 
 4. Write `RegBitBashSeq.body()` in `tb/router_ral.py`. For every bit that isn't in a volatile
    field, twice, it writes the register with that bit flipped from the mirror, takes the mirror,
-   reads the register back, and compares the value read with the mirror it took. Take the mirror before the read: once the read completes, your
-   predictor puts the value read in the mirror, and a sequence that compared with it then would
-   be comparing the value read with itself. Then write the first Part 3 `TODO` of
-   `RouterLab06Vseq`, which runs the bit bash before the raw writes. Run the test and look at
-   the two sequences' lines:
+   reads the register back, and compares the value read with the mirror it took. It has to take
+   the mirror before the read, because once the read completes your predictor puts the value read
+   in the mirror, and a sequence that compared with it then would be comparing the value read with
+   itself. Then write the first Part 3 `TODO` of `RouterLab06Vseq`, which runs the bit bash before
+   the raw writes. Run the test and look at the two sequences' lines:
 
    ```bash
    make run
@@ -610,13 +611,13 @@ Does `irq` follow `STATUS` and `INT_EN` in every cycle?
 
    Your `RouterLab06Vseq` sends no packets yet, so the drop that set `STATUS.NOROUTE` was in Lab
    04's traffic. Every phase of `RouterInjectTest` disables a route and sends packets to it (in
-   the first phase the routing table is `--01`). `INT_EN` stays 0 all through that traffic,
-   because Lab 04's steps and your Lab 05 sequence never write it, and the bit bash leaves each of
-   its bits the way it found it. So `irq` must stay 0, but B02, which ignores `INT_EN`, raises it
-   at the first NOROUTE drop. Nothing after that drop clears `STATUS`, so `irq` stays wrong and
-   the check reports it once. B01 shows only when something writes `STATUS` while a bit that the
-   write shouldn't clear is set. The only writes to `STATUS` so far are the bit bash's, right after
-   the reset, when every bit is 0.
+   `RouterTest`'s first phase the routing table is `--01`). `INT_EN` stays 0 all through that
+   traffic, because Lab 04's steps and your Lab 05 sequence never write it, and the bit bash leaves
+   each of its bits the way it found it. So `irq` must stay 0, but B02, which ignores `INT_EN`,
+   raises it at the first NOROUTE drop. Nothing after that drop clears `STATUS`, so `irq` stays
+   wrong and the check reports it once. B01 shows only when something writes `STATUS` while a bit
+   that the write shouldn't clear is set. The only writes to `STATUS` so far are the bit bash's,
+   right after the reset, when every bit is 0.
 
    </details>
 
@@ -652,7 +653,13 @@ Does `irq` follow `STATUS` and `INT_EN` in every cycle?
     Every bug in the list, each one caught by a check that fired.
    ```
 
-   B01's errors, with our wording, are:
+   Look at B01's errors:
+
+   ```bash
+   grep ERROR build/grade/B01/run.log | grep -o '\[uvm_test_top[^]]*\]: .*'
+   ```
+
+   With our wording they are:
 
    ```text
    [uvm_test_top.env.sb]: irq is 0 from cycle 5955, but STATUS = 110 and INT_EN = 111 make it 1
@@ -668,11 +675,10 @@ Does `irq` follow `STATUS` and `INT_EN` in every cycle?
    <summary>Answer</summary>
 
    Your step ends with `INT_EN` at `0b111`, and nothing writes it again, so Lab 04's traffic and
-   your Lab 05 sequence run with every enable on. With every enable on,
-   `STATUS & INT_EN` is `STATUS`, so B02 makes no difference to `irq`. That is the situation
-   the catalogue means when it says that B02 hides behind "turning on every interrupt enable
-   before looking at irq". Your step catches B02 earlier, after the NOROUTE drop and while
-   `INT_EN` is still 0.
+   your Lab 05 sequence run with every enable on. With every enable on, `STATUS & INT_EN` is
+   `STATUS`, so B02 makes no difference to `irq`. That is the situation the catalogue means when it
+   says that B02 hides behind "turning on every interrupt enable before looking at irq". Your step
+   catches B02 earlier, after the NOROUTE drop and while `INT_EN` is still 0.
 
    </details>
 
@@ -690,10 +696,10 @@ Does `irq` follow `STATUS` and `INT_EN` in every cycle?
    [SB] registers: 870 reads, 64 of STATUS checked; 492 transfers to bad addresses; irq checked in 13918 cycles, wrong in 0
    ```
 
-   Before your Part 5 step, the first two lines were Lab 05's: 1123 packets, 376 of them FULL.
-   The total is 12 more, the 12 packets your step sent, but the split moved by more than they
-   explain: 359 FULL drops where Lab 05 had 376. Why did Lab 04's and Lab 05's packets change now, and not
-   in Parts 2 to 4?
+   Up to Part 4, the packet and beat counts in the first two lines were Lab 05's: 1123 packets,
+   376 of them FULL. The total is now 12 more, the 12 packets your step sent, and only one of those
+   was a FULL drop, yet there are 359 FULL drops where Lab 05 had 376. Why did Lab 04's and
+   Lab 05's packets change now, and not in Parts 2 to 4?
 
    <details>
    <summary>Answer</summary>
@@ -765,7 +771,8 @@ Run your testbench against every bug in the catalogue:
 make check-all BUG_LIST="B01 B02 B03 B04 B05 B06 B07 B08 B09 B10 B11 B12 B13 B14 B15"
 ```
 
-Our solution catches 14 of the 15, in 88 s, and its output ends with:
+Our solution catches 14 of the 15, in 88 s. These are the last two rows of its table, with the
+count under them:
 
 ```text
   caught  tier 6  B14_enable_resets_to_one         2 errors, 0 assertions          8.0s

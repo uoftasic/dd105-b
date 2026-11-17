@@ -31,4 +31,4 @@ and each test catches what an operation raises and prints it, so every run ends 
 
 `grep REGAPI build/runs/<test>-s1/run.log` pulls a test's lines out of its log. In the course image
 with 2 CPUs and 3 GB, `make build` took 7.8 s with an empty ccache, and each run took 0.31 s to
-1.16 s.
+1.17 s.

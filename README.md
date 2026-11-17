@@ -82,10 +82,11 @@ quarto render docs --profile pdf --to typst    # whole course as one PDF in docs
 | `scripts/` | No | `check_site.py`, the link check for the rendered site; `ci/`, the reference-solution checks; `figures/`, the script that draws the router's block diagram; `screenshots/`, the tool that draws the waveform figures |
 | `notebooks/`, `data/`, `figures/` | No | Repo scaffolding, unused by DD105-B |
 
-GitHub Pages is set to Source: GitHub Actions. On every push to `main` that touches `docs/`,
-`scripts/check_site.py` or the workflow itself, `.github/workflows/site.yml` renders the site (with
-a PDF of every page) and the course PDF, checks the rendered site's local links and anchors with
-`scripts/check_site.py`, and deploys `docs/_site`.
+On every push to `main` that touches `docs/`, `scripts/check_site.py` or the workflow itself,
+`.github/workflows/site.yml` renders the site (with a PDF of every page) and the course PDF, checks
+the rendered site's local links and anchors with `scripts/check_site.py`, and deploys `docs/_site`.
+For the deploy, GitHub Pages has to be set to Source: GitHub Actions, which `TEMPLATE.md`'s
+checklist still lists as to do, since the repository isn't on GitHub yet.
 
 This repo was created from [uoftasic/course-template](https://github.com/uoftasic/course-template)
 at commit `92e35ab`. `TEMPLATE.md`, `REFERENCE-SOLUTION-CI.md` and `scripts/init-template.py` are

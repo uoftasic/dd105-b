@@ -9,11 +9,11 @@ Python library of UVM's classes that runs on cocotb.
 
 DD105-B is part of the UofT ASIC Team education materials, published at
 <https://uoftasic.com/dd105-b/>. The labs run in the workbench: the IIC-OSIC-TOOLS container you
-start from the `workspace` clone you set up in [IC101](https://uoftasic.com/ic101/). The workbench's
-`mod add dd105-b` clones this course's [repository](https://github.com/uoftasic/dd105-b), whose
-`labs/` folder holds everything the labs run, and
+start from the `workspace` clone you set up in [IC101](https://uoftasic.com/ic101/). You get this
+course's files with the workbench's `mod add dd105-b`, which
 [Lab 01, Part 1](labs/lab-01-one-alu-two-frameworks-overview.md#part-1-load-the-course) walks you
-through it.
+through. It clones the course's [repository](https://github.com/uoftasic/dd105-b), whose `labs/`
+folder holds everything the labs run.
 
 ## Who this course is for
 
@@ -70,13 +70,13 @@ than for reading from start to finish:
 
 ## DD105-A
 
-DD105-A is this course's sibling. It has the same router, the same fifteen bugs and the same seven
-labs in the same order, and you write its testbenches in SystemVerilog, with the UVM library, on
-Verilator 5.050. Students take one of the two courses, not both. In DD105-A's Lab 01, a
-SystemVerilog UVM testbench for SimProc's ALU took 102 s to build, because Verilator compiled the
-whole UVM library along with the ALU, and an edit to its scoreboard took 99 s to rebuild. In this
-course's Lab 01, the pyuvm testbench for the same ALU builds in 7.3 s with an empty compiler cache,
-because Verilator compiles only the ALU, and an edit to the testbench rebuilds nothing.
+DD105-A has the same router, the same fifteen bugs and the same seven labs in the same order as
+this course, and you write its testbenches in SystemVerilog, with the UVM library, on Verilator
+5.050. Students take one of the two courses, not both. In DD105-A's Lab 01, a SystemVerilog UVM
+testbench for SimProc's ALU took 102 s to build, because Verilator compiled the whole UVM library
+along with the ALU. An edit to its scoreboard took 99 s to rebuild. In this course's Lab 01, the
+pyuvm testbench for the same ALU builds in 7.3 s with an empty compiler cache, because Verilator
+compiles only the ALU. The testbench is Python, so an edit to it rebuilds nothing.
 
 ## Getting help
 

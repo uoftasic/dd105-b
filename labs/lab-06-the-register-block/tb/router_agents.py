@@ -1,5 +1,5 @@
 """
-DD105-B Lab 05: the agents. One agent for each kind of port, each with the
+DD105-B Lab 06: the agents. One agent for each kind of port, each with the
 same shape: a driver that puts values on the pins, a monitor that reports
 what moved on them, and a sequencer for the driver's items.
 
@@ -17,22 +17,24 @@ what moved on them, and a sequencer for the driver's items.
   SinkDriver, OutMonitor, OutAgent           an output stream; the environment
                    makes one OutAgent for each output. SinkDriver is Lab 04's
                    OutReadyDriver, which in Lab 05 can also answer each beat
-                   with an item from SinkSeq (Part 3)
+                   with an item from SinkSeq
   ApbItem, ApbDriver, ApbMonitor, ApbAgent   the APB port; the monitor stamps
                    each transfer with its cycle (Lab 05)
+  SysSample, SysMonitor                      rst_n and irq in every cycle (Lab 06)
   RouterRandSeq    n random packets (Lab 03's generator)
   RouterOneSeq     one packet that the test made itself
   ApbRwSeq         one APB transfer
 
-This is Lab 04's file with Lab 05's additions, each marked "Lab 05". It is
-the reference solution: SinkDriver's countdown and its out_ready decision
-are filled in, as Part 3 of the lab asks.
+This is our Lab 05 solution (SinkDriver's countdown and its out_ready
+decision filled in) with Lab 06's addition, the sys monitor. Lab 05's
+additions are still marked "Lab 05". Nothing in this file is left for you
+to write.
 
 The timing rule is Lab 02's: every driver changes the router's inputs right
 after a rising edge, and every monitor reads the pins at the falling edge in
 the middle of the cycle, where nothing is changing. Each monitor counts the
 falling edges from the start of the test, so cycle n is the clock period that
-holds the nth falling edge, and the three monitors agree on it.
+holds the nth falling edge, and the monitors agree on it.
 
 Every class here derives from a pyuvm class, so each can be made with
 create(), and a test can swap in a subclass through the factory.
@@ -532,6 +534,38 @@ class ApbAgent(uvm_agent):
 
     def connect_phase(self):
         self.drv.seq_item_port.connect(self.sqr.seq_item_export)
+
+
+# ── Lab 06: rst_n and irq ────────────────────────────────────────────────────
+
+class SysSample(uvm_sequence_item):
+    """rst_n and irq as they were in one cycle."""
+
+    def __init__(self, cycle, rst_n, irq):
+        super().__init__("sys")
+        self.cycle = cycle
+        self.rst_n = rst_n
+        self.irq = irq
+
+
+class SysMonitor(uvm_monitor):
+    """Reads rst_n and irq at every falling edge and writes a SysSample for
+    every cycle, counting the cycles as the other monitors do. Nothing in
+    the testbench drives either pin: the base test drives rst_n, and the
+    router drives irq. The scoreboard checks irq against its model of
+    STATUS and INT_EN."""
+
+    def build_phase(self):
+        self.ap = uvm_analysis_port("ap", self)
+        self.dut = ConfigDB().get(self, "", "DUT")
+
+    async def run_phase(self):
+        d = self.dut
+        cycle = 0
+        while True:
+            await FallingEdge(d.clk)
+            cycle += 1
+            self.ap.write(SysSample(cycle, int(d.rst_n.value), int(d.irq.value)))
 
 
 # ── sequences ────────────────────────────────────────────────────────────────

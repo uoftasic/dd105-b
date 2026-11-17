@@ -1,12 +1,16 @@
 """
-DD105-B Lab 05: the tests. Every one runs on the same simulator, and TEST=
+DD105-B Lab 06: the tests. Every one runs on the same simulator, and TEST=
 picks one when the simulator starts:
 
-  RouterTest        RouterInjectTest's steps, then RouterLab05Vseq (Part 4);
-                    make check and make check-all grade this one
-  RouterLab05Test   RouterLab05Vseq on its own (Part 4)
-  RouterSinkTest    RouterRandTest with both sinks in SNK_RANDOM, each beat
-                    answered by an item (Part 3)
+  RouterTest        RouterLab06Vseq (Parts 2 to 5), then everything Lab 05's
+                    RouterTest ran: RouterInjectTest's steps and
+                    RouterLab05Vseq; make check and make check-all grade
+                    this one
+  RouterLab06Test   RouterLab06Vseq on its own: the first part of
+                    RouterTest, cycle for cycle
+  RouterLab05Test   Lab 05's: RouterLab05Vseq on its own
+  RouterSinkTest    Lab 05's: RouterRandTest with both sinks in SNK_RANDOM,
+                    each beat answered by an item
   RouterInjectTest  Lab 04's: RouterStallTest, with NoroutePkt swapped in for
                     RouterPkt by a factory override
   RouterStallTest   Lab 04's: RouterRandTest, with one output stalled in each
@@ -24,10 +28,9 @@ Plusargs: +N=<packets> (200 a phase; 100 in RouterClassTest), +PHASES=<n>
 and +OVERRIDE=<class>,<class>, a factory override by name, which the base
 test applies before it builds anything.
 
-This is our Lab 04 solution (RouterStallTest, NoroutePkt and
-RouterInjectTest filled in) with Lab 05's three tests added. The base test
-also starts a SinkSeq on each output before anything else (Lab 05). Nothing
-in this file is left for you to write.
+This is Lab 05's file with RouterTest changed and RouterLab06Test added,
+both marked "Lab 06". The base test starts a SinkSeq on each output before
+anything else (Lab 05). Nothing in this file is left for you to write.
 
 Every test derives from RouterLabTest, which derives from the course's
 RouterBaseTest (labs/common/py/dd105b_base.py). BaseTest's final_phase fails
@@ -47,7 +50,7 @@ from dd105b_base import RouterBaseTest
 from router_agents import (SNK_PCT, SNK_RANDOM, ApbRwSeq, OutCfg, RouterOneSeq, RouterPkt,
                            RouterRandSeq, SinkSeq)
 from router_env import RouterEnv
-from router_vseq import RouterLab05Vseq
+from router_vseq import RouterLab05Vseq, RouterLab06Vseq
 
 CTRL, DROP_CNT, ROUTE0 = 0x04, 0x10, 0x20
 
@@ -393,16 +396,20 @@ class RouterSinkTest(RouterRandTest):
 
 @pyuvm.test()
 class RouterTest(RouterInjectTest):
-    """The graded test: everything RouterInjectTest does, unchanged, and then
-    this lab's virtual sequence (Part 4). The factory override is still on,
-    so the sequence's random packets are NoroutePkts too; with every route
+    """The graded test. Lab 06: RouterLab06Vseq first, while the router
+    still holds its reset values, because a reset sequence compares what it
+    reads with them; then everything Lab 05's RouterTest did, unchanged:
+    RouterInjectTest's steps and RouterLab05Vseq. The factory override is
+    still on, so Lab 05's random packets are NoroutePkts; with every route
     enabled they behave as RouterPkts.
 
-    The sequence is made after RouterInjectTest's steps, because every
-    random value comes from Python's random, one after another: anything
-    the sequence drew first would change every packet after it."""
+    Every random value comes from Python's random, one after another, so
+    anything RouterLab06Vseq draws changes every packet after it."""
 
     async def body(self):
+        self.logger.info("[VSEQ] starting RouterLab06Vseq")
+        await RouterLab06Vseq("lab06", self.env).start()
+        self.logger.info("[VSEQ] RouterLab06Vseq is done; starting RouterInjectTest's steps")
         await super().body()
         self.logger.info("[VSEQ] RouterInjectTest's steps are done; starting RouterLab05Vseq")
         await RouterLab05Vseq("vseq", self.env).start()
@@ -410,7 +417,19 @@ class RouterTest(RouterInjectTest):
 
 @pyuvm.test()
 class RouterLab05Test(RouterLabTest):
-    """Part 4: RouterLab05Vseq on its own, from a router just out of reset."""
+    """Lab 05, Part 4: RouterLab05Vseq on its own, from a router just out of
+    reset."""
 
     async def body(self):
         await RouterLab05Vseq("vseq", self.env).start()
+
+
+# ── Lab 06 ───────────────────────────────────────────────────────────────────
+
+@pyuvm.test()
+class RouterLab06Test(RouterLabTest):
+    """RouterLab06Vseq on its own: the first part of RouterTest, cycle for
+    cycle."""
+
+    async def body(self):
+        await RouterLab06Vseq("lab06", self.env).start()

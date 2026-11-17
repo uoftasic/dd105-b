@@ -1,5 +1,5 @@
 """
-DD105-B Lab 06: the agents. One agent for each kind of port, each with the
+DD105-B Lab 07: the agents. One agent for each kind of port, each with the
 same shape: a driver that puts values on the pins, a monitor that reports
 what moved on them, and a sequencer for the driver's items.
 
@@ -21,14 +21,23 @@ what moved on them, and a sequencer for the driver's items.
   ApbItem, ApbDriver, ApbMonitor, ApbAgent   the APB port; the monitor stamps
                    each transfer with its cycle (Lab 05)
   SysSample, SysMonitor                      rst_n and irq in every cycle (Lab 06)
+  ResetState       how the reset driver warns the other drivers that a reset
+                   is coming (Lab 07)
+  ResetItem, ResetDriver, SysAgent           the reset driver, with the sys
+                   monitor beside it (Lab 07)
   RouterRandSeq    n random packets (Lab 03's generator)
   RouterOneSeq     one packet that the test made itself
   ApbRwSeq         one APB transfer
+  ResetSeq         one reset (Lab 07)
 
-This is our Lab 05 solution (SinkDriver's countdown and its out_ready
-decision filled in) with Lab 06's addition, the sys monitor. Lab 05's
-additions are still marked "Lab 05". Nothing in this file is left for you
-to write.
+This is Lab 06's file. Lab 07 adds the reset driver, and teaches two
+drivers what to do when rst_n falls in the middle of their work: the source
+driver abandons the packet it was sending (rule I3), and the APB driver
+keeps psel at 0 while rst_n is 0, abandoning a transfer the reset
+interrupts and starting it again afterwards (rule A4). Neither waits any
+longer than in Lab 06 when there is no reset, so a test that never resets
+runs cycle for cycle as it did in Lab 06. Lab 07's additions are marked
+"Lab 07". Nothing in this file is left for you to write.
 
 The timing rule is Lab 02's: every driver changes the router's inputs right
 after a rising edge, and every monitor reads the pins at the falling edge in
@@ -45,8 +54,10 @@ import random
 
 import vsc
 from cocotb.triggers import FallingEdge, RisingEdge
+from cocotb.utils import get_sim_time
 from pyuvm import (ConfigDB, uvm_agent, uvm_analysis_port, uvm_driver,
                    uvm_monitor, uvm_sequence, uvm_sequence_item, uvm_sequencer)
+from pyuvm.error_classes import UVMConfigItemNotFound
 
 
 async def after_rising_edge(dut):
@@ -55,6 +66,43 @@ async def after_rising_edge(dut):
     low."""
     if not dut.clk.value:
         await RisingEdge(dut.clk)
+
+
+# ── Lab 07: the warning before a reset ───────────────────────────────────────
+
+class ResetState:
+    """How the reset driver warns the drivers that a reset is coming. The
+    environment makes one and puts it in ConfigDB as "RESET".
+
+    The reset driver sets `soon` right after the rising edge before the one
+    at which it pulls rst_n low, and records the time it did so in
+    `soon_time`. Right after the next edge it pulls rst_n low and adds one
+    to `epoch`, and it clears `soon` when it lets rst_n go. So right after a
+    rising edge a driver can tell three things apart: no reset coming; a
+    reset that starts at the next edge (`soon` set in this time step), when
+    a transfer already under way carries on for one more cycle, because rule
+    A1 holds until rst_n is 0; and a reset that starts at this edge (`soon`
+    set at an earlier one), when it must stop at once. The APB driver keeps
+    psel at 0 in every reset cycle that way (rule A4), and the source driver
+    abandons a packet once `epoch` has moved (rule I3)."""
+
+    def __init__(self):
+        self.soon = False
+        self.soon_time = 0
+        self.epoch = 0
+
+    def starts_now(self):
+        """Right after a rising edge: True if rst_n falls at this edge."""
+        return self.soon and self.soon_time < get_sim_time("step")
+
+
+def reset_state(comp):
+    """The environment's ResetState, or one that never changes if nothing put
+    one in ConfigDB."""
+    try:
+        return ConfigDB().get(comp, "", "RESET")
+    except UVMConfigItemNotFound:
+        return ResetState()
 
 
 # ── the packet ───────────────────────────────────────────────────────────────
@@ -187,12 +235,20 @@ class SrcDriver(uvm_driver):
     beats, and offers each beat (in_valid = 1) until a cycle in which in_ready
     is also 1. That cycle is the handshake, and the beat moves at the rising
     edge that ends it. A beat that waits MAX_WAIT cycles is an error, and the
-    rest of its packet is dropped."""
+    rest of its packet is dropped.
+
+    Lab 07: rule I3. A reset ends the packet. In the first reset cycle the
+    driver reports the packet as abandoned and, right after the next rising
+    edge, lowers in_valid and takes the next packet, whose header it offers
+    once the reset is over. Without this it would go on offering the rest of
+    the old packet, and the router would take its next beat as a header."""
 
     MAX_WAIT = 1000
 
     def build_phase(self):
         self.dut = ConfigDB().get(self, "", "DUT")
+        self.rst = reset_state(self)            # Lab 07
+        self.abandoned = 0                      # Lab 07: packets a reset cut short
 
     async def run_phase(self):
         d = self.dut
@@ -204,13 +260,31 @@ class SrcDriver(uvm_driver):
             d.in_valid.value = 0
             self.seq_item_port.item_done()
 
+    def reset_seen(self, epoch):
+        """Lab 07: a reset has started since `epoch`, or rst_n is 0 now."""
+        return self.rst.epoch != epoch or not self.dut.rst_n.value
+
+    def abandon(self, p, i):
+        """Lab 07: beats 0 to i-1 of p went in before the reset; the rest never will."""
+        self.abandoned += 1
+        self.logger.info(f"[SRC] reset: abandoned {p} after {i} beat{'' if i == 1 else 's'}")
+
     async def send(self, p):
         d = self.dut
+        # Lab 07: start a packet only outside a reset, and not in the cycle
+        # before one.
+        while self.rst.soon or not d.rst_n.value:
+            d.in_valid.value = 0
+            await RisingEdge(d.clk)
+        epoch = self.rst.epoch
         for i, beat in enumerate(p.data):
             if p.gaps[i]:
                 d.in_valid.value = 0
                 for _ in range(p.gaps[i]):
                     await RisingEdge(d.clk)
+                    if self.reset_seen(epoch):          # Lab 07
+                        self.abandon(p, i)
+                        return
             d.in_valid.value = 1
             d.in_data.value = beat
             d.in_last.value = int(i == len(p.data) - 1)
@@ -218,6 +292,10 @@ class SrcDriver(uvm_driver):
             while True:
                 await FallingEdge(d.clk)
                 waited += 1
+                if self.reset_seen(epoch):              # Lab 07
+                    self.abandon(p, i)
+                    await RisingEdge(d.clk)
+                    return
                 if d.in_ready.value:
                     break
                 await RisingEdge(d.clk)
@@ -465,38 +543,79 @@ class ApbDriver(uvm_driver):
     starts right after the next rising edge, then access cycles until pready.
     A read's data is prdata as it is in the access cycle in which pready is
     1. The item is done right after the rising edge at which the transfer
-    completes."""
+    completes.
+
+    Lab 07: rule A4, psel is 0 while rst_n is 0. The driver starts no
+    transfer while the reset driver has warned that a reset is coming
+    (ResetState.soon) or rst_n is 0. After each rising edge of a transfer
+    under way it checks whether rst_n falls at that edge, and if it does it
+    drops psel at once, so psel is 0 from the first reset cycle. It doesn't
+    stop any earlier: rule A1 holds until the reset starts, so a setup cycle
+    in the last cycle before it is still followed by an access cycle. The
+    transfer is abandoned and started again from its setup cycle once the
+    reset is over, so the sequence that sent it still gets its answer.
+    `restarts` counts them."""
 
     def build_phase(self):
         self.dut = ConfigDB().get(self, "", "DUT")
+        self.rst = reset_state(self)            # Lab 07
+        self.restarts = 0                       # Lab 07
+
+    def idle(self):
+        self.dut.psel.value = 0
+        self.dut.penable.value = 0
+
+    def reset_coming(self):
+        """Lab 07: right after a rising edge, the next cycle must be idle."""
+        return self.rst.soon or not self.dut.rst_n.value
+
+    def reset_now(self):
+        """Lab 07: right after a rising edge, rst_n falls at this edge or is 0."""
+        return self.rst.starts_now() or not self.dut.rst_n.value
 
     async def run_phase(self):
-        d = self.dut
-        d.psel.value = 0
-        d.penable.value = 0
+        self.idle()
         while True:
             t = await self.seq_item_port.get_next_item()
-            await RisingEdge(d.clk)
-            d.psel.value = 1
-            d.penable.value = 0
-            d.pwrite.value = int(t.write)
-            d.paddr.value = t.addr
-            d.pwdata.value = t.wdata if t.write else 0
-            await RisingEdge(d.clk)                 # the setup cycle ends
-            d.penable.value = 1
-            while True:
-                await FallingEdge(d.clk)
-                done = bool(d.pready.value)
-                rdata, slverr = int(d.prdata.value), int(d.pslverr.value)
-                await RisingEdge(d.clk)
-                if done:
-                    break
-            if not t.write:
-                t.rdata = rdata
-            t.slverr = slverr
-            d.psel.value = 0
-            d.penable.value = 0
+            while not await self.transfer(t):
+                self.restarts += 1          # Lab 07: a reset came first; again
+                self.logger.info(f"[APB] reset: abandoned a {'write' if t.write else 'read'} of "
+                                 f"{t.addr:02x}; it will start again after the reset")
             self.seq_item_port.item_done()
+
+    async def transfer(self, t):
+        """One try at the transfer: True if it completed, False if a reset
+        came first (Lab 07)."""
+        d = self.dut
+        await RisingEdge(d.clk)
+        while self.reset_coming():                  # Lab 07: no transfer in a reset
+            self.idle()
+            await RisingEdge(d.clk)
+        d.psel.value = 1
+        d.penable.value = 0
+        d.pwrite.value = int(t.write)
+        d.paddr.value = t.addr
+        d.pwdata.value = t.wdata if t.write else 0
+        await RisingEdge(d.clk)                     # the setup cycle ends
+        if self.reset_now():                        # Lab 07
+            self.idle()
+            return False
+        d.penable.value = 1
+        while True:
+            await FallingEdge(d.clk)
+            done = bool(d.pready.value)
+            rdata, slverr = int(d.prdata.value), int(d.pslverr.value)
+            await RisingEdge(d.clk)
+            if done:
+                break
+            if self.reset_now():                    # Lab 07
+                self.idle()
+                return False
+        if not t.write:
+            t.rdata = rdata
+        t.slverr = slverr
+        self.idle()
+        return True
 
 
 class ApbMonitor(uvm_monitor):
@@ -550,10 +669,10 @@ class SysSample(uvm_sequence_item):
 
 class SysMonitor(uvm_monitor):
     """Reads rst_n and irq at every falling edge and writes a SysSample for
-    every cycle, counting the cycles as the other monitors do. Nothing in
-    the testbench drives either pin: the base test drives rst_n, and the
-    router drives irq. The scoreboard checks irq against its model of
-    STATUS and INT_EN."""
+    every cycle, counting the cycles as the other monitors do. The base test
+    drives rst_n at time 0, the reset driver beside this monitor drives it
+    after that (Lab 07), and the router drives irq. The scoreboard checks irq
+    against its model of STATUS and INT_EN, and follows each reset."""
 
     def build_phase(self):
         self.ap = uvm_analysis_port("ap", self)
@@ -566,6 +685,61 @@ class SysMonitor(uvm_monitor):
             await FallingEdge(d.clk)
             cycle += 1
             self.ap.write(SysSample(cycle, int(d.rst_n.value), int(d.irq.value)))
+
+
+# ── Lab 07: the reset driver ─────────────────────────────────────────────────
+
+class ResetItem(uvm_sequence_item):
+    """A request for a reset: rst_n low for `cycles` cycles."""
+
+    def __init__(self, name="reset", cycles=3):
+        super().__init__(name)
+        self.cycles = cycles
+
+
+class ResetDriver(uvm_driver):
+    """Drives rst_n after time 0. For each item: right after the next rising
+    edge it sets ResetState.soon, right after the edge after that it pulls
+    rst_n low, and right after the edge that ends the item's last reset
+    cycle it lets rst_n go and clears `soon`. So a reset covers `cycles`
+    whole cycles, the first of them two cycles after the item arrives, and
+    the APB driver has a cycle's warning. The item is done right after the
+    edge at which rst_n goes back to 1, so whatever the sequence does next
+    starts in the first cycle after the reset."""
+
+    def build_phase(self):
+        self.dut = ConfigDB().get(self, "", "DUT")
+        self.rst = reset_state(self)
+
+    async def run_phase(self):
+        d = self.dut
+        while True:
+            it = await self.seq_item_port.get_next_item()
+            await RisingEdge(d.clk)
+            self.rst.soon = True
+            self.rst.soon_time = get_sim_time("step")
+            await RisingEdge(d.clk)
+            d.rst_n.value = 0
+            self.rst.epoch += 1
+            for _ in range(max(1, it.cycles)):
+                await RisingEdge(d.clk)
+            d.rst_n.value = 1
+            self.rst.soon = False
+            self.seq_item_port.item_done()
+
+
+class SysAgent(uvm_agent):
+    """Lab 06 had the sys monitor on its own, because nothing in the
+    testbench drove rst_n after time 0. Lab 07 puts it beside the reset
+    driver and its sequencer."""
+
+    def build_phase(self):
+        self.sqr = uvm_sequencer("sqr", self)
+        self.drv = ResetDriver.create("drv", self)
+        self.mon = SysMonitor.create("mon", self)
+
+    def connect_phase(self):
+        self.drv.seq_item_port.connect(self.sqr.seq_item_export)
 
 
 # ── sequences ────────────────────────────────────────────────────────────────
@@ -626,3 +800,17 @@ class ApbRwSeq(uvm_sequence):
         await self.start_item(self.t)
         self.t.write, self.t.addr, self.t.wdata = self.write, self.addr, self.wdata
         await self.finish_item(self.t)
+
+
+class ResetSeq(uvm_sequence):
+    """Lab 07: one reset of `cycles` cycles. start() returns right after the
+    rising edge at which rst_n goes back to 1."""
+
+    def __init__(self, name="reset_seq", cycles=3):
+        super().__init__(name)
+        self.cycles = cycles
+
+    async def body(self):
+        it = ResetItem("reset", self.cycles)
+        await self.start_item(it)
+        await self.finish_item(it)

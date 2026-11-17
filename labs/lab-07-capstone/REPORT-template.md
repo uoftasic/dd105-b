@@ -1,7 +1,7 @@
 # Verification report: the packet router
 
 <!--
-  DD105-A Lab 07. Part 4 of the lab copies this file to REPORT.md and fills
+  DD105-B Lab 07. Part 4 of the lab copies this file to REPORT.md and fills
   in the hunt table; Part 8 fills in the rest. Every number in it comes from
   a run you did: paste the line the tool printed, not your summary of it.
   Delete these comments when you're done.
@@ -45,16 +45,16 @@ paste the summary line here
 
 ## 5. Coverage
 
-_The `covergroup` line from the regression, the bins that were hard to reach and what reached
-them, and anything coverage doesn't show (rules with "no bin" in the plan)._
+_The `top` line of the regression's merged coverage, the bins that were hard to reach and what
+reached them, and anything coverage doesn't show (rules with "no bin" in the plan)._
 
 ```text
-paste the covergroup line here
+paste the top line here
 ```
 
-Coverage numbers from Verilator 5.050 don't follow the standard's formula (type-level
-`get_coverage()` returns 0, `ignore_bins` stay in the denominator, `option.weight` is ignored),
-so this report counts bins from `coverage.dat`, whose per-bin counts are right.
+cocotb-coverage's percentage for a group is the share of its bins that were hit, crosses
+included, so a bin the specification rules out stays in the count. This report names the bins
+from the merged list `make cov` prints, not only the percentage.
 
 ## 6. Bugs
 

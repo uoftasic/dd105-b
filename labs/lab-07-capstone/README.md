@@ -4,12 +4,13 @@ Writeup: [`docs/labs/lab-07-capstone-overview.md`](../../docs/labs/lab-07-capsto
 
 This package is our solution to Lab 06, with this lab's pieces added: a reset driver, a source
 driver and an APB driver that know what to do when a reset interrupts them, a scoreboard that
-follows a reset with traffic in flight, and four corners in the coverage. Four pieces are left for
-you, marked `TODO (Part n)`: the assertions for the rules about reset, the sequence that resets the
-router with traffic in flight, the resets in `RouterLab07Vseq`'s random phases, and the sequence
-that takes both drop counters to 255. You also write a verification plan and a verification report
-from the two templates here, and keep all of it in a GitHub repository of your own. The router and
-its planted bugs come from [`../common`](../common/README.md).
+follows a reset with traffic in flight, and four corners in the coverage. Four pieces of code are
+left for you, marked `TODO (Part n)`: the assertions for the rules about reset, the sequence that
+resets the router with traffic in flight, the resets in `RouterLab07Vseq`'s random phases, and the
+sequence that takes both drop counters to 255. A `TODO` in the Makefile says when to add the two
+sequences' tests to `TESTS`. You also write a verification plan and a verification report from the
+two templates here, and keep all of it in a GitHub repository of your own. The router and its
+planted bugs come from [`../common`](../common/README.md).
 
 Run it in the course image, from this folder:
 
@@ -24,7 +25,8 @@ make clean                                   # remove build/ (the ccache and the
 ```
 
 The assertions are SystemVerilog, so `make build` rebuilds the simulator after you edit
-`tb/router_sva.sv`; every other file you edit is Python, and changing it rebuilds nothing.
+`tb/router_sva.sv`. The sequences are Python and `TESTS` is a list of names in the Makefile, so
+editing either rebuilds nothing.
 
 `BUG_LIST` has all 15 bugs, with B15 first, because `make check` grades the first bug in the
 list. `make check-all` and the hunts use the whole list.

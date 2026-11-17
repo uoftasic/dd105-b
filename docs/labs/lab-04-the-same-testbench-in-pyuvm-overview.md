@@ -300,8 +300,8 @@ What does it take to watch output 1, when an output agent is a class you can mak
 
    and `ok`. The 2006 beats that went unwatched in Part 1 are now checked. The number in
    parentheses after each file name is a line in that file. We left each TODO comment in place when
-   we filled it in, so if you deleted yours, your line numbers here and in Part 3 are a few lower:
-   218 and 221 here, for example.
+   we filled it in. If you deleted yours, your line numbers here and in Part 3 are a few lower, such
+   as 218 and 221 for these two lines.
 
    These are the same 805 packets as Part 1's run of this test, although the new agent's
    `OutReadyDriver` runs in every cycle. Read its `run_phase`: why did it change none of them?

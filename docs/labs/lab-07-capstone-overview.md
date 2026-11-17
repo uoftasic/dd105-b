@@ -41,10 +41,10 @@ you:
 
 Time: about 3 h 30 min. About 30 minutes of that is waiting for the machine, as we measured it on
 the course's 2 CPUs: the two regressions took 8 min 27 s and 9 min 21 s, each of the three runs of
-`make check-all` took 114 to 118 s, and a run of `RouterTest` takes about 12 s. Every file you
-edit is Python apart from the assertions, so only Part 5's assertions rebuild the simulator, which
-took us 2.5 s. You'll spend most of the rest writing the plan, eight assertions, two sequences and
-the report.
+`make check-all` took 114 to 118 s, and a run of `RouterTest` takes about 12 s. The assertions
+are SystemVerilog, so writing them rebuilds the simulator, which took us 2.5 s; the sequences are
+Python and the tests you add are a line in the Makefile, and neither rebuilds anything. You'll
+spend most of the rest writing the plan, eight assertions, two sequences and the report.
 
 ## Part 1: Your repository and the first build
 
@@ -651,7 +651,7 @@ add?
    *B15, from the same seed. The reset empties the buffer behind the output but not the output
    register, so `out0_valid` stays 1 through the reset with `00` still on `out0_data`, and
    `level0` reads 1, because the level counts the beat on the pins. `a_O4_rst` counts a failure at
-   each of the two rising edges inside the reset (280 and 290 ns), and `a_O4_after` at the next
+   the rising edges that end the two reset cycles (280 and 290 ns), and `a_O4_after` at the next
    three (300, 310 and 320 ns). The sink takes `00` at the edge at 320 ns, and the scoreboard
    reports it: `output 0: got 00 in cycle 32, and no beat was expected`.*
 

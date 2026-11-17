@@ -97,8 +97,8 @@ The `I`, `O` and `A` ids are the specification's own; the others are this plan's
 ## Sign-off criteria
 
 - `make regress` prints `120 ok  (120 runs)`: all 12 tests pass on seeds 1 to 10.
-- The same run's merged coverage prints `88.33 %   53 of 60 bins` for `top`, and the seven bins it never
-  hits are the seven of `router.pkt.x_fate_level` that the specification rules out.
+- The same run's merged coverage prints `88.33 %   53 of 60 bins` for `top`, and the seven bins
+  it never hits are the seven of `router.pkt.x_fate_level` that the specification rules out.
 - `make check-all` prints `15 of 15 caught.` with the golden router `ok`, on seeds 1 to 5.
 - Every row above is `done`, or its gap is written down under Open items.
 

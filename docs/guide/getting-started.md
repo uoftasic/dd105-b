@@ -1,8 +1,8 @@
 # Getting started
 
 Read this page before you start Lab 01. You'll do the setup itself in
-[Lab 01, Part 1](../labs/lab-01-one-alu-two-frameworks-overview.md#part-1-load-the-course), and you'll
-meet the builds, runs and verdicts this page describes in the parts after it.
+[Lab 01, Part 1](../labs/lab-01-one-alu-two-frameworks-overview.md#part-1-load-the-course), and in the
+parts after it you'll see the builds, runs and verdicts that this page describes.
 
 ## Requirements
 
@@ -10,14 +10,16 @@ You set up the workbench in [IC101](https://uoftasic.com/ic101/), and you used t
 all through [DD104](https://uoftasic.com/dd104/). DD105-B runs in that container too. Everything in
 the course is simulation, so it needs no PDK and no synthesis flow.
 
-The setup has three pieces:
+Getting to the course files takes three steps:
 
-- the noVNC desktop, started from your `workspace` clone with `./scripts/start_vnc.sh`
-  (`scripts\start_vnc.bat` on Windows). Ports, passwords and blank-page fixes are in
-  [IC101: Launch the noVNC desktop](https://uoftasic.com/ic101/guide/launch-novnc.html);
-- `. /foss/designs/common/.designinit`, which defines the workbench's `mod` command. You have to
-  load it in every new terminal;
-- `mod add dd105-b`, which you run once.
+- Start the noVNC desktop from your `workspace` clone with `./scripts/start_vnc.sh`
+  (`scripts\start_vnc.bat` on Windows).
+  [IC101: Launch the noVNC desktop](https://uoftasic.com/ic101/guide/launch-novnc.html) gives the
+  ports and the password, and it tells you where to look if the desktop page comes up blank.
+- In a terminal on the desktop, load the environment with `. /foss/designs/common/.designinit`. It
+  defines the workbench's `mod` command. Every new terminal starts without it, so you load it in
+  each one.
+- Run `mod add dd105-b`, the first time only.
 
 <!-- MODADD: capture after push -->
 
@@ -27,20 +29,19 @@ The setup has three pieces:
 `/foss/designs`, so the course folder and your files in it are on your own disk, and deleting the
 container doesn't delete your work.
 
-Labs 01 and 02 need nothing that isn't already in the image: Verilator, cocotb, pyuvm and Surfer
-are all there. From Lab 03 on, the labs also use two Python libraries that the image doesn't have,
-pyvsc for constrained-random stimulus and cocotb-coverage for functional coverage. Lab 03, Part 1
-has you install them, once, with `make venv`, into a Python virtual environment (a *venv*) that
-sees the image's own packages as well. pip downloads them, so that step needs the network. The
-venv goes in your workspace, at `/foss/designs/.venvs/dd105-b`, so it survives a restart of the
-container, and it came to 37 MB when we made it. The simulator's Python doesn't notice a venv
-that you activate in your shell, so the labs' shared makefile tells cocotb to start the venv's
-Python instead, in every run, whenever the venv exists.
+Labs 01 and 02 use Verilator, cocotb, pyuvm and Surfer, which are all in the image. From Lab 03 on,
+the labs also use pyvsc, for constrained-random stimulus, and cocotb-coverage, for functional
+coverage. Neither of those is in the image. In Lab 03, Part 1 you install them once, with
+`make venv`, into a Python virtual environment (a *venv*) that also sees the image's own packages.
+pip downloads them, so that step needs the network. The venv goes in your workspace, at
+`/foss/designs/.venvs/dd105-b`, so it survives a restart of the container. Ours came to 37 MB.
+Activating a venv in your shell doesn't change the Python that the simulator starts, so whenever
+the venv exists, the labs' shared makefile tells cocotb to start the venv's Python, in every run.
 
-Each lab's makefile works out its own paths, so every lab also runs with `make` alone, in a plain
-`git clone` of the course inside the image, without `.designinit` or `mod`. If a setup step fails
-late at night, you can still run `make` in a lab folder to find out whether the tools themselves
-work.
+Each lab's makefile works out its own paths, so you can also run any lab with `make` alone, from a
+plain `git clone` of the course inside the image, without `.designinit` or `mod`. If a setup step
+fails late at night, you can still run `make` in a lab folder to find out whether the tools
+themselves work.
 
 ## Versions
 
@@ -57,18 +58,18 @@ its tools report, and every exact number in the labs was recorded with them:
 | pyvsc and cocotb-coverage, in the venv | `pyvsc 1.1.0` and `cocotb-coverage 2.0`, as `make venv` lists them |
 
 You'll check the first five rows yourself in Lab 01, Part 1, and `make venv` prints the last one in
-Lab 03. Of the six, pyuvm's version is the one to keep in mind when you read about it elsewhere.
-pyuvm's online documentation describes a newer release than 4.0.1. Its example test calls
-`self.raise_objection("Description")`, and in 4.0.1 `raise_objection()` takes no argument; it
-describes a `self.uvm_report` way of logging, and 4.0.1 has none. The pyuvm source that the image
-has installed, in `/usr/local/lib/python3.12/dist-packages/pyuvm`, is the reference this course
-uses for pyuvm.
+Lab 03. Keep pyuvm's version in mind when you read about pyuvm elsewhere, because pyuvm's online
+documentation describes a newer release than 4.0.1. Its example test calls
+`self.raise_objection("Description")`, but in 4.0.1 `raise_objection()` takes no argument. It also
+describes logging through `self.uvm_report`, which 4.0.1 doesn't have. This course goes by the
+pyuvm source that is installed in the image, in `/usr/local/lib/python3.12/dist-packages/pyuvm`.
 
 ## How long things take
 
-Verilator compiles only the design. A testbench in this course is Python, which cocotb runs inside
-the simulator each time it starts, so editing a testbench never rebuilds anything. These are the
-times we measured for Lab 01 in the course image, on 2 CPUs of a shared machine:
+Verilator compiles only the design, not the testbench. Every testbench in this course is Python,
+which cocotb runs inside the simulator each time the simulator starts, so editing a testbench never
+rebuilds anything. These are the times we measured for Lab 01 in the course image, with 2 CPUs and
+3 GB:
 
 | Job | Wall time |
 |---|---|
@@ -82,31 +83,33 @@ times we measured for Lab 01 in the course image, on 2 CPUs of a shared machine:
 The first build compiles seven C++ files, and only one of them, `Vtop__ALL.o`, is the ALU. The other
 six are Verilator's and cocotb's support code, and the compiler cache keeps all seven. The second
 build of the same ALU found six of them in the cache and compiled one, so it took under 2 s. Lab 02's
-first build of the router compiled two, the router and cocotb's `main()` for the simulator, which
-includes a header that Verilator writes for each design, and it took 2.2 s. Build times vary with
-the machine and with whatever else it's doing, so use the table to judge how long to wait, and don't
-expect your times to match it.
+first build of the router took 2.2 s and compiled two files: the router, and cocotb's `main()` for
+the simulator. It compiled `main()` again because `main()` includes a header that Verilator writes
+for each design. Build times vary with the machine and with whatever else it's doing, so use the
+table to judge how long to wait, and don't expect your times to match it.
 
-In each lab, one build serves all of the lab's tests and all of its planted bugs. You choose the
-test, the seed, the bug and the test's knobs (which are plusargs) when you start the simulator, so
-changing any of them never rebuilds anything either.
+In each lab, one build serves all of a testbench's tests and all of the lab's planted bugs. Every
+lab from Lab 02 on has one testbench, and so one build. Lab 01 has two testbenches, the cocotb test
+and the pyuvm testbench, and it builds the ALU once for each. You choose the test, the seed, the bug
+and the test's knobs (which are plusargs) when you start the simulator, so changing any of them
+never rebuilds anything either.
 
-Runs get longer later in the course. From Lab 03 on, a run imports pyvsc, which takes about 1.5 s,
-and a graded test sends hundreds of packets: Lab 03's took us about 3 s, where Lab 02's took 0.25 s.
-The longest steps are Lab 07's two regressions, which took us 8 min 27 s and 9 min 21 s.
+Runs take longer from Lab 03 on. Each run spends about 1.5 s importing pyvsc, and a graded test
+sends hundreds of packets, so a run of Lab 03's graded test took us about 3 s, where Lab 02's took
+0.25 s. The longest steps are Lab 07's two regressions, which took us 8 min 27 s and 9 min 21 s.
 
 ## Where the builds go
 
 Each lab builds into its own `build/` folder. The simulator is `build/sim_build/Vtop`, and for
-Lab 01's ALU its folder came to 1.5 MB. Lab 01's cocotb test has a build of its own, in
-`build/cocotb/`. Each run gets a folder of its own under `build/runs/`, named for the test, the
-seed and the bug, such as `AluRandTest-s1-A03`. It holds `run.log`, cocotb's `results.xml`, the
-exact command (`cmd`), and the waves if you asked for them. After Lab 01's two builds and a few runs,
-`build/` held 3.4 MB.
+Lab 01's ALU, `build/sim_build/` came to 1.5 MB. Lab 01's cocotb test builds its own simulator in
+`build/cocotb/`. Each run gets a folder of its own under `build/runs/`, named after the
+test, the seed and the bug (for example `AluRandTest-s1-A03`). It holds `run.log`, cocotb's
+`results.xml`, the exact command (`cmd`), and the waves if you asked for them. After Lab 01's two
+builds and a few runs, `build/` held 3.4 MB.
 
-The compiler cache is ccache, and it lives at the top of your clone, in `.ccache`, where every lab
-shares it. Because it's in your workspace, it survives a container restart, so a new container
-doesn't have to begin with a cold build. It's capped at 1 GB, and after Lab 01's two builds it held
+The compiler cache is ccache. It lives at the top of your clone, in `.ccache`, and every lab shares
+it. Because it's in your workspace, it survives a container restart, so a new container doesn't
+have to begin with a cold build. It's capped at 1 GB, and after Lab 01's two builds it held
 672 KB.
 
 `make clean` in a lab folder removes that lab's `build/` and keeps the cache and the venv:
@@ -128,17 +131,22 @@ current values of its variables.
 Every run starts with cocotb's own lines, which give the Verilator version, the seed (`Seeding
 Python random module with supplied seed 1`) and cocotb's version. Your test's lines come next, then
 cocotb's table of the tests it ran, and last the course's one-line verdict on the run, between two
-rules. What comes just before the verdict depends on what kind of test it is.
+rules. The last of your test's lines, and the wording of the verdict, depend on what kind of test
+it is.
 
-A pyuvm test, such as Lab 01's `AluRandTest` and every test from Lab 04 on, derives from the
-course's `BaseTest`. pyuvm reports through Python's `logging`, and a component that logs an error with
-`self.logger.error()` fails nothing by itself, so the test would still pass. `BaseTest` counts every
-error that any component logs, and at the end it prints one line with the count and fails the test
-if the count isn't 0. A pyuvm run that passes ends like this:
+Every pyuvm test in the course derives from `BaseTest`, in `labs/common/py/dd105b_base.py`.
+Lab 01's `AluRandTest` is a pyuvm test, and so is every test from Lab 04 on. pyuvm reports through Python's `logging`, and an error that a
+component logs with `self.logger.error()` doesn't fail anything by itself, so without `BaseTest` the
+test would still pass. `BaseTest` counts every error that any component logs, and at the end it
+prints one line with the count and fails the test if the count isn't 0. In a pyuvm run that
+passes, the last line that your test prints is this one:
 
 ```text
 DD105-B BaseTest: 0 errors logged, no bound assertions
 ```
+
+Then come cocotb's line saying that the test passed and cocotb's table, and the run ends with the
+verdict:
 
 ```text
 ------------------------------------------------------------------------
@@ -147,21 +155,22 @@ DD105-B BaseTest: 0 errors logged, no bound assertions
 ```
 
 "No bound assertions" means that no SystemVerilog assertions are attached to the design. From
-Lab 05 on they are, and the line counts their failures too.
+Lab 05 on, assertions are bound into the router, and the line counts their failures too.
 
-A plain cocotb test, such as Lab 01's cocotb test and the tests in Labs 02 and 03, has no `BaseTest`,
-because a failed check there raises `AssertionError`, which fails the test by itself. Its verdict
-reads `ok: passed`.
+Lab 01's cocotb test and the tests in Labs 02 and 03 are plain cocotb tests. They have no
+`BaseTest`, because a failed check in them raises `AssertionError`, and that fails the test by
+itself. When one of them passes, its verdict reads `ok: passed`.
 
 As in DD104, the graders accept your testbench only if it passes on the correct design and fails
 on a broken one. `make check` and `make check-all` run your test on the correct design and on the
 bugs, and mark every run with one word. On the correct design, a run is `ok` if it passed and
 `FAIL` if a check fired. On a bug, a run is `caught` if a check fired and `MISSED` if it passed. On
 either one, a run that failed for some other reason is `BROKEN`, and a `BROKEN` run never counts as a
-catch. That covers any exception that isn't a check, such as a `NameError` from a typo in your code,
-and a crash, a timeout or a failed build. A pyuvm test that passed without `BaseTest`'s line is
-`BROKEN` too, because its logged errors would have failed nothing. Lab 01's shipped testbench misses
-one of its three bugs, so its first `make check-all` ends like this:
+catch. The other reasons include an exception that isn't a check (a `NameError` from a typo in your
+code, for example), a crash, a timeout and a failed build. A pyuvm test that passed without
+`BaseTest`'s line is `BROKEN` too, because its logged errors would have failed nothing. Lab 01's
+shipped pyuvm testbench misses one of the lab's three bugs, so your first `make check-all` there
+ends like this:
 
 ```text
   MISSED  tier 1  A03_zero_flag_low_nibble         0 errors                        0.5s
@@ -186,8 +195,8 @@ your testbench passes on the correct design and catches every bug.
 Counts, simulated times and verdicts come out the same every time you run the same code with the
 same seed. The seed is 1 unless you choose another, and cocotb uses it to seed Python's `random`,
 so your counts should match the labs' exactly. If one doesn't, something is different and we'd like
-to know what. Wall-clock times are only a rough guide, because they depend on your machine and on
-what else it's doing.
+to know what. Wall-clock times change from one run to the next, so treat them only as a rough
+guide.
 
 ## Getting help
 
@@ -257,15 +266,16 @@ ask in Discord for help finding a better question to put to the design, rather t
 - pyuvm's [README at release 4.0.1](https://github.com/pyuvm/pyuvm/tree/4.0.1), the version in the
   course image. Its table of the IEEE 1800.2 standard says, section by section, what pyuvm
   implements and what it leaves out. The same text on
-  [pyuvm.readthedocs.io](https://pyuvm.readthedocs.io/) describes a later release. Correction for
-  this course: in 4.0.1, `raise_objection()` and `drop_objection()` take no argument, and there is no
-  `self.uvm_report`.
+  [pyuvm.readthedocs.io](https://pyuvm.readthedocs.io/) describes a later release. Correction to
+  those pages for this course: in 4.0.1, `raise_objection()` and `drop_objection()` take no
+  argument, and there is no `self.uvm_report`.
 - [cocotb 2.0.1's documentation](https://docs.cocotb.org/en/v2.0.1/), the version in the image.
   The pages for other versions differ, so check that the address has `v2.0.1` in it.
 - ChipVerify's [Introduction to Verilator](https://chipverify.com/rtl-synthesis/introduction-to-verilator).
   Correction: it says that Verilator supports only synthesizable Verilog, and it sends you to Icarus
   for testbenches with delays or `fork`. In this course the testbench is Python and the delays are
   cocotb's, so Verilator compiles only the design, which is synthesizable. DD105-A, which writes its
-  testbenches in SystemVerilog, runs delays and `fork` on Verilator 5.050 with its `--timing` option.
+  testbenches in SystemVerilog, runs delays and `fork` on Verilator 5.050 with Verilator's `--timing`
+  option.
 
 Next: [What a framework buys you](what-a-framework-buys-you.md).

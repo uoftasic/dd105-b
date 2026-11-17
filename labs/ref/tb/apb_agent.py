@@ -42,11 +42,15 @@ class ApbDriver(uvm_driver, Clocked):
     rising edge after it.
 
     Rule A4: psel is 0 while rst_n is 0. The reset driver announces a reset
-    one edge ahead (router_common.ResetState), and after every rising edge
-    this driver checks for one, so by the edge at which rst_n falls psel is
-    already 0. A transfer that a reset interrupts is abandoned and started
-    again from its setup cycle once the reset is over; to the router it is
-    just the next transfer. `restarts` counts them."""
+    one edge ahead (router_common.ResetState). This driver starts no
+    transfer while one is announced, and after every rising edge of a
+    transfer under way it checks whether rst_n falls at that edge; if so it
+    drops psel at once, so psel is 0 from the first reset cycle. It doesn't
+    stop any earlier: rule A1 holds until the reset starts, so a setup cycle
+    in the last cycle before it is still followed by an access cycle. The
+    transfer is abandoned and started again from its setup cycle once the
+    reset is over; to the router it is just the next transfer. `restarts`
+    counts them."""
 
     def build_phase(self):
         self.dut = ConfigDB().get(self, "", "DUT")
@@ -59,6 +63,9 @@ class ApbDriver(uvm_driver, Clocked):
 
     def reset_coming(self):
         return self.rst.soon or not self.dut.rst_n.value
+
+    def reset_now(self):
+        return self.rst.starts_now() or not self.dut.rst_n.value
 
     async def _clear_of_reset(self):
         """Right after a rising edge, with no reset in progress or announced."""
@@ -96,7 +103,7 @@ class ApbDriver(uvm_driver, Clocked):
         await RisingEdge(d.clk)                      # the setup cycle ends
         while True:
             self._mark_edge()
-            if self.reset_coming() or self.rst.epoch != epoch:
+            if self.reset_now() or self.rst.epoch != epoch:
                 self.idle()
                 return False
             d.penable.value = 1

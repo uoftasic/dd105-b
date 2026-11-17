@@ -1,4 +1,4 @@
-# Quarto build of the COURSE-TEMPLATE docs (replacing Docsify's index.html,
+# Quarto build of the DD105-B docs (replacing Docsify's index.html,
 # _sidebar.md and _navbar.md).
 #
 #   quarto preview docs          # live site at http://localhost:4200
@@ -39,40 +39,95 @@ website:
         href: https://github.com/uoftasic/dd105-b
         aria-label: GitHub
   sidebar:
-    style: docked
+    # Floating centres the sidebar, the page and "On this page" on a wide
+    # screen. Docked pins the sidebar to the left edge and leaves all the
+    # spare width on the right.
+    style: floating
     contents:
       - text: "Home"
         href: index.md
-      - section: "Course path"
+      - section: "1. Two frameworks"
         contents:
-          - text: "1. Getting started"
+          - text: "Getting started"
             href: guide/getting-started.md
-          - text: "2. Lab 01: One ALU, two frameworks"
+          - text: "What a framework buys you"
+            href: guide/what-a-framework-buys-you.md
+          - text: "From cocotb tests to pyuvm components"
+            href: guide/from-cocotb-tests-to-pyuvm-components.md
+          - text: "Lab 01: One ALU, two frameworks"
             href: labs/lab-01-one-alu-two-frameworks-overview.md
-          - text: "3. Lab 02: A layered testbench without pyuvm"
+      - section: "2. A layered testbench"
+        contents:
+          - text: "Python classes and cocotb concurrency"
+            href: guide/python-classes-and-cocotb-concurrency.md
+          - text: "Driving and sampling on the clock"
+            href: guide/driving-and-sampling-on-the-clock.md
+          - text: "Lab 02: A layered testbench without pyuvm"
             href: labs/lab-02-a-layered-testbench-without-pyuvm-overview.md
-          - text: "4. Lab 03: Constraints and coverage"
+      - section: "3. Constraints and coverage"
+        contents:
+          - text: "Constrained random with pyvsc"
+            href: guide/constrained-random-with-pyvsc.md
+          - text: "Functional coverage you can read"
+            href: guide/functional-coverage-you-can-read.md
+          - text: "Lab 03: Constraints and coverage"
             href: labs/lab-03-constraints-and-coverage-overview.md
-          - text: "5. Lab 04: The same testbench in pyuvm"
+      - section: "4. pyuvm"
+        contents:
+          - text: "The pyuvm skeleton"
+            href: guide/the-pyuvm-skeleton.md
+          - text: "Sequences, sequencers and drivers"
+            href: guide/sequences-sequencers-and-drivers.md
+          - text: "Monitors, analysis ports and scoreboards"
+            href: guide/monitors-analysis-ports-and-scoreboards.md
+          - text: "The factory and ConfigDB"
+            href: guide/the-factory-and-configdb.md
+          - text: "Lab 04: The same testbench in pyuvm"
             href: labs/lab-04-the-same-testbench-in-pyuvm-overview.md
-          - text: "6. Lab 05: Protocol rules and backpressure"
+      - section: "5. Protocol rules"
+        contents:
+          - text: "Assertions for interface rules"
+            href: guide/assertions-for-interface-rules.md
+          - text: "Reactive agents and backpressure"
+            href: guide/reactive-agents-and-backpressure.md
+          - text: "Virtual sequences"
+            href: guide/virtual-sequences.md
+          - text: "Lab 05: Protocol rules and backpressure"
             href: labs/lab-05-protocol-rules-and-backpressure-overview.md
-          - text: "7. Lab 06: The register block"
+      - section: "6. Registers"
+        contents:
+          - text: "Register models in pyuvm"
+            href: guide/register-models-in-pyuvm.md
+          - text: "Regressions and seeds"
+            href: guide/regressions-and-seeds.md
+          - text: "Lab 06: The register block"
             href: labs/lab-06-the-register-block-overview.md
-          - text: "8. Lab 07: Capstone"
+      - section: "7. Capstone"
+        contents:
+          - text: "Verification plans and sign-off"
+            href: guide/verification-plans-and-sign-off.md
+          - text: "Writing the verification report"
+            href: guide/writing-the-verification-report.md
+          - text: "Lab 07: Capstone"
             href: labs/lab-07-capstone-overview.md
       - section: "Reference"
         contents:
-          - text: "The packet router"
-            href: reference/router-spec.md
           - text: "The router in one page"
             href: reference/the-router-in-one-page.md
+          - text: "The packet router"
+            href: reference/router-spec.md
+          - text: "The pyuvm register API"
+            href: reference/pyuvm-register-api.md
+          - text: "Getting the tools outside the course image"
+            href: reference/getting-the-tools-outside-the-course-image.md
       - section: "Repo"
         contents:
           - text: "Lab packages"
             href: https://github.com/uoftasic/dd105-b/tree/main/labs
-          - text: "Scripts"
-            href: https://github.com/uoftasic/dd105-b/tree/main/scripts
+          - text: "The shared build and graders"
+            href: https://github.com/uoftasic/dd105-b/tree/main/labs/common
+          - text: "The reference testbench"
+            href: https://github.com/uoftasic/dd105-b/tree/main/labs/ref
 
 filters:
   - _filters/course.lua
@@ -87,6 +142,16 @@ format:
       light: [cosmo, _light.scss]
       dark: [darkly, _dark.scss]
     css: _styles.css
+    # Widths of the sidebar, the text column and "On this page". The text
+    # column gets the width the two sidebars leave, so it grows with the
+    # window up to 1020px (Quarto takes 3em off body-width). It reaches that
+    # on a screen about 1520px wide; DD105-A, whose settings these are,
+    # measured about 140 characters of text or 114 of code a line there. A
+    # wider screen splits the spare width equally between the two sides.
+    grid:
+      sidebar-width: 200px
+      margin-width: 200px
+      body-width: 1071px
     # Keeps old Docsify links (.../dd105-b/#/labs/...) working.
     include-in-header: _docsify-redirect.html
     toc: true

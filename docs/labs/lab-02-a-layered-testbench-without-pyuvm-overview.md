@@ -55,8 +55,8 @@ What does the shipped testbench do, and what does it check?
    The first two lines are `inject.py` writing a copy of the router's RTL with all fifteen planted
    bugs in it, each behind the `+BUG` switch, as Lab 01's ALU had its three, and that one simulator
    serves every run in this lab. The ccache's counts add up over every build in your clone. Ours
-   include Lab 01's two builds and nothing else, so this build's own were 5 hits and 2 misses. The
-   two files it compiled are `Vtop__ALL.o`, the router, and `verilator.o`, cocotb's `main()` for the
+   include only Lab 01's two builds, which came to 6 hits and 8 misses, so this build's own were 5
+   hits and 2 misses. The two files it compiled are `Vtop__ALL.o`, the router, and `verilator.o`, cocotb's `main()` for the
    simulator, which includes the header Verilator writes for the design it built. With an empty
    ccache the build took us 7.6 to 7.7 s.
 

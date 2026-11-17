@@ -68,8 +68,8 @@ What does the starting testbench check, and does it catch this lab's two bugs?
    step needs the network. The venv is in your workspace under `/foss/designs`, so it survives a
    restart of the container. It sees the image's own packages too, which is why it lists the
    image's cocotb 2.0.1 and pyuvm 4.0.1 beside pyvsc 1.1.0 and cocotb-coverage 2.0.
-   Every run in this lab uses the venv's Python, and until the venv exists, `make run`,
-   `make check-all`, `make cov` and `make traps` stop with:
+   Every run in this lab uses the venv's Python, and until the venv exists, `make check-all`,
+   `make cov`, `make traps`, and `make run` once it has built the simulator, stop with:
 
    ```text
    ========================================================================

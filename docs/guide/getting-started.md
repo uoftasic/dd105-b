@@ -21,13 +21,20 @@ Setting up takes three steps:
   each one.
 - Run `mod add dd105-b`, the first time only.
 
-<!-- MODADD: capture after push -->
+`mod add dd105-b` clones the course into `/foss/designs/modules/dd105-b` and prints:
 
-`mod add dd105-b` clones the course from `github.com/uoftasic/dd105-b` into
-`/foss/designs/modules/dd105-b`, and from then on `mod dd105-b` takes you to that folder and prints
-`cwd: /foss/designs/modules/dd105-b`. Your `workspace` folder is bind-mounted into the container at
-`/foss/designs`, so the course folder and your files in it are on your own disk, and deleting the
-container doesn't delete your work.
+```text
+Cloning https://github.com/uoftasic/dd105-b.git
+     into /foss/designs/modules/dd105-b
+Cloning into '/foss/designs/modules/dd105-b'...
+OK  module ready: /foss/designs/modules/dd105-b
+    run: mod dd105-b
+cwd: /foss/designs/modules/dd105-b
+```
+
+From then on, `mod dd105-b` takes you to that folder and prints the same `cwd:` line. Your
+`workspace` folder is bind-mounted into the container at `/foss/designs`, so the course folder and
+your files in it are on your own disk, and deleting the container doesn't delete your work.
 
 Labs 01 and 02 run on the image alone. Verilator, cocotb, pyuvm and Surfer are all in it. From
 Lab 03 on, the labs also use pyvsc, for constrained-random stimulus, and cocotb-coverage, for

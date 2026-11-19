@@ -56,7 +56,7 @@ assertions, two sequences and the report.
    simulator:
 
    ```bash
-   . /foss/designs/common/.designinit   # in every new terminal
+   . /foss/designs/common/.designinit   # a new terminal loads this by itself; safe to rerun
    mod dd105-b
    cd labs/lab-07-capstone
    make build

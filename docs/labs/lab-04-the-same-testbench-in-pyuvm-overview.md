@@ -48,7 +48,7 @@ Does the port do what the Lab 03 testbench did, and which of this lab's bugs doe
    simulator:
 
    ```bash
-   . /foss/designs/common/.designinit   # in every new terminal
+   . /foss/designs/common/.designinit   # a new terminal loads this by itself; safe to rerun
    mod dd105-b
    cd labs/lab-04-the-same-testbench-in-pyuvm
    make build

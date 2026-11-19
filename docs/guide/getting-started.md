@@ -16,9 +16,9 @@ Setting up takes three steps:
   (`scripts\start_vnc.bat` on Windows).
   [IC101: Launch the noVNC desktop](https://uoftasic.com/ic101/guide/launch-novnc.html) gives the
   ports and the password, and it tells you where to look if the desktop page comes up blank.
-- In a terminal on the desktop, load the environment with `. /foss/designs/common/.designinit`. It
-  defines the workbench's `mod` command. Every new terminal starts without it, so you load it in
-  each one.
+- Open a terminal on the desktop. The terminal loads the environment from
+  `/foss/designs/common/.designinit` by itself, and that file defines the workbench's `mod`
+  command. Running `. /foss/designs/common/.designinit` again does no harm.
 - Run `mod add dd105-b`, the first time only.
 
 `mod add dd105-b` clones the course into `/foss/designs/modules/dd105-b` and prints:

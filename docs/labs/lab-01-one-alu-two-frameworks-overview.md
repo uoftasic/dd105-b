@@ -51,7 +51,7 @@ recorded with? If you haven't set up the workbench yet, do
 2. Load the environment and get the course files:
 
    ```bash
-   . /foss/designs/common/.designinit   # in every new terminal
+   . /foss/designs/common/.designinit   # a new terminal loads this by itself; safe to rerun
    mod add dd105-b                      # first time only: clones github.com/uoftasic/dd105-b
    mod dd105-b                          # every time, including the first
    ```
@@ -87,7 +87,7 @@ recorded with? If you haven't set up the workbench yet, do
 | If you see | Do this |
 |---|---|
 | `bash: /foss/designs/common/.designinit: No such file or directory` | The workspace isn't mounted, so relaunch `start_vnc` from your `workspace` clone. In the meantime you can run this lab from a plain `git clone` of `github.com/uoftasic/dd105-b` inside the workbench image, because `make` needs neither `.designinit` nor `mod`. |
-| `bash: mod: command not found` | You haven't loaded `.designinit` in this terminal (the first line of step 2). Every new terminal starts without it. |
+| `bash: mod: command not found` | Run the first line of step 2 in this terminal. It loads `.designinit`, which defines `mod`. |
 | `mod: no such module: dd105-b` | You ran `mod dd105-b` before `mod add dd105-b`. |
 
 For anything else, see IC101's [Troubleshooting](https://uoftasic.com/ic101/reference/troubleshooting.html) page.

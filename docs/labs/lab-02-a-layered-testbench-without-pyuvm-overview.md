@@ -27,7 +27,7 @@ What does the shipped testbench do, and what does it check?
 1. Open a terminal on the workbench desktop, as in Lab 01, and go to the lab folder:
 
    ```bash
-   . /foss/designs/common/.designinit   # in every new terminal
+   . /foss/designs/common/.designinit   # a new terminal loads this by itself; safe to rerun
    mod dd105-b
    cd labs/lab-02-a-layered-testbench-without-pyuvm
    ```

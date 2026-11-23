@@ -89,7 +89,7 @@ For the deploy, GitHub Pages has to be set to Source: GitHub Actions, which `TEM
 checklist still lists as to do, since the repository isn't on GitHub yet.
 
 This repo was created from [uoftasic/course-template](https://github.com/uoftasic/course-template)
-at commit `92e35ab`. `TEMPLATE.md`, `REFERENCE-SOLUTION-CI.md` and `scripts/init-template.py` are
+at commit `1f77c9a`. `TEMPLATE.md`, `REFERENCE-SOLUTION-CI.md` and `scripts/init-template.py` are
 that template's files and are not part of the course.
 
 ## Copied from DD105-A
@@ -97,9 +97,11 @@ that template's files and are not part of the course.
 DD105-B carries its own copy of everything it shares with DD105-A. No module is shared between the
 two courses, so a change to one course's copy doesn't reach the other. Every file below was copied
 from [uoftasic/dd105-a](https://github.com/uoftasic/dd105-a) at commit
-`da489f273945e44c49069adee8dc45ac346bd42a` (Nov 16, 2026). Two commits, "Copy the shared files from
+`0704bbdc0a153fe86c41a6d217e59f71647b7b6b` (Nov 16, 2026). Two commits, "Copy the shared files from
 DD105-A da489f2" and "Copy the router's directed reference test from DD105-A da489f2", hold them
-byte for byte, and the commits after those hold every change DD105-B made to them.
+byte for byte, and the commits after those hold every change DD105-B made to them. Their subjects,
+and the subjects quoted below, give DD105-A's commit as `da489f2`, its hash before DD105-A's
+history was rewritten on Nov 23, 2026.
 The copy of `scripts/screenshots/`, from the same DD105-A commit, is in a later commit of its own,
 "Copy scripts/screenshots from DD105-A da489f2". Lab 07's assertions and templates, from the same
 commit, are in another, "Copy Lab 07's assertions and templates from DD105-A da489f2", and

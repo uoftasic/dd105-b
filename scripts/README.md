@@ -6,7 +6,7 @@ Utilities for DD105-B — Testbenches with UVM under the UofT ASIC org (`uoftasi
 
 | Script | Purpose |
 |--------|---------|
-| `check_site.py` | Check that every local link and `#anchor` in the rendered site resolves; `.github/workflows/site.yml` runs it on `docs/_site` |
+| `check_site.py` | Check that every local link and `#anchor` in the rendered site resolves, and that every page has the navbar's link to https://edu.uoftasic.com/; `.github/workflows/site.yml` runs it on `docs/_site` |
 | `init-template.py` | The template's bootstrap script, which filled in `dd105-b`, the title and the description; see `TEMPLATE.md` |
 | `ci/check-labs.sh` | The reference-solution checks that `.github/workflows/labs.yml` runs: the course venv, `labs/common/selftest`, `labs/ref` catching all 15 bugs, and for each lab, the starter's `make check` failing and the solution's passing |
 | `ci/in-image.sh` | Runs a command in the course image with the course's limits (2 CPUs, 3 GB): `IMAGE=<image@digest> scripts/ci/in-image.sh <command>` |
